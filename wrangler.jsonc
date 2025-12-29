@@ -15,7 +15,7 @@
 	},
 	"d1_databases": [
 		{
-			"binding": "health_comply",
+			"binding": "DB",
 			"database_name": "health-comply",
 			"database_id": "84f8a56b-2113-44e5-8854-8dd52cb6d09f",
 			"remote": true
@@ -24,7 +24,7 @@
 	"r2_buckets": [
 		{
 			"bucket_name": "health-comply",
-			"binding": "health_comply",
+			"binding": "R2",
 			"remote": true
 		}
 	]
