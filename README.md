@@ -1,39 +1,124 @@
-Welcome to your new TanStack app! 
+# TanStack Start on Cloudflare
 
-# Getting Started
+A modern, full-stack React application built with TanStack Start and deployed on Cloudflare Workers. This template showcases server functions, middleware, type-safe data fetching, and seamless integration with Cloudflare's edge computing platform.
 
-To run this application:
+[![TanStack Start on Cloudflare](https://img.youtube.com/vi/TWWS_lo4kOA/0.jpg)](https://www.youtube.com/watch?v=TWWS_lo4kOA)
+
+## 🚀 Quick Start
 
 ```bash
+# Install dependencies
 pnpm install
-pnpm start
-```
 
-# Building For Production
+# Start development server
+pnpm dev
 
-To build this application for production:
-
-```bash
+# Build for production
 pnpm build
+
+# Deploy to Cloudflare
+pnpm deploy
 ```
 
-## Testing
+## 📦 Development Workflow
 
-This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:
+This project provides a comprehensive development workflow with the following scripts:
+
+- **`pnpm dev`** - Start development server on port 3000
+- **`pnpm build`** - Build the application for production
+- **`pnpm deploy`** - Build and deploy to Cloudflare Workers
+- **`pnpm serve`** - Preview production build locally
+- **`pnpm cf-typegen`** - Generate TypeScript types for Cloudflare environment
+
+## 🌩️ Cloudflare Integration
+
+### Environment Variables & Type Generation
+
+This project includes full TypeScript support for Cloudflare Workers environment variables:
 
 ```bash
-pnpm test
+# Generate types for Cloudflare environment
+pnpm cf-typegen
 ```
 
-## Styling
+This creates type definitions allowing you to safely import and use Cloudflare environment variables:
 
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
+```typescript
+import { env } from "cloudflare:workers";
+
+// Now env is fully typed with your Wrangler configuration
+console.log(env.MY_VAR); // TypeScript knows this exists
+```
+
+### Wrangler Configuration
+
+The `wrangler.jsonc` file configures your Cloudflare deployment:
+
+```jsonc
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tanstack-start-app",
+  "compatibility_date": "2025-09-02",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "./src/server.ts",  // Custom server entry point
+  "vars": {
+    "MY_VAR": "Hello from Cloudflare"
+  }
+}
+```
+
+### Custom Server Entry (`src/server.ts`)
+
+The `src/server.ts` file is your custom Cloudflare Workers entry point where you can add additional Cloudflare features:
+
+```typescript
+import handler from "@tanstack/react-start/server-entry";
+
+export default {
+  fetch(request: Request) {
+    return handler.fetch(request, {
+      context: {
+        fromFetch: true,
+      },
+    });
+  },
+
+  // Add other Cloudflare Workers features:
+  // - Queue consumers: queue(batch, env) { ... }
+  // - Scheduled events: scheduled(event, env) { ... }
+  // - Durable Object handlers
+  // - etc.
+};
+```
+
+## 🎨 Styling & Components
+
+### Tailwind CSS v4
+This project uses the latest Tailwind CSS v4 with CSS variables for theming:
+
+```bash
+# Tailwind is pre-configured with the @tailwindcss/vite plugin
+# CSS variables are enabled for theme customization
+```
+
+### Shadcn/UI Components
+Add beautiful, accessible components using Shadcn/UI:
+
+```bash
+# Add individual components
+pnpx shadcn@latest add button
+pnpx shadcn@latest add card
+pnpx shadcn@latest add form
+
+# Components use semantic color tokens and CSS variables
+# Perfect for light/dark theme support
+```
 
 
 
+## 🗂️ File-Based Routing
 
-## Routing
-This project uses [TanStack Router](https://tanstack.com/router). The initial setup is a file based router. Which means that the routes are managed as files in `src/routes`.
+This project uses [TanStack Router](https://tanstack.com/router/latest) with file-based routing. Routes are automatically generated from files in the `src/routes` directory:
 
 ### Adding A Route
 
@@ -94,197 +179,135 @@ The `<TanStackRouterDevtools />` component is not required so you can remove it 
 More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
 
 
-## Data Fetching
+## 🔄 Data Fetching & Server Functions
 
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
+This template demonstrates modern server-side patterns with TanStack Start's server functions, middleware, and seamless client integration.
 
-For example:
+### Server Functions with Middleware
 
-```tsx
-const peopleRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/people",
-  loader: async () => {
-    const response = await fetch("https://swapi.dev/api/people");
-    return response.json() as Promise<{
-      results: {
-        name: string;
-      }[];
-    }>;
-  },
-  component: () => {
-    const data = peopleRoute.useLoaderData();
-    return (
-      <ul>
-        {data.results.map((person) => (
-          <li key={person.name}>{person.name}</li>
-        ))}
-      </ul>
-    );
-  },
+Server functions run exclusively on the server and maintain type safety across network boundaries:
+
+```typescript
+// src/core/middleware/example-middleware.ts
+export const exampleMiddleware = createMiddleware({
+  type: 'function'
+}).server(async ({ next }) => {
+  console.log('Middleware executing on server');
+  return next({
+    context: {
+      data: 'Context from middleware'
+    }
+  });
 });
-```
 
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-### React-Query
-
-React-Query is an excellent addition or alternative to route loading and integrating it into you application is a breeze.
-
-First add your dependencies:
-
-```bash
-pnpm add @tanstack/react-query @tanstack/react-query-devtools
-```
-
-Next we'll need to create a query client and provider. We recommend putting those in `main.tsx`.
-
-```tsx
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-
-// ...
-
-const queryClient = new QueryClient();
-
-// ...
-
-if (!rootElement.innerHTML) {
-  const root = ReactDOM.createRoot(rootElement);
-
-  root.render(
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
-  );
-}
-```
-
-You can also add TanStack Query Devtools to the root route (optional).
-
-```tsx
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-
-const rootRoute = createRootRoute({
-  component: () => (
-    <>
-      <Outlet />
-      <ReactQueryDevtools buttonPosition="top-right" />
-      <TanStackRouterDevtools />
-    </>
-  ),
+// src/core/functions/example-functions.ts
+const ExampleInputSchema = z.object({
+  exampleKey: z.string().min(1),
 });
+
+type ExampleInput = z.infer<typeof ExampleInputSchema>;
+
+const baseFunction = createServerFn().middleware([
+  exampleMiddleware,
+]);
+
+export const exampleFunction = baseFunction
+  .inputValidator((data: ExampleInput) => ExampleInputSchema.parse(data))
+  .handler(async (ctx) => {
+    // Access validated input: ctx.data
+    // Access middleware context: ctx.context
+    // Access Cloudflare env: env.MY_VAR
+    return 'Server response';
+  });
 ```
 
-Now you can use `useQuery` to fetch your data.
+### Client Integration with TanStack Query
+
+Server functions integrate seamlessly with TanStack Query for optimal UX:
 
 ```tsx
-import { useQuery } from "@tanstack/react-query";
+import { useMutation } from '@tanstack/react-query';
+import { exampleFunction } from '@/core/functions/example-functions';
 
-import "./App.css";
-
-function App() {
-  const { data } = useQuery({
-    queryKey: ["people"],
-    queryFn: () =>
-      fetch("https://swapi.dev/api/people")
-        .then((res) => res.json())
-        .then((data) => data.results as { name: string }[]),
-    initialData: [],
+function MyComponent() {
+  const mutation = useMutation({
+    mutationFn: exampleFunction,
+    onSuccess: (data) => console.log('Success:', data),
+    onError: (error) => console.error('Error:', error),
   });
 
   return (
-    <div>
-      <ul>
-        {data.map((person) => (
-          <li key={person.name}>{person.name}</li>
-        ))}
-      </ul>
-    </div>
+    <button
+      onClick={() => mutation.mutate({ exampleKey: 'Hello Server!' })}
+      disabled={mutation.isPending}
+    >
+      {mutation.isPending ? 'Loading...' : 'Call Server Function'}
+    </button>
   );
 }
-
-export default App;
 ```
 
-You can find out everything you need to know on how to use React-Query in the [React-Query documentation](https://tanstack.com/query/latest/docs/framework/react/overview).
+### Key Benefits
 
-## State Management
+- **🔒 Type-Safe**: Full TypeScript support with Zod validation
+- **🚀 Server-First**: Secure server-side logic with client convenience
+- **⚡ Edge Computing**: Runs on Cloudflare's global edge network
+- **🔄 Seamless Integration**: Works perfectly with TanStack Query
+- **🧩 Composable**: Middleware chains for auth, logging, validation
 
-Another common requirement for React applications is state management. There are many options for state management in React. TanStack Store provides a great starting point for your project.
+### Interactive Demo
 
-First you need to add TanStack Store as a dependency:
+This template includes a live demo showcasing the middleware and server function patterns. Check your server logs when running the demo to see the execution flow!
+
+## 🧪 Testing
+
+This project uses [Vitest](https://vitest.dev/) for fast unit and integration testing:
 
 ```bash
-pnpm add @tanstack/store
+# Run tests
+pnpm test
+
+# Test configuration is in vite.config.ts
+# Uses jsdom environment for DOM testing
+# Includes @testing-library/react for component testing
 ```
 
-Now let's create a simple counter in the `src/App.tsx` file as a demonstration.
+## 📋 Tech Stack
 
-```tsx
-import { useStore } from "@tanstack/react-store";
-import { Store } from "@tanstack/store";
-import "./App.css";
+This template includes the latest and greatest from the React ecosystem:
 
-const countStore = new Store(0);
+### **Core Framework**
+- **TanStack Start** - Full-stack React framework with SSR
+- **React 19** - Latest React with concurrent features
+- **TypeScript** - Strict type checking enabled
 
-function App() {
-  const count = useStore(countStore);
-  return (
-    <div>
-      <button onClick={() => countStore.setState((n) => n + 1)}>
-        Increment - {count}
-      </button>
-    </div>
-  );
-}
+### **Routing & Data**
+- **TanStack Router** - Type-safe, file-based routing
+- **TanStack Query** - Server state management with SSR integration
 
-export default App;
-```
+### **Styling & UI**
+- **Tailwind CSS v4** - Utility-first CSS with CSS variables
+- **Shadcn/UI** - Beautiful, accessible component library
+- **Lucide React** - Consistent icon set
 
-One of the many nice features of TanStack Store is the ability to derive state from other state. That derived state will update when the base state updates.
+### **Development Tools**
+- **Vite** - Lightning-fast build tool and dev server
+- **Vitest** - Unit testing with jsdom
+- **TypeScript** - Full type safety across client and server
 
-Let's check this out by doubling the count using derived state.
+### **Deployment**
+- **Cloudflare Workers** - Edge computing platform
+- **Wrangler** - Cloudflare deployment and development CLI
 
-```tsx
-import { useStore } from "@tanstack/react-store";
-import { Store, Derived } from "@tanstack/store";
-import "./App.css";
+## 🚀 Learn More
 
-const countStore = new Store(0);
+- **[TanStack Start](https://tanstack.com/start)** - Full-stack React framework
+- **[TanStack Router](https://tanstack.com/router)** - Type-safe routing
+- **[TanStack Query](https://tanstack.com/query)** - Server state management
+- **[Cloudflare Workers](https://workers.cloudflare.com/)** - Edge computing platform
+- **[Shadcn/UI](https://ui.shadcn.com/)** - Component library
+- **[Tailwind CSS](https://tailwindcss.com/)** - Utility-first CSS
 
-const doubledStore = new Derived({
-  fn: () => countStore.state * 2,
-  deps: [countStore],
-});
-doubledStore.mount();
+## 📄 License
 
-function App() {
-  const count = useStore(countStore);
-  const doubledCount = useStore(doubledStore);
-
-  return (
-    <div>
-      <button onClick={() => countStore.setState((n) => n + 1)}>
-        Increment - {count}
-      </button>
-      <div>Doubled - {doubledCount}</div>
-    </div>
-  );
-}
-
-export default App;
-```
-
-We use the `Derived` class to create a new store that is derived from another store. The `Derived` class has a `mount` method that will start the derived store updating.
-
-Once we've created the derived store we can use it in the `App` component just like we would any other store using the `useStore` hook.
-
-You can find out everything you need to know on how to use TanStack Store in the [TanStack Store documentation](https://tanstack.com/store/latest).
-
-# Demo files
-
-Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
+This template is open source and available under the [MIT License](LICENSE).
