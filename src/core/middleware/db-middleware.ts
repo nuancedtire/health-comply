@@ -1,34 +1,33 @@
-import { createMiddleware } from "@tanstack/react-start";
 
-import { getDb } from "@/db";
+// src/core/middleware/db-middleware.ts
+import { createMiddleware } from '@tanstack/react-start';
+import { drizzle } from 'drizzle-orm/d1';
+import * as schema from '@/db/schema';
 
-export const dbMiddleware = createMiddleware({
-    type: "function",
-}).server(async ({ next, context }) => {
+// Define Env interface locally
+interface Env extends Cloudflare.Env { }
 
-    // @ts-ignore - env should be in context from server.ts
-    const env = context?.env || globalThis.env || process.env;
+export const dbMiddleware = createMiddleware().server(async ({ next, context }) => {
+    // @ts-ignore
+    const env = context.env as Env;
 
-    console.log("DB Middleware Env Keys:", env ? Object.keys(env) : "env is undefined");
-
-    // If env.DB is not available (e.g. not in worker), this might fail or we need a fallback.
-    let db;
-    if (!env?.DB) {
-        console.warn("DB binding not found in environment, using shim for build/dev");
-        // Shim for build/dev where D1 might not be bound yet
-        const d1Shim = {
-            prepare: () => ({ bind: () => ({ all: async () => [], run: async () => ({}), first: async () => null, get: async () => null }) })
-        } as any;
-        db = getDb(d1Shim);
+    // Log for debugging
+    if (env) {
+        console.log("DB Middleware Env Keys:", Object.keys(env));
     } else {
-        console.log("DB binding found");
-        db = getDb(env.DB);
+        console.error("DB Middleware: Env is missing!");
     }
+
+    if (!env?.DB) {
+        console.error("DB Binding missing");
+        throw new Error("DB Binding missing");
+    }
+
+    const db = drizzle(env.DB, { schema });
 
     return next({
         context: {
             db,
-            env
-        },
+        }
     });
 });

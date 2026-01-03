@@ -1,9 +1,11 @@
+
+// src/routes/evidence/$evidenceId.tsx
 import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_app/evidence/$evidenceId')({
-  component: RouteComponent,
+    component: EvidenceDetail,
 })
 
-function RouteComponent() {
-  return <div>Hello "/_app/evidence/$evidenceId"!</div>
+function EvidenceDetail() {
+    return <div>Evidence Detail Stub</div>
 }

@@ -1,0 +1,201 @@
+{
+    "version": "2026-01-03",
+    "evidenceCategories": [
+        {
+            "id": "peoples_experience",
+            "title": "People's experience of health and care services"
+        },
+        {
+            "id": "staff_feedback",
+            "title": "Feedback from staff and leaders"
+        },
+        {
+            "id": "partner_feedback",
+            "title": "Feedback from partners"
+        },
+        {
+            "id": "observation",
+            "title": "Observation"
+        },
+        {
+            "id": "processes",
+            "title": "Processes"
+        },
+        {
+            "id": "outcomes",
+            "title": "Outcomes"
+        }
+    ],
+    "keyQuestions": [
+        {
+            "id": "safe",
+            "title": "Safe",
+            "displayOrder": 10,
+            "qualityStatements": [
+                {
+                    "id": "safe.learning_culture",
+                    "code": "learning-culture",
+                    "title": "Learning culture"
+                },
+                {
+                    "id": "safe.safeguarding",
+                    "code": "safeguarding",
+                    "title": "Safeguarding"
+                },
+                {
+                    "id": "safe.involving_people_to_manage_risks",
+                    "code": "involving-people-to-manage-risks",
+                    "title": "Involving people to manage risks"
+                },
+                {
+                    "id": "safe.safe_environments",
+                    "code": "safe-environments",
+                    "title": "Safe environments"
+                },
+                {
+                    "id": "safe.infection_prevention_and_control",
+                    "code": "infection-prevention-and-control",
+                    "title": "Infection prevention and control"
+                },
+                {
+                    "id": "safe.medicines_optimisation",
+                    "code": "medicines-optimisation",
+                    "title": "Medicines optimisation"
+                }
+            ]
+        },
+        {
+            "id": "effective",
+            "title": "Effective",
+            "displayOrder": 20,
+            "qualityStatements": [
+                {
+                    "id": "effective.assessing_needs",
+                    "code": "assessing-needs",
+                    "title": "Assessing needs"
+                },
+                {
+                    "id": "effective.delivering_evidence_based_care",
+                    "code": "delivering-evidence-based-care-and-treatment",
+                    "title": "Delivering evidence-based care and treatment"
+                },
+                {
+                    "id": "effective.how_staff_teams_work_together",
+                    "code": "how-staff-teams-and-services-work-together",
+                    "title": "How staff, teams and services work together"
+                },
+                {
+                    "id": "effective.supporting_healthier_lives",
+                    "code": "supporting-people-to-live-healthier-lives",
+                    "title": "Supporting people to live healthier lives"
+                },
+                {
+                    "id": "effective.monitoring_and_improving_outcomes",
+                    "code": "monitoring-and-improving-outcomes",
+                    "title": "Monitoring and improving outcomes"
+                },
+                {
+                    "id": "effective.consent_to_care",
+                    "code": "consent-to-care-and-treatment",
+                    "title": "Consent to care and treatment"
+                }
+            ]
+        },
+        {
+            "id": "caring",
+            "title": "Caring",
+            "displayOrder": 30,
+            "qualityStatements": [
+                {
+                    "id": "caring.kindness_compassion_dignity",
+                    "code": "kindness-compassion-and-dignity",
+                    "title": "Kindness, compassion and dignity"
+                },
+                {
+                    "id": "caring.treating_people_as_individuals",
+                    "code": "treating-people-as-individuals",
+                    "title": "Treating people as individuals"
+                },
+                {
+                    "id": "caring.independence_choice_control",
+                    "code": "independence-choice-and-control",
+                    "title": "Independence, choice and control"
+                },
+                {
+                    "id": "caring.responding_to_immediate_needs",
+                    "code": "responding-to-peoples-immediate-needs",
+                    "title": "Responding to people's immediate needs"
+                },
+                {
+                    "id": "caring.workforce_wellbeing_enablement",
+                    "code": "workforce-wellbeing-and-enablement",
+                    "title": "Workforce wellbeing and enablement"
+                }
+            ]
+        },
+        {
+            "id": "responsive",
+            "title": "Responsive",
+            "displayOrder": 40,
+            "qualityStatements": [
+                {
+                    "id": "responsive.person_centred_care",
+                    "code": "person-centred-care",
+                    "title": "Person-centred care"
+                },
+                {
+                    "id": "responsive.providing_information",
+                    "code": "providing-information",
+                    "title": "Providing information"
+                },
+                {
+                    "id": "responsive.listening_involving_people",
+                    "code": "listening-to-and-involving-people",
+                    "title": "Listening to and involving people"
+                },
+                {
+                    "id": "responsive.planning_for_the_future",
+                    "code": "planning-for-the-future",
+                    "title": "Planning for the future"
+                }
+            ]
+        },
+        {
+            "id": "well_led",
+            "title": "Well-led",
+            "displayOrder": 50,
+            "qualityStatements": [
+                {
+                    "id": "well_led.shared_direction_and_culture",
+                    "code": "shared-direction-and-culture",
+                    "title": "Shared direction and culture"
+                },
+                {
+                    "id": "well_led.capable_compassionate_inclusive_leaders",
+                    "code": "capable-compassionate-and-inclusive-leaders",
+                    "title": "Capable, compassionate and inclusive leaders"
+                },
+                {
+                    "id": "well_led.freedom_to_speak_up",
+                    "code": "freedom-to-speak-up",
+                    "title": "Freedom to speak up"
+                },
+                {
+                    "id": "well_led.governance_management_sustainability",
+                    "code": "governance-management-and-sustainability",
+                    "title": "Governance, management and sustainability"
+                },
+                {
+                    "id": "well_led.learning_improvement_innovation",
+                    "code": "learning-improvement-and-innovation",
+                    "title": "Learning, improvement and innovation"
+                },
+                {
+                    "id": "well_led.environmental_sustainability",
+                    "code": "environmental-sustainability",
+                    "title": "Environmental sustainability"
+                }
+            ]
+        }
+    ]
+}

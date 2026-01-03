@@ -1,0 +1,28 @@
+# Southside Medical Practice: Medication Management Policy 2024
+
+## 1. Purpose
+The purpose of this policy is to ensure the safe and effective management of medicines within our practice, minimizing risks to patients and staff.
+
+## 2. Storage
+- All controlled drugs (CDs) must be stored in the designated CD cabinet, which is double-locked.
+- Vaccines and other temperature-sensitive medicines must be stored in the medical refrigerator.
+- Temperature logs for the medical fridge must be recorded twice daily (morning and evening).
+- Any temperature excursion (outside 2°C to 8°C) must be reported immediately to the Practice Manager.
+
+## 3. Prescribing
+- All prescriptions must be issued by a qualified prescriber.
+- Repeat prescriptions must be reviewed every 6 months for chronic conditions.
+- We use the electronic prescription service (EPS) as the primary method for issuing prescriptions.
+
+## 4. Disposal
+- Expired or returned medicines must be placed in the designated "DOOP" (Dispose of Old Pharmaceuticals) bins.
+- Bins are collected monthly by our authorized waste contractor.
+
+## 5. Audit
+- A quarterly audit of medication storage and prescribing patterns is conducted by the Clinical Lead.
+- Results are discussed in the Clinical Governance meeting.
+
+---
+Last reviewed: January 15, 2024
+Author: Dr. Jane Smith, Clinical Lead
+Next review due: January 2025

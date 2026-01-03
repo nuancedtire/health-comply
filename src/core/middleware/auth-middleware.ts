@@ -1,29 +1,65 @@
-import { createMiddleware } from "@tanstack/react-start";
-import { dbMiddleware } from "./db-middleware";
 
-export const authMiddleware = createMiddleware({
-    type: "function",
-})
-    .middleware([dbMiddleware])
-    .server(async ({ next }) => {
-        // For MVP, we'll hardcode the user to the seeded admin user
-        // In a real app, we'd check session cookies or tokens here via getWebRequest()
+// src/core/middleware/auth-middleware.ts
+import { createMiddleware } from '@tanstack/react-start';
+import { drizzle } from 'drizzle-orm/d1';
+import * as schema from '../../db/schema';
+import { parseCookies } from '../../lib/cookie';
 
-        // Check if db is available from previous middleware
-        // const { db } = context;
+export type Session = {
+    userId: string;
+    tenantId: string;
+    siteId?: string;
+    role: string;
+};
 
-        // Fetch the admin user to ensure context validity
-        // We'll just define the user object statically for performance in this stub phase
-        const user = {
-            id: "user_admin",
-            name: "Admin User",
-            email: "admin@example.com",
-            roleId: "role_pm"
-        };
+type Env = Cloudflare.Env;
 
+export const authMiddleware = createMiddleware().server(async ({ next, context }) => {
+    // @ts-ignore
+    const request = context.request as Request;
+    // @ts-ignore
+    const env = context.env as Env;
+
+    // Fallback
+    if (!request || !env) {
+        // In some environments, request might be missing? 
+        // Ensure we return null session
         return next({
             context: {
-                user
+                session: null as Session | null,
+                db: env?.DB ? drizzle(env.DB, { schema }) : null as any,
             }
         });
-    });
+    }
+
+    const db = drizzle(env.DB, { schema });
+    const cookieHeader = request.headers.get('Cookie');
+    const cookies = parseCookies(cookieHeader);
+    const sessionCookie = cookies['session'];
+
+    if (!sessionCookie) {
+        return next({
+            context: {
+                session: null as Session | null,
+                db,
+            },
+        });
+    }
+
+    try {
+        const sessionData = JSON.parse(atob(sessionCookie)) as Session;
+        return next({
+            context: {
+                session: sessionData,
+                db,
+            }
+        });
+    } catch (e) {
+        return next({
+            context: {
+                session: null as Session | null,
+                db,
+            },
+        });
+    }
+});

@@ -4,6 +4,9 @@ import handler from "@tanstack/react-start/server-entry";
 
 console.log("[server-entry]: using custom server entry in 'src/server.ts'");
 
+// Export named entrypoints for Cloudflare Workflows / Durable Objects
+export { EvidenceIngestWorkflow } from "./core/workflows/evidence-ingest";
+
 export default {
   fetch(request: Request, env: unknown, ctx: unknown) {
     return handler.fetch(request, {
@@ -12,6 +15,7 @@ export default {
         env,
         // @ts-ignore
         ctx,
+        request, // Inject Request for manual cookie handling
         fromFetch: true,
       },
     });

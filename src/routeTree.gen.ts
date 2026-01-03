@@ -9,14 +9,25 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
-import { Route as AppActionsRouteImport } from './routes/_app/actions'
-import { Route as AppReadinessIndexRouteImport } from './routes/_app/readiness/index'
-import { Route as AppEvidenceIndexRouteImport } from './routes/_app/evidence/index'
+import { Route as AppTeamRouteImport } from './routes/_app/team'
+import { Route as AppSignOffRouteImport } from './routes/_app/sign-off'
+import { Route as AppSettingsRouteImport } from './routes/_app/settings'
+import { Route as AppPresentationRouteImport } from './routes/_app/presentation'
+import { Route as AppDocumentsRouteImport } from './routes/_app/documents'
+import { Route as AppChecklistRouteImport } from './routes/_app/checklist'
+import { Route as AppDashboardIndexRouteImport } from './routes/_app/dashboard/index'
 import { Route as AppEvidenceEvidenceIdRouteImport } from './routes/_app/evidence/$evidenceId'
+import { Route as AppDashboardQsIndexRouteImport } from './routes/_app/dashboard/qs/index'
+import { Route as AppDashboardQsQsIdRouteImport } from './routes/_app/dashboard/qs/$qsId'
 
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppRoute = AppRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
@@ -26,24 +37,39 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppDashboardRoute = AppDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
+const AppTeamRoute = AppTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
   getParentRoute: () => AppRoute,
 } as any)
-const AppActionsRoute = AppActionsRouteImport.update({
-  id: '/actions',
-  path: '/actions',
+const AppSignOffRoute = AppSignOffRouteImport.update({
+  id: '/sign-off',
+  path: '/sign-off',
   getParentRoute: () => AppRoute,
 } as any)
-const AppReadinessIndexRoute = AppReadinessIndexRouteImport.update({
-  id: '/readiness/',
-  path: '/readiness/',
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
-const AppEvidenceIndexRoute = AppEvidenceIndexRouteImport.update({
-  id: '/evidence/',
-  path: '/evidence/',
+const AppPresentationRoute = AppPresentationRouteImport.update({
+  id: '/presentation',
+  path: '/presentation',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDocumentsRoute = AppDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppChecklistRoute = AppChecklistRouteImport.update({
+  id: '/checklist',
+  path: '/checklist',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDashboardIndexRoute = AppDashboardIndexRouteImport.update({
+  id: '/dashboard/',
+  path: '/dashboard/',
   getParentRoute: () => AppRoute,
 } as any)
 const AppEvidenceEvidenceIdRoute = AppEvidenceEvidenceIdRouteImport.update({
@@ -51,68 +77,122 @@ const AppEvidenceEvidenceIdRoute = AppEvidenceEvidenceIdRouteImport.update({
   path: '/evidence/$evidenceId',
   getParentRoute: () => AppRoute,
 } as any)
+const AppDashboardQsIndexRoute = AppDashboardQsIndexRouteImport.update({
+  id: '/dashboard/qs/',
+  path: '/dashboard/qs/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDashboardQsQsIdRoute = AppDashboardQsQsIdRouteImport.update({
+  id: '/dashboard/qs/$qsId',
+  path: '/dashboard/qs/$qsId',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/actions': typeof AppActionsRoute
-  '/dashboard': typeof AppDashboardRoute
+  '/login': typeof LoginRoute
+  '/checklist': typeof AppChecklistRoute
+  '/documents': typeof AppDocumentsRoute
+  '/presentation': typeof AppPresentationRoute
+  '/settings': typeof AppSettingsRoute
+  '/sign-off': typeof AppSignOffRoute
+  '/team': typeof AppTeamRoute
   '/evidence/$evidenceId': typeof AppEvidenceEvidenceIdRoute
-  '/evidence': typeof AppEvidenceIndexRoute
-  '/readiness': typeof AppReadinessIndexRoute
+  '/dashboard': typeof AppDashboardIndexRoute
+  '/dashboard/qs/$qsId': typeof AppDashboardQsQsIdRoute
+  '/dashboard/qs': typeof AppDashboardQsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/actions': typeof AppActionsRoute
-  '/dashboard': typeof AppDashboardRoute
+  '/login': typeof LoginRoute
+  '/checklist': typeof AppChecklistRoute
+  '/documents': typeof AppDocumentsRoute
+  '/presentation': typeof AppPresentationRoute
+  '/settings': typeof AppSettingsRoute
+  '/sign-off': typeof AppSignOffRoute
+  '/team': typeof AppTeamRoute
   '/evidence/$evidenceId': typeof AppEvidenceEvidenceIdRoute
-  '/evidence': typeof AppEvidenceIndexRoute
-  '/readiness': typeof AppReadinessIndexRoute
+  '/dashboard': typeof AppDashboardIndexRoute
+  '/dashboard/qs/$qsId': typeof AppDashboardQsQsIdRoute
+  '/dashboard/qs': typeof AppDashboardQsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
-  '/_app/actions': typeof AppActionsRoute
-  '/_app/dashboard': typeof AppDashboardRoute
+  '/login': typeof LoginRoute
+  '/_app/checklist': typeof AppChecklistRoute
+  '/_app/documents': typeof AppDocumentsRoute
+  '/_app/presentation': typeof AppPresentationRoute
+  '/_app/settings': typeof AppSettingsRoute
+  '/_app/sign-off': typeof AppSignOffRoute
+  '/_app/team': typeof AppTeamRoute
   '/_app/evidence/$evidenceId': typeof AppEvidenceEvidenceIdRoute
-  '/_app/evidence/': typeof AppEvidenceIndexRoute
-  '/_app/readiness/': typeof AppReadinessIndexRoute
+  '/_app/dashboard/': typeof AppDashboardIndexRoute
+  '/_app/dashboard/qs/$qsId': typeof AppDashboardQsQsIdRoute
+  '/_app/dashboard/qs/': typeof AppDashboardQsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/actions'
-    | '/dashboard'
+    | '/login'
+    | '/checklist'
+    | '/documents'
+    | '/presentation'
+    | '/settings'
+    | '/sign-off'
+    | '/team'
     | '/evidence/$evidenceId'
-    | '/evidence'
-    | '/readiness'
+    | '/dashboard'
+    | '/dashboard/qs/$qsId'
+    | '/dashboard/qs'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/actions'
-    | '/dashboard'
+    | '/login'
+    | '/checklist'
+    | '/documents'
+    | '/presentation'
+    | '/settings'
+    | '/sign-off'
+    | '/team'
     | '/evidence/$evidenceId'
-    | '/evidence'
-    | '/readiness'
+    | '/dashboard'
+    | '/dashboard/qs/$qsId'
+    | '/dashboard/qs'
   id:
     | '__root__'
     | '/'
     | '/_app'
-    | '/_app/actions'
-    | '/_app/dashboard'
+    | '/login'
+    | '/_app/checklist'
+    | '/_app/documents'
+    | '/_app/presentation'
+    | '/_app/settings'
+    | '/_app/sign-off'
+    | '/_app/team'
     | '/_app/evidence/$evidenceId'
-    | '/_app/evidence/'
-    | '/_app/readiness/'
+    | '/_app/dashboard/'
+    | '/_app/dashboard/qs/$qsId'
+    | '/_app/dashboard/qs/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
+  LoginRoute: typeof LoginRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app': {
       id: '/_app'
       path: ''
@@ -127,32 +207,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/dashboard': {
-      id: '/_app/dashboard'
+    '/_app/team': {
+      id: '/_app/team'
+      path: '/team'
+      fullPath: '/team'
+      preLoaderRoute: typeof AppTeamRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/sign-off': {
+      id: '/_app/sign-off'
+      path: '/sign-off'
+      fullPath: '/sign-off'
+      preLoaderRoute: typeof AppSignOffRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/presentation': {
+      id: '/_app/presentation'
+      path: '/presentation'
+      fullPath: '/presentation'
+      preLoaderRoute: typeof AppPresentationRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/documents': {
+      id: '/_app/documents'
+      path: '/documents'
+      fullPath: '/documents'
+      preLoaderRoute: typeof AppDocumentsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/checklist': {
+      id: '/_app/checklist'
+      path: '/checklist'
+      fullPath: '/checklist'
+      preLoaderRoute: typeof AppChecklistRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/dashboard/': {
+      id: '/_app/dashboard/'
       path: '/dashboard'
       fullPath: '/dashboard'
-      preLoaderRoute: typeof AppDashboardRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/actions': {
-      id: '/_app/actions'
-      path: '/actions'
-      fullPath: '/actions'
-      preLoaderRoute: typeof AppActionsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/readiness/': {
-      id: '/_app/readiness/'
-      path: '/readiness'
-      fullPath: '/readiness'
-      preLoaderRoute: typeof AppReadinessIndexRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/evidence/': {
-      id: '/_app/evidence/'
-      path: '/evidence'
-      fullPath: '/evidence'
-      preLoaderRoute: typeof AppEvidenceIndexRouteImport
+      preLoaderRoute: typeof AppDashboardIndexRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/evidence/$evidenceId': {
@@ -162,23 +263,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppEvidenceEvidenceIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/dashboard/qs/': {
+      id: '/_app/dashboard/qs/'
+      path: '/dashboard/qs'
+      fullPath: '/dashboard/qs'
+      preLoaderRoute: typeof AppDashboardQsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/dashboard/qs/$qsId': {
+      id: '/_app/dashboard/qs/$qsId'
+      path: '/dashboard/qs/$qsId'
+      fullPath: '/dashboard/qs/$qsId'
+      preLoaderRoute: typeof AppDashboardQsQsIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
-  AppActionsRoute: typeof AppActionsRoute
-  AppDashboardRoute: typeof AppDashboardRoute
+  AppChecklistRoute: typeof AppChecklistRoute
+  AppDocumentsRoute: typeof AppDocumentsRoute
+  AppPresentationRoute: typeof AppPresentationRoute
+  AppSettingsRoute: typeof AppSettingsRoute
+  AppSignOffRoute: typeof AppSignOffRoute
+  AppTeamRoute: typeof AppTeamRoute
   AppEvidenceEvidenceIdRoute: typeof AppEvidenceEvidenceIdRoute
-  AppEvidenceIndexRoute: typeof AppEvidenceIndexRoute
-  AppReadinessIndexRoute: typeof AppReadinessIndexRoute
+  AppDashboardIndexRoute: typeof AppDashboardIndexRoute
+  AppDashboardQsQsIdRoute: typeof AppDashboardQsQsIdRoute
+  AppDashboardQsIndexRoute: typeof AppDashboardQsIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
-  AppActionsRoute: AppActionsRoute,
-  AppDashboardRoute: AppDashboardRoute,
+  AppChecklistRoute: AppChecklistRoute,
+  AppDocumentsRoute: AppDocumentsRoute,
+  AppPresentationRoute: AppPresentationRoute,
+  AppSettingsRoute: AppSettingsRoute,
+  AppSignOffRoute: AppSignOffRoute,
+  AppTeamRoute: AppTeamRoute,
   AppEvidenceEvidenceIdRoute: AppEvidenceEvidenceIdRoute,
-  AppEvidenceIndexRoute: AppEvidenceIndexRoute,
-  AppReadinessIndexRoute: AppReadinessIndexRoute,
+  AppDashboardIndexRoute: AppDashboardIndexRoute,
+  AppDashboardQsQsIdRoute: AppDashboardQsQsIdRoute,
+  AppDashboardQsIndexRoute: AppDashboardQsIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -186,6 +311,7 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
+  LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

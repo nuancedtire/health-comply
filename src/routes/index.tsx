@@ -14,7 +14,7 @@ function Home() {
           <span className="">HealthComply</span>
         </Link>
         <nav className="ml-auto flex gap-4 sm:gap-6">
-          <Link to="/dashboard" className="text-sm font-medium hover:underline underline-offset-4">
+          <Link to="/dashboard/qs" className="text-sm font-medium hover:underline underline-offset-4">
             Dashboard
           </Link>
         </nav>
@@ -33,13 +33,13 @@ function Home() {
               </div>
               <div className="space-x-4">
                 <Link
-                  to="/dashboard"
+                  to="/dashboard/qs"
                   className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
                   Get Started
                 </Link>
                 <Link
-                  to="/dashboard"
+                  to="/dashboard/qs"
                   className="inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
                   Learn more

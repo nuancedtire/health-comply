@@ -1,11 +1,11 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "fff3cc17-b078-4d59-8edf-88789f7afa4d",
+  "id": "f2c11775-da13-4851-95d1-d7f94f60ac64",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
-    "action_evidence_links": {
-      "name": "action_evidence_links",
+    "action_approvals": {
+      "name": "action_approvals",
       "columns": {
         "id": {
           "name": "id",
@@ -14,41 +14,75 @@
           "notNull": true,
           "autoincrement": false
         },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
         "action_id": {
           "name": "action_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
-        "evidence_item_id": {
-          "name": "evidence_item_id",
+        "approved_by": {
+          "name": "approved_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "approved_at": {
+          "name": "approved_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "comment": {
+          "name": "comment",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "linked_at": {
-          "name": "linked_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "(strftime('%s', 'now'))"
-        },
-        "linked_by": {
-          "name": "linked_by",
+        "closure_evidence_id": {
+          "name": "closure_evidence_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "idx_action_approvals_action": {
+          "name": "idx_action_approvals_action",
+          "columns": [
+            "action_id"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
-        "action_evidence_links_action_id_actions_id_fk": {
-          "name": "action_evidence_links_action_id_actions_id_fk",
-          "tableFrom": "action_evidence_links",
+        "action_approvals_tenant_id_tenants_id_fk": {
+          "name": "action_approvals_tenant_id_tenants_id_fk",
+          "tableFrom": "action_approvals",
+          "tableTo": "tenants",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "action_approvals_action_id_actions_id_fk": {
+          "name": "action_approvals_action_id_actions_id_fk",
+          "tableFrom": "action_approvals",
           "tableTo": "actions",
           "columnsFrom": [
             "action_id"
@@ -59,12 +93,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "action_evidence_links_evidence_item_id_evidence_items_id_fk": {
-          "name": "action_evidence_links_evidence_item_id_evidence_items_id_fk",
-          "tableFrom": "action_evidence_links",
-          "tableTo": "evidence_items",
+        "action_approvals_approved_by_users_id_fk": {
+          "name": "action_approvals_approved_by_users_id_fk",
+          "tableFrom": "action_approvals",
+          "tableTo": "users",
           "columnsFrom": [
-            "evidence_item_id"
+            "approved_by"
           ],
           "columnsTo": [
             "id"
@@ -72,12 +106,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "action_evidence_links_linked_by_users_id_fk": {
-          "name": "action_evidence_links_linked_by_users_id_fk",
-          "tableFrom": "action_evidence_links",
-          "tableTo": "users",
+        "action_approvals_closure_evidence_id_evidence_items_id_fk": {
+          "name": "action_approvals_closure_evidence_id_evidence_items_id_fk",
+          "tableFrom": "action_approvals",
+          "tableTo": "evidence_items",
           "columnsFrom": [
-            "linked_by"
+            "closure_evidence_id"
           ],
           "columnsTo": [
             "id"
@@ -100,25 +134,25 @@
           "notNull": true,
           "autoincrement": false
         },
-        "gap_id": {
-          "name": "gap_id",
+        "tenant_id": {
+          "name": "tenant_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
-        "quality_statement_id": {
-          "name": "quality_statement_id",
+        "site_id": {
+          "name": "site_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
-        "practice_id": {
-          "name": "practice_id",
+        "qs_id": {
+          "name": "qs_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "title": {
@@ -139,11 +173,11 @@
           "name": "owner_user_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
-        "due_date": {
-          "name": "due_date",
+        "due_at": {
+          "name": "due_at",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,
@@ -154,46 +188,49 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false
-        },
-        "priority": {
-          "name": "priority",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "completed_at": {
-          "name": "completed_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "completed_by": {
-          "name": "completed_by",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
+          "autoincrement": false,
+          "default": "'open'"
         },
         "created_at": {
           "name": "created_at",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "(strftime('%s', 'now'))"
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "idx_actions_qs": {
+          "name": "idx_actions_qs",
+          "columns": [
+            "tenant_id",
+            "site_id",
+            "qs_id"
+          ],
+          "isUnique": false
+        },
+        "idx_actions_owner": {
+          "name": "idx_actions_owner",
+          "columns": [
+            "owner_user_id"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
-        "actions_gap_id_gaps_id_fk": {
-          "name": "actions_gap_id_gaps_id_fk",
+        "actions_tenant_id_tenants_id_fk": {
+          "name": "actions_tenant_id_tenants_id_fk",
           "tableFrom": "actions",
-          "tableTo": "gaps",
+          "tableTo": "tenants",
           "columnsFrom": [
-            "gap_id"
+            "tenant_id"
           ],
           "columnsTo": [
             "id"
@@ -201,12 +238,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "actions_quality_statement_id_quality_statements_id_fk": {
-          "name": "actions_quality_statement_id_quality_statements_id_fk",
+        "actions_site_id_sites_id_fk": {
+          "name": "actions_site_id_sites_id_fk",
           "tableFrom": "actions",
-          "tableTo": "quality_statements",
+          "tableTo": "sites",
           "columnsFrom": [
-            "quality_statement_id"
+            "site_id"
           ],
           "columnsTo": [
             "id"
@@ -214,12 +251,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "actions_practice_id_practices_id_fk": {
-          "name": "actions_practice_id_practices_id_fk",
+        "actions_qs_id_cqc_quality_statements_id_fk": {
+          "name": "actions_qs_id_cqc_quality_statements_id_fk",
           "tableFrom": "actions",
-          "tableTo": "practices",
+          "tableTo": "cqc_quality_statements",
           "columnsFrom": [
-            "practice_id"
+            "qs_id"
           ],
           "columnsTo": [
             "id"
@@ -239,27 +276,14 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
-        },
-        "actions_completed_by_users_id_fk": {
-          "name": "actions_completed_by_users_id_fk",
-          "tableFrom": "actions",
-          "tableTo": "users",
-          "columnsFrom": [
-            "completed_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "ai_evidence_suggestions": {
-      "name": "ai_evidence_suggestions",
+    "audit_log": {
+      "name": "audit_log",
       "columns": {
         "id": {
           "name": "id",
@@ -268,92 +292,25 @@
           "notNull": true,
           "autoincrement": false
         },
-        "evidence_item_id": {
-          "name": "evidence_item_id",
+        "tenant_id": {
+          "name": "tenant_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "suggested_type": {
-          "name": "suggested_type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "suggested_statements": {
-          "name": "suggested_statements",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "suggested_category": {
-          "name": "suggested_category",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "suggested_summary": {
-          "name": "suggested_summary",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "(strftime('%s', 'now'))"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "ai_evidence_suggestions_evidence_item_id_evidence_items_id_fk": {
-          "name": "ai_evidence_suggestions_evidence_item_id_evidence_items_id_fk",
-          "tableFrom": "ai_evidence_suggestions",
-          "tableTo": "evidence_items",
-          "columnsFrom": [
-            "evidence_item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "audit_trail": {
-      "name": "audit_trail",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
           "notNull": true,
           "autoincrement": false
         },
-        "practice_id": {
-          "name": "practice_id",
+        "actor_user_id": {
+          "name": "actor_user_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "user_id": {
-          "name": "user_id",
+        "action": {
+          "name": "action",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "entity_type": {
@@ -370,51 +327,52 @@
           "notNull": true,
           "autoincrement": false
         },
-        "event": {
-          "name": "event",
+        "json_diff": {
+          "name": "json_diff",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
-        },
-        "change_type": {
-          "name": "change_type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "before_state": {
-          "name": "before_state",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "after_state": {
-          "name": "after_state",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "timestamp": {
-          "name": "timestamp",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "(strftime('%s', 'now'))"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "idx_audit_log_tenant": {
+          "name": "idx_audit_log_tenant",
+          "columns": [
+            "tenant_id"
+          ],
+          "isUnique": false
+        },
+        "idx_audit_log_entity": {
+          "name": "idx_audit_log_entity",
+          "columns": [
+            "entity_type",
+            "entity_id"
+          ],
+          "isUnique": false
+        },
+        "idx_audit_log_created": {
+          "name": "idx_audit_log_created",
+          "columns": [
+            "created_at"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
-        "audit_trail_practice_id_practices_id_fk": {
-          "name": "audit_trail_practice_id_practices_id_fk",
-          "tableFrom": "audit_trail",
-          "tableTo": "practices",
+        "audit_log_tenant_id_tenants_id_fk": {
+          "name": "audit_log_tenant_id_tenants_id_fk",
+          "tableFrom": "audit_log",
+          "tableTo": "tenants",
           "columnsFrom": [
-            "practice_id"
+            "tenant_id"
           ],
           "columnsTo": [
             "id"
@@ -422,12 +380,117 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "audit_trail_user_id_users_id_fk": {
-          "name": "audit_trail_user_id_users_id_fk",
-          "tableFrom": "audit_trail",
+        "audit_log_actor_user_id_users_id_fk": {
+          "name": "audit_log_actor_user_id_users_id_fk",
+          "tableFrom": "audit_log",
           "tableTo": "users",
           "columnsFrom": [
-            "user_id"
+            "actor_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "cqc_key_questions": {
+      "name": "cqc_key_questions",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "display_order": {
+          "name": "display_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "cqc_quality_statements": {
+      "name": "cqc_quality_statements",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "key_question_id": {
+          "name": "key_question_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "cqc_url": {
+          "name": "cqc_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "display_order": {
+          "name": "display_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "active": {
+          "name": "active",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "cqc_quality_statements_key_question_id_cqc_key_questions_id_fk": {
+          "name": "cqc_quality_statements_key_question_id_cqc_key_questions_id_fk",
+          "tableFrom": "cqc_quality_statements",
+          "tableTo": "cqc_key_questions",
+          "columnsFrom": [
+            "key_question_id"
           ],
           "columnsTo": [
             "id"
@@ -450,151 +513,16 @@
           "notNull": true,
           "autoincrement": false
         },
-        "name": {
-          "name": "name",
+        "title": {
+          "name": "title",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "(strftime('%s', 'now'))"
         }
       },
       "indexes": {},
       "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "evidence_item_tags": {
-      "name": "evidence_item_tags",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "evidence_item_id": {
-          "name": "evidence_item_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "quality_statement_id": {
-          "name": "quality_statement_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "evidence_category_id": {
-          "name": "evidence_category_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "free_tags": {
-          "name": "free_tags",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "why_it_supports": {
-          "name": "why_it_supports",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "(strftime('%s', 'now'))"
-        },
-        "created_by": {
-          "name": "created_by",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "evidence_item_tags_evidence_item_id_evidence_items_id_fk": {
-          "name": "evidence_item_tags_evidence_item_id_evidence_items_id_fk",
-          "tableFrom": "evidence_item_tags",
-          "tableTo": "evidence_items",
-          "columnsFrom": [
-            "evidence_item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "evidence_item_tags_quality_statement_id_quality_statements_id_fk": {
-          "name": "evidence_item_tags_quality_statement_id_quality_statements_id_fk",
-          "tableFrom": "evidence_item_tags",
-          "tableTo": "quality_statements",
-          "columnsFrom": [
-            "quality_statement_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "evidence_item_tags_evidence_category_id_evidence_categories_id_fk": {
-          "name": "evidence_item_tags_evidence_category_id_evidence_categories_id_fk",
-          "tableFrom": "evidence_item_tags",
-          "tableTo": "evidence_categories",
-          "columnsFrom": [
-            "evidence_category_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "evidence_item_tags_created_by_users_id_fk": {
-          "name": "evidence_item_tags_created_by_users_id_fk",
-          "tableFrom": "evidence_item_tags",
-          "tableTo": "users",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
@@ -609,11 +537,518 @@
           "notNull": true,
           "autoincrement": false
         },
-        "practice_id": {
-          "name": "practice_id",
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "site_id": {
+          "name": "site_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "qs_id": {
+          "name": "qs_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "evidence_category_id": {
+          "name": "evidence_category_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "r2_key": {
+          "name": "r2_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "mime_type": {
+          "name": "mime_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "size_bytes": {
+          "name": "size_bytes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "uploaded_by": {
+          "name": "uploaded_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "uploaded_at": {
+          "name": "uploaded_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "review_due_at": {
+          "name": "review_due_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'draft'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "idx_evidence_items_qs": {
+          "name": "idx_evidence_items_qs",
+          "columns": [
+            "tenant_id",
+            "site_id",
+            "qs_id"
+          ],
+          "isUnique": false
+        },
+        "idx_evidence_items_date": {
+          "name": "idx_evidence_items_date",
+          "columns": [
+            "uploaded_at"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "evidence_items_tenant_id_tenants_id_fk": {
+          "name": "evidence_items_tenant_id_tenants_id_fk",
+          "tableFrom": "evidence_items",
+          "tableTo": "tenants",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "evidence_items_site_id_sites_id_fk": {
+          "name": "evidence_items_site_id_sites_id_fk",
+          "tableFrom": "evidence_items",
+          "tableTo": "sites",
+          "columnsFrom": [
+            "site_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "evidence_items_qs_id_cqc_quality_statements_id_fk": {
+          "name": "evidence_items_qs_id_cqc_quality_statements_id_fk",
+          "tableFrom": "evidence_items",
+          "tableTo": "cqc_quality_statements",
+          "columnsFrom": [
+            "qs_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "evidence_items_evidence_category_id_evidence_categories_id_fk": {
+          "name": "evidence_items_evidence_category_id_evidence_categories_id_fk",
+          "tableFrom": "evidence_items",
+          "tableTo": "evidence_categories",
+          "columnsFrom": [
+            "evidence_category_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "evidence_items_uploaded_by_users_id_fk": {
+          "name": "evidence_items_uploaded_by_users_id_fk",
+          "tableFrom": "evidence_items",
+          "tableTo": "users",
+          "columnsFrom": [
+            "uploaded_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "evidence_links": {
+      "name": "evidence_links",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "from_type": {
+          "name": "from_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "from_id": {
+          "name": "from_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "evidence_id": {
+          "name": "evidence_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "uq_evidence_links": {
+          "name": "uq_evidence_links",
+          "columns": [
+            "tenant_id",
+            "from_type",
+            "from_id",
+            "evidence_id"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "evidence_links_tenant_id_tenants_id_fk": {
+          "name": "evidence_links_tenant_id_tenants_id_fk",
+          "tableFrom": "evidence_links",
+          "tableTo": "tenants",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "evidence_links_evidence_id_evidence_items_id_fk": {
+          "name": "evidence_links_evidence_id_evidence_items_id_fk",
+          "tableFrom": "evidence_links",
+          "tableTo": "evidence_items",
+          "columnsFrom": [
+            "evidence_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "inspection_pack_outputs": {
+      "name": "inspection_pack_outputs",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "pack_id": {
+          "name": "pack_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "r2_key": {
+          "name": "r2_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "idx_pack_outputs_pack": {
+          "name": "idx_pack_outputs_pack",
+          "columns": [
+            "pack_id"
+          ],
+          "isUnique": false
+        },
+        "uq_pack_outputs": {
+          "name": "uq_pack_outputs",
+          "columns": [
+            "pack_id",
+            "kind"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "inspection_pack_outputs_tenant_id_tenants_id_fk": {
+          "name": "inspection_pack_outputs_tenant_id_tenants_id_fk",
+          "tableFrom": "inspection_pack_outputs",
+          "tableTo": "tenants",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "inspection_pack_outputs_pack_id_inspection_packs_id_fk": {
+          "name": "inspection_pack_outputs_pack_id_inspection_packs_id_fk",
+          "tableFrom": "inspection_pack_outputs",
+          "tableTo": "inspection_packs",
+          "columnsFrom": [
+            "pack_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "inspection_packs": {
+      "name": "inspection_packs",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "site_id": {
+          "name": "site_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "scope_type": {
+          "name": "scope_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "scope_data": {
+          "name": "scope_data",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
+          "autoincrement": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'building'"
+        }
+      },
+      "indexes": {
+        "idx_inspection_packs_site": {
+          "name": "idx_inspection_packs_site",
+          "columns": [
+            "tenant_id",
+            "site_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "inspection_packs_tenant_id_tenants_id_fk": {
+          "name": "inspection_packs_tenant_id_tenants_id_fk",
+          "tableFrom": "inspection_packs",
+          "tableTo": "tenants",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "inspection_packs_site_id_sites_id_fk": {
+          "name": "inspection_packs_site_id_sites_id_fk",
+          "tableFrom": "inspection_packs",
+          "tableTo": "sites",
+          "columnsFrom": [
+            "site_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "inspection_packs_created_by_users_id_fk": {
+          "name": "inspection_packs_created_by_users_id_fk",
+          "tableFrom": "inspection_packs",
+          "tableTo": "users",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "local_controls": {
+      "name": "local_controls",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "site_id": {
+          "name": "site_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "qs_id": {
+          "name": "qs_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
           "autoincrement": false
         },
         "title": {
@@ -630,81 +1065,47 @@
           "notNull": false,
           "autoincrement": false
         },
-        "owner_user_id": {
-          "name": "owner_user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "evidence_date": {
-          "name": "evidence_date",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "review_due_date": {
-          "name": "review_due_date",
+        "cadence_days": {
+          "name": "cadence_days",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "status": {
-          "name": "status",
-          "type": "text",
+        "active": {
+          "name": "active",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false
-        },
-        "confidentiality_level": {
-          "name": "confidentiality_level",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
           "autoincrement": false,
-          "default": "'internal'"
-        },
-        "evidence_type": {
-          "name": "evidence_type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
+          "default": 1
         },
         "created_at": {
           "name": "created_at",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "(strftime('%s', 'now'))"
-        },
-        "created_by": {
-          "name": "created_by",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "(strftime('%s', 'now'))"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "idx_local_controls_qs": {
+          "name": "idx_local_controls_qs",
+          "columns": [
+            "tenant_id",
+            "site_id",
+            "qs_id"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
-        "evidence_items_practice_id_practices_id_fk": {
-          "name": "evidence_items_practice_id_practices_id_fk",
-          "tableFrom": "evidence_items",
-          "tableTo": "practices",
+        "local_controls_tenant_id_tenants_id_fk": {
+          "name": "local_controls_tenant_id_tenants_id_fk",
+          "tableFrom": "local_controls",
+          "tableTo": "tenants",
           "columnsFrom": [
-            "practice_id"
+            "tenant_id"
           ],
           "columnsTo": [
             "id"
@@ -712,9 +1113,159 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "evidence_items_owner_user_id_users_id_fk": {
-          "name": "evidence_items_owner_user_id_users_id_fk",
-          "tableFrom": "evidence_items",
+        "local_controls_site_id_sites_id_fk": {
+          "name": "local_controls_site_id_sites_id_fk",
+          "tableFrom": "local_controls",
+          "tableTo": "sites",
+          "columnsFrom": [
+            "site_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "local_controls_qs_id_cqc_quality_statements_id_fk": {
+          "name": "local_controls_qs_id_cqc_quality_statements_id_fk",
+          "tableFrom": "local_controls",
+          "tableTo": "cqc_quality_statements",
+          "columnsFrom": [
+            "qs_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "policies": {
+      "name": "policies",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "site_id": {
+          "name": "site_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "qs_id": {
+          "name": "qs_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'draft'"
+        },
+        "owner_user_id": {
+          "name": "owner_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "idx_policies_qs": {
+          "name": "idx_policies_qs",
+          "columns": [
+            "tenant_id",
+            "site_id",
+            "qs_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "policies_tenant_id_tenants_id_fk": {
+          "name": "policies_tenant_id_tenants_id_fk",
+          "tableFrom": "policies",
+          "tableTo": "tenants",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "policies_site_id_sites_id_fk": {
+          "name": "policies_site_id_sites_id_fk",
+          "tableFrom": "policies",
+          "tableTo": "sites",
+          "columnsFrom": [
+            "site_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "policies_qs_id_cqc_quality_statements_id_fk": {
+          "name": "policies_qs_id_cqc_quality_statements_id_fk",
+          "tableFrom": "policies",
+          "tableTo": "cqc_quality_statements",
+          "columnsFrom": [
+            "qs_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "policies_owner_user_id_users_id_fk": {
+          "name": "policies_owner_user_id_users_id_fk",
+          "tableFrom": "policies",
           "tableTo": "users",
           "columnsFrom": [
             "owner_user_id"
@@ -724,27 +1275,14 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
-        },
-        "evidence_items_created_by_users_id_fk": {
-          "name": "evidence_items_created_by_users_id_fk",
-          "tableFrom": "evidence_items",
-          "tableTo": "users",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "evidence_versions": {
-      "name": "evidence_versions",
+    "policy_approvals": {
+      "name": "policy_approvals",
       "columns": {
         "id": {
           "name": "id",
@@ -753,303 +1291,10 @@
           "notNull": true,
           "autoincrement": false
         },
-        "evidence_item_id": {
-          "name": "evidence_item_id",
+        "tenant_id": {
+          "name": "tenant_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "version_number": {
-          "name": "version_number",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "source_type": {
-          "name": "source_type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "r2_bucket": {
-          "name": "r2_bucket",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "r2_object_key": {
-          "name": "r2_object_key",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "external_url": {
-          "name": "external_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "file_name": {
-          "name": "file_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "file_size": {
-          "name": "file_size",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "mime_type": {
-          "name": "mime_type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "(strftime('%s', 'now'))"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "evidence_versions_evidence_item_id_evidence_items_id_fk": {
-          "name": "evidence_versions_evidence_item_id_evidence_items_id_fk",
-          "tableFrom": "evidence_versions",
-          "tableTo": "evidence_items",
-          "columnsFrom": [
-            "evidence_item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "gaps": {
-      "name": "gaps",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "quality_statement_id": {
-          "name": "quality_statement_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "practice_id": {
-          "name": "practice_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "title": {
-          "name": "title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "severity": {
-          "name": "severity",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "created_by": {
-          "name": "created_by",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "(strftime('%s', 'now'))"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "gaps_quality_statement_id_quality_statements_id_fk": {
-          "name": "gaps_quality_statement_id_quality_statements_id_fk",
-          "tableFrom": "gaps",
-          "tableTo": "quality_statements",
-          "columnsFrom": [
-            "quality_statement_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "gaps_practice_id_practices_id_fk": {
-          "name": "gaps_practice_id_practices_id_fk",
-          "tableFrom": "gaps",
-          "tableTo": "practices",
-          "columnsFrom": [
-            "practice_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "gaps_created_by_users_id_fk": {
-          "name": "gaps_created_by_users_id_fk",
-          "tableFrom": "gaps",
-          "tableTo": "users",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "key_questions": {
-      "name": "key_questions",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "number": {
-          "name": "number",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "short_name": {
-          "name": "short_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "full_question": {
-          "name": "full_question",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "(strftime('%s', 'now'))"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "permissions": {
-      "name": "permissions",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "resource": {
-          "name": "resource",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "action": {
-          "name": "action",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "policy_acknowledgements": {
-      "name": "policy_acknowledgements",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
           "notNull": true,
           "autoincrement": false
         },
@@ -1057,37 +1302,57 @@
           "name": "policy_version_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
-        "user_id": {
-          "name": "user_id",
+        "approved_by": {
+          "name": "approved_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "approved_at": {
+          "name": "approved_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "comment": {
+          "name": "comment",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
-        },
-        "acknowledged_at": {
-          "name": "acknowledged_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "(strftime('%s', 'now'))"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "idx_policy_approvals_version": {
+          "name": "idx_policy_approvals_version",
+          "columns": [
+            "policy_version_id"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
-        "policy_acknowledgements_policy_version_id_policy_versions_id_fk": {
-          "name": "policy_acknowledgements_policy_version_id_policy_versions_id_fk",
-          "tableFrom": "policy_acknowledgements",
+        "policy_approvals_tenant_id_tenants_id_fk": {
+          "name": "policy_approvals_tenant_id_tenants_id_fk",
+          "tableFrom": "policy_approvals",
+          "tableTo": "tenants",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "policy_approvals_policy_version_id_policy_versions_id_fk": {
+          "name": "policy_approvals_policy_version_id_policy_versions_id_fk",
+          "tableFrom": "policy_approvals",
           "tableTo": "policy_versions",
           "columnsFrom": [
             "policy_version_id"
@@ -1098,12 +1363,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "policy_acknowledgements_user_id_users_id_fk": {
-          "name": "policy_acknowledgements_user_id_users_id_fk",
-          "tableFrom": "policy_acknowledgements",
+        "policy_approvals_approved_by_users_id_fk": {
+          "name": "policy_approvals_approved_by_users_id_fk",
+          "tableFrom": "policy_approvals",
           "tableTo": "users",
           "columnsFrom": [
-            "user_id"
+            "approved_by"
           ],
           "columnsTo": [
             "id"
@@ -1116,8 +1381,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "policy_library": {
-      "name": "policy_library",
+    "policy_read_attestations": {
+      "name": "policy_read_attestations",
       "columns": {
         "id": {
           "name": "id",
@@ -1126,37 +1391,78 @@
           "notNull": true,
           "autoincrement": false
         },
-        "practice_id": {
-          "name": "practice_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "topic": {
-          "name": "topic",
+        "tenant_id": {
+          "name": "tenant_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "created_at": {
-          "name": "created_at",
+        "policy_version_id": {
+          "name": "policy_version_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "read_at": {
+          "name": "read_at",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "(strftime('%s', 'now'))"
+          "notNull": true,
+          "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "uq_read_attestations": {
+          "name": "uq_read_attestations",
+          "columns": [
+            "policy_version_id",
+            "user_id"
+          ],
+          "isUnique": true
+        }
+      },
       "foreignKeys": {
-        "policy_library_practice_id_practices_id_fk": {
-          "name": "policy_library_practice_id_practices_id_fk",
-          "tableFrom": "policy_library",
-          "tableTo": "practices",
+        "policy_read_attestations_tenant_id_tenants_id_fk": {
+          "name": "policy_read_attestations_tenant_id_tenants_id_fk",
+          "tableFrom": "policy_read_attestations",
+          "tableTo": "tenants",
           "columnsFrom": [
-            "practice_id"
+            "tenant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "policy_read_attestations_policy_version_id_policy_versions_id_fk": {
+          "name": "policy_read_attestations_policy_version_id_policy_versions_id_fk",
+          "tableFrom": "policy_read_attestations",
+          "tableTo": "policy_versions",
+          "columnsFrom": [
+            "policy_version_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "policy_read_attestations_user_id_users_id_fk": {
+          "name": "policy_read_attestations_user_id_users_id_fk",
+          "tableFrom": "policy_read_attestations",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
           ],
           "columnsTo": [
             "id"
@@ -1179,23 +1485,159 @@
           "notNull": true,
           "autoincrement": false
         },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
         "policy_id": {
           "name": "policy_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
-        "version_number": {
-          "name": "version_number",
+        "version_no": {
+          "name": "version_no",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "content": {
-          "name": "content",
+        "r2_key": {
+          "name": "r2_key",
           "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "summary": {
+          "name": "summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "idx_policy_versions_policy": {
+          "name": "idx_policy_versions_policy",
+          "columns": [
+            "policy_id"
+          ],
+          "isUnique": false
+        },
+        "uq_policy_versions": {
+          "name": "uq_policy_versions",
+          "columns": [
+            "policy_id",
+            "version_no"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "policy_versions_tenant_id_tenants_id_fk": {
+          "name": "policy_versions_tenant_id_tenants_id_fk",
+          "tableFrom": "policy_versions",
+          "tableTo": "tenants",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "policy_versions_policy_id_policies_id_fk": {
+          "name": "policy_versions_policy_id_policies_id_fk",
+          "tableFrom": "policy_versions",
+          "tableTo": "policies",
+          "columnsFrom": [
+            "policy_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "policy_versions_created_by_users_id_fk": {
+          "name": "policy_versions_created_by_users_id_fk",
+          "tableFrom": "policy_versions",
+          "tableTo": "users",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "qs_owners": {
+      "name": "qs_owners",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "site_id": {
+          "name": "site_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "qs_id": {
+          "name": "qs_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "owner_user_id": {
+          "name": "owner_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "review_cadence_days": {
+          "name": "review_cadence_days",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -1205,191 +1647,50 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false
-        },
-        "published_at": {
-          "name": "published_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
+          "autoincrement": false,
+          "default": "'assigned'"
         },
         "created_at": {
           "name": "created_at",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "(strftime('%s', 'now'))"
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "idx_qs_owners_site": {
+          "name": "idx_qs_owners_site",
+          "columns": [
+            "tenant_id",
+            "site_id"
+          ],
+          "isUnique": false
+        },
+        "uq_qs_owners": {
+          "name": "uq_qs_owners",
+          "columns": [
+            "tenant_id",
+            "site_id",
+            "qs_id"
+          ],
+          "isUnique": true
+        }
+      },
       "foreignKeys": {
-        "policy_versions_policy_id_policy_library_id_fk": {
-          "name": "policy_versions_policy_id_policy_library_id_fk",
-          "tableFrom": "policy_versions",
-          "tableTo": "policy_library",
+        "qs_owners_tenant_id_tenants_id_fk": {
+          "name": "qs_owners_tenant_id_tenants_id_fk",
+          "tableFrom": "qs_owners",
+          "tableTo": "tenants",
           "columnsFrom": [
-            "policy_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "practices": {
-      "name": "practices",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "(strftime('%s', 'now'))"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "quality_statements": {
-      "name": "quality_statements",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "key_question_id": {
-          "name": "key_question_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "statement_number": {
-          "name": "statement_number",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "statement_text": {
-          "name": "statement_text",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "regulation_links": {
-          "name": "regulation_links",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "(strftime('%s', 'now'))"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "quality_statements_key_question_id_key_questions_id_fk": {
-          "name": "quality_statements_key_question_id_key_questions_id_fk",
-          "tableFrom": "quality_statements",
-          "tableTo": "key_questions",
-          "columnsFrom": [
-            "key_question_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "role_permissions": {
-      "name": "role_permissions",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "role_id": {
-          "name": "role_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "permission_id": {
-          "name": "permission_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "granted_at": {
-          "name": "granted_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "(strftime('%s', 'now'))"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "role_permissions_role_id_roles_id_fk": {
-          "name": "role_permissions_role_id_roles_id_fk",
-          "tableFrom": "role_permissions",
-          "tableTo": "roles",
-          "columnsFrom": [
-            "role_id"
+            "tenant_id"
           ],
           "columnsTo": [
             "id"
@@ -1397,12 +1698,38 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "role_permissions_permission_id_permissions_id_fk": {
-          "name": "role_permissions_permission_id_permissions_id_fk",
-          "tableFrom": "role_permissions",
-          "tableTo": "permissions",
+        "qs_owners_site_id_sites_id_fk": {
+          "name": "qs_owners_site_id_sites_id_fk",
+          "tableFrom": "qs_owners",
+          "tableTo": "sites",
           "columnsFrom": [
-            "permission_id"
+            "site_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "qs_owners_qs_id_cqc_quality_statements_id_fk": {
+          "name": "qs_owners_qs_id_cqc_quality_statements_id_fk",
+          "tableFrom": "qs_owners",
+          "tableTo": "cqc_quality_statements",
+          "columnsFrom": [
+            "qs_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "qs_owners_owner_user_id_users_id_fk": {
+          "name": "qs_owners_owner_user_id_users_id_fk",
+          "tableFrom": "qs_owners",
+          "tableTo": "users",
+          "columnsFrom": [
+            "owner_user_id"
           ],
           "columnsTo": [
             "id"
@@ -1425,11 +1752,11 @@
           "notNull": true,
           "autoincrement": false
         },
-        "practice_id": {
-          "name": "practice_id",
+        "tenant_id": {
+          "name": "tenant_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "name": {
@@ -1438,39 +1765,24 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "is_default": {
-          "name": "is_default",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "(strftime('%s', 'now'))"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "idx_roles_tenant_id": {
+          "name": "idx_roles_tenant_id",
+          "columns": [
+            "tenant_id"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
-        "roles_practice_id_practices_id_fk": {
-          "name": "roles_practice_id_practices_id_fk",
+        "roles_tenant_id_tenants_id_fk": {
+          "name": "roles_tenant_id_tenants_id_fk",
           "tableFrom": "roles",
-          "tableTo": "practices",
+          "tableTo": "tenants",
           "columnsFrom": [
-            "practice_id"
+            "tenant_id"
           ],
           "columnsTo": [
             "id"
@@ -1483,8 +1795,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "statement_assessments": {
-      "name": "statement_assessments",
+    "sites": {
+      "name": "sites",
       "columns": {
         "id": {
           "name": "id",
@@ -1493,99 +1805,51 @@
           "notNull": true,
           "autoincrement": false
         },
-        "quality_statement_id": {
-          "name": "quality_statement_id",
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "address": {
+          "name": "address",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
-        },
-        "practice_id": {
-          "name": "practice_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "assessment_text": {
-          "name": "assessment_text",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "assessment_score": {
-          "name": "assessment_score",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "assessed_by": {
-          "name": "assessed_by",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "assessed_at": {
-          "name": "assessed_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "is_latest": {
-          "name": "is_latest",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": true
         },
         "created_at": {
           "name": "created_at",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "(strftime('%s', 'now'))"
+          "notNull": true,
+          "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "idx_sites_tenant_id": {
+          "name": "idx_sites_tenant_id",
+          "columns": [
+            "tenant_id"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
-        "statement_assessments_quality_statement_id_quality_statements_id_fk": {
-          "name": "statement_assessments_quality_statement_id_quality_statements_id_fk",
-          "tableFrom": "statement_assessments",
-          "tableTo": "quality_statements",
+        "sites_tenant_id_tenants_id_fk": {
+          "name": "sites_tenant_id_tenants_id_fk",
+          "tableFrom": "sites",
+          "tableTo": "tenants",
           "columnsFrom": [
-            "quality_statement_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "statement_assessments_practice_id_practices_id_fk": {
-          "name": "statement_assessments_practice_id_practices_id_fk",
-          "tableFrom": "statement_assessments",
-          "tableTo": "practices",
-          "columnsFrom": [
-            "practice_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "statement_assessments_assessed_by_users_id_fk": {
-          "name": "statement_assessments_assessed_by_users_id_fk",
-          "tableFrom": "statement_assessments",
-          "tableTo": "users",
-          "columnsFrom": [
-            "assessed_by"
+            "tenant_id"
           ],
           "columnsTo": [
             "id"
@@ -1595,6 +1859,139 @@
         }
       },
       "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "tenants": {
+      "name": "tenants",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "user_roles": {
+      "name": "user_roles",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "role_id": {
+          "name": "role_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "site_id": {
+          "name": "site_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "idx_user_roles_user_id": {
+          "name": "idx_user_roles_user_id",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": false
+        },
+        "idx_user_roles_role_id": {
+          "name": "idx_user_roles_role_id",
+          "columns": [
+            "role_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "user_roles_user_id_users_id_fk": {
+          "name": "user_roles_user_id_users_id_fk",
+          "tableFrom": "user_roles",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "user_roles_role_id_roles_id_fk": {
+          "name": "user_roles_role_id_roles_id_fk",
+          "tableFrom": "user_roles",
+          "tableTo": "roles",
+          "columnsFrom": [
+            "role_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "user_roles_site_id_sites_id_fk": {
+          "name": "user_roles_site_id_sites_id_fk",
+          "tableFrom": "user_roles",
+          "tableTo": "sites",
+          "columnsFrom": [
+            "site_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "user_roles_user_id_role_id_site_id_pk": {
+          "columns": [
+            "user_id",
+            "role_id",
+            "site_id"
+          ],
+          "name": "user_roles_user_id_role_id_site_id_pk"
+        }
+      },
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
@@ -1608,11 +2005,11 @@
           "notNull": true,
           "autoincrement": false
         },
-        "practice_id": {
-          "name": "practice_id",
+        "tenant_id": {
+          "name": "tenant_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "email": {
@@ -1622,38 +2019,16 @@
           "notNull": true,
           "autoincrement": false
         },
-        "full_name": {
-          "name": "full_name",
+        "password_hash": {
+          "name": "password_hash",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "role_id": {
-          "name": "role_id",
+        "name": {
+          "name": "name",
           "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "password_hash": {
-          "name": "password_hash",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "is_active": {
-          "name": "is_active",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": true
-        },
-        "last_login": {
-          "name": "last_login",
-          "type": "integer",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -1662,32 +2037,41 @@
           "name": "created_at",
           "type": "integer",
           "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "last_login_at": {
+          "name": "last_login_at",
+          "type": "integer",
+          "primaryKey": false,
           "notNull": false,
-          "autoincrement": false,
-          "default": "(strftime('%s', 'now'))"
+          "autoincrement": false
         }
       },
-      "indexes": {},
-      "foreignKeys": {
-        "users_practice_id_practices_id_fk": {
-          "name": "users_practice_id_practices_id_fk",
-          "tableFrom": "users",
-          "tableTo": "practices",
-          "columnsFrom": [
-            "practice_id"
+      "indexes": {
+        "idx_users_tenant_id": {
+          "name": "idx_users_tenant_id",
+          "columns": [
+            "tenant_id"
           ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "isUnique": false
         },
-        "users_role_id_roles_id_fk": {
-          "name": "users_role_id_roles_id_fk",
+        "uq_users_tenant_email": {
+          "name": "uq_users_tenant_email",
+          "columns": [
+            "tenant_id",
+            "email"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "users_tenant_id_tenants_id_fk": {
+          "name": "users_tenant_id_tenants_id_fk",
           "tableFrom": "users",
-          "tableTo": "roles",
+          "tableTo": "tenants",
           "columnsFrom": [
-            "role_id"
+            "tenant_id"
           ],
           "columnsTo": [
             "id"
