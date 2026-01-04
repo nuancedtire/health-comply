@@ -1,66 +1,107 @@
+import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import * as schema from '@/db/schema';
+import { eq } from "drizzle-orm";
+import { APIError } from "better-auth/api";
 
-// src/lib/auth.ts
-// timingSafeEqual removed
+export const createAuth = (db: any) => betterAuth({
+    database: drizzleAdapter(db, {
+        provider: "sqlite",
+        schema: {
+            ...schema,
+            user: schema.users,
+            session: schema.sessions,
+            account: schema.accounts,
+            verification: schema.verifications,
+            invitation: schema.invitations
+        }
+    }),
+    emailAndPassword: {
+        enabled: true,
+    },
+    user: {
+        fields: {
+            isSystemAdmin: "is_system_admin",
+            tenantId: "tenant_id"
+        },
+        additionalFields: {
+            isSystemAdmin: {
+                type: "boolean",
+                required: false,
+                defaultValue: false
+            },
+            tenantId: {
+                type: "string",
+                required: false
+            }
+        }
+    } as any,
+    databaseHooks: {
+        user: {
+            create: {
+                before: async (user) => {
+                    // Check if this is the first user
+                    const existingUsers = await db.select({ count: schema.users.id }).from(schema.users).limit(1);
+                    if (existingUsers.length === 0) {
+                        return {
+                            data: {
+                                ...user,
+                                isSystemAdmin: true
+                            }
+                        };
+                    }
 
-const enc = new TextEncoder();
+                    // Check for invitation
+                    const invite = await db.query.invitations.findFirst({
+                        where: (inv: any, { eq, and }: any) => and(
+                            eq(inv.email, user.email),
+                            eq(inv.status, 'pending')
+                        )
+                    });
 
-function b64(u8: Uint8Array) {
-    return btoa(String.fromCharCode(...u8));
-}
+                    if (!invite) {
+                        throw new APIError("BAD_REQUEST", {
+                            message: "Registration is by invitation only."
+                        });
+                    }
 
-function unb64(s: string) {
-    return Uint8Array.from(atob(s), c => c.charCodeAt(0));
-}
+                    // Allow creation (return nothing or original data)
+                    return { data: user };
+                },
+                after: async (user) => {
+                    if (user.isSystemAdmin) return;
 
-export async function hashPassword(password: string): Promise<string> {
-    const salt = crypto.getRandomValues(new Uint8Array(16));
-    const iterations = 100_000;
-    const keyMaterial = await crypto.subtle.importKey(
-        'raw',
-        enc.encode(password),
-        { name: 'PBKDF2' },
-        false,
-        ['deriveBits']
-    );
-    const bits = await crypto.subtle.deriveBits(
-        { name: 'PBKDF2', hash: 'SHA-256', salt, iterations },
-        keyMaterial,
-        256
-    );
-    const dk = new Uint8Array(bits);
-    return `pbkdf2_sha256$${iterations}$${b64(salt)}$${b64(dk)}`;
-}
+                    // Find the invite again
+                    const invite = await db.query.invitations.findFirst({
+                        where: (inv: any, { eq, and }: any) => and(
+                            eq(inv.email, user.email),
+                            eq(inv.status, 'pending')
+                        )
+                    });
 
-export async function verifyPassword(
-    password: string,
-    stored: string
-): Promise<boolean> {
-    const [alg, iterStr, saltB64, dkB64] = stored.split('$');
-    if (alg !== 'pbkdf2_sha256') return false;
-    const iterations = Number(iterStr);
-    const salt = unb64(saltB64);
-    const expected = unb64(dkB64);
-    const keyMaterial = await crypto.subtle.importKey(
-        'raw',
-        enc.encode(password),
-        { name: 'PBKDF2' },
-        false,
-        ['deriveBits']
-    );
-    const bits = await crypto.subtle.deriveBits(
-        { name: 'PBKDF2', hash: 'SHA-256', salt, iterations },
-        keyMaterial,
-        expected.length * 8
-    );
-    const actual = new Uint8Array(bits);
+                    if (invite) {
+                        // Assign Tenant & Role
+                        await db.update(schema.users)
+                            .set({ tenantId: invite.tenantId })
+                            .where(eq(schema.users.id, user.id));
 
-    // Timing-safe comparison if possible, or simple check for now
-    // Note: crypto.subtle timing attacks are a risk, but this is MVP standard.
-    if (actual.length !== expected.length) return false;
+                        const userRoleVal = {
+                            userId: user.id,
+                            roleId: invite.roleId,
+                            siteId: invite.siteId,
+                            createdAt: new Date(),
+                        };
+                        await db.insert(schema.userRoles).values(userRoleVal);
 
-    let match = true;
-    for (let i = 0; i < actual.length; i++) {
-        if (actual[i] !== expected[i]) match = false;
+                        // Mark invite accepted
+                        await db.update(schema.invitations)
+                            .set({ status: 'accepted' })
+                            .where(eq(schema.invitations.id, invite.id));
+                    }
+                }
+            }
+        }
     }
-    return match;
-}
+});
+
+export type Auth = ReturnType<typeof createAuth>;

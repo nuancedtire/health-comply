@@ -1,105 +1,119 @@
+import * as React from 'react'
+import { createFileRoute, useRouter, Link } from '@tanstack/react-router'
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import { authClient } from '@/lib/auth-client'
 
-// src/routes/login.tsx
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { loginFn } from '../core/functions/auth.server';
-import { useMutation } from '@tanstack/react-query';
-import { useState } from 'react';
+import { Button } from '@/components/ui/button'
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
 export const Route = createFileRoute('/login')({
     component: LoginComponent,
 })
 
+const formSchema = z.object({
+    email: z.string().email(),
+    password: z.string().min(1, "Password is required"),
+})
+
 function LoginComponent() {
-    const navigate = useNavigate();
-    const [error, setError] = useState<string | null>(null);
+    const router = useRouter()
+    const [error, setError] = React.useState<string | null>(null)
 
-    const loginMutation = useMutation({
-        mutationFn: loginFn,
-        onSuccess: () => {
-            navigate({ to: '/dashboard/qs' });
+    const form = useForm<z.infer<typeof formSchema>>({
+        resolver: zodResolver(formSchema),
+        defaultValues: {
+            email: "",
+            password: "",
         },
-        onError: (err) => {
-            setError(err.message || 'Login failed');
-        }
-    });
+    })
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        setError(null);
-        const formData = new FormData(e.currentTarget);
-        const email = formData.get('email') as string;
-        const password = formData.get('password') as string;
-
-        if (!email || !password) {
-            setError("Email and password are required");
-            return;
-        }
-
-        loginMutation.mutate({ data: { email, password } });
-    };
+    async function onSubmit(values: z.infer<typeof formSchema>) {
+        setError(null)
+        await authClient.signIn.email({
+            email: values.email,
+            password: values.password,
+            callbackURL: "/dashboard" // Optimistic redirect
+        }, {
+            onSuccess: async () => {
+                router.invalidate()
+                await router.navigate({ to: '/dashboard' })
+            },
+            onError: (ctx) => {
+                setError(ctx.error.message);
+            }
+        })
+    }
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
-            <div className="w-full max-w-md space-y-8">
-                <div className="text-center">
-                    <h2 className="mt-6 text-3xl font-extrabold text-gray-900 dark:text-white">
-                        Sign in to your account
-                    </h2>
-                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                        CQC Compliance Management System
-                    </p>
-                </div>
-                <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                    <div className="-space-y-px rounded-md shadow-sm">
-                        <div>
-                            <label htmlFor="email-address" className="sr-only">
-                                Email address
-                            </label>
-                            <input
-                                id="email-address"
-                                name="email"
-                                type="email"
-                                autoComplete="email"
-                                required
-                                className="relative block w-full rounded-t-md border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-                                placeholder="Email address"
-                                defaultValue="pm@example.com"
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="password" className="sr-only">
-                                Password
-                            </label>
-                            <input
-                                id="password"
-                                name="password"
-                                type="password"
-                                autoComplete="current-password"
-                                required
-                                className="relative block w-full rounded-b-md border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-                                placeholder="Password"
-                                defaultValue="Password123!"
-                            />
-                        </div>
-                    </div>
-
+        <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 p-4">
+            <Card className="w-full max-w-md">
+                <CardHeader>
+                    <CardTitle>Sign In</CardTitle>
+                    <CardDescription>Enter your credentials to access your account.</CardDescription>
+                </CardHeader>
+                <CardContent>
                     {error && (
-                        <div className="text-red-600 text-sm text-center font-medium">
-                            {error}
-                        </div>
+                        <Alert variant="destructive" className="mb-4">
+                            <AlertTitle>Error</AlertTitle>
+                            <AlertDescription>{error}</AlertDescription>
+                        </Alert>
                     )}
 
-                    <div>
-                        <button
-                            type="submit"
-                            disabled={loginMutation.isPending}
-                            className="group relative flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
-                        >
-                            {loginMutation.isPending ? 'Signing in...' : 'Sign in'}
-                        </button>
-                    </div>
-                </form>
-            </div>
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                            <FormField
+                                control={form.control}
+                                name="email"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Email</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="name@example.com" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="password"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Password</FormLabel>
+                                        <FormControl>
+                                            <Input type="password" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                                {form.formState.isSubmitting ? "Signing in..." : "Sign In"}
+                            </Button>
+                        </form>
+                    </Form>
+                </CardContent>
+                <CardFooter className="flex justify-center">
+                    <p className="text-sm text-muted-foreground">
+                        Don't have an account?{" "}
+                        <Link to="/signup" className="text-primary hover:underline">
+                            Sign up
+                        </Link>
+                    </p>
+                </CardFooter>
+            </Card>
         </div>
     )
 }

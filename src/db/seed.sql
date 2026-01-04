@@ -1,702 +1,859 @@
--- ==========================================
--- 1. Core Entities (Practices, Roles, Users)
--- ==========================================
+-- =========================================================================================
+-- COMPLETE SEED SCRIPT
+-- Replaces all previous seed files.
+-- Run this to reset the database to a known state with CQC taxonomy and demo data.
+-- =========================================================================================
 
+-- 1. CLEANUP (Delete in reverse dependency order)
+-- =========================================================================================
+DELETE FROM audit_log;
+
+DELETE FROM inspection_pack_outputs;
+
+DELETE FROM inspection_packs;
+
+DELETE FROM policy_read_attestations;
+
+DELETE FROM policy_approvals;
+
+DELETE FROM policy_versions;
+
+DELETE FROM policies;
+
+DELETE FROM action_approvals;
+
+DELETE FROM actions;
+
+DELETE FROM evidence_links;
+
+DELETE FROM evidence_items;
+
+DELETE FROM local_controls;
+
+DELETE FROM qs_owners;
+
+DELETE FROM user_roles;
+
+DELETE FROM roles;
+
+DELETE FROM users;
+
+DELETE FROM sites;
+
+DELETE FROM tenants;
+
+DELETE FROM cqc_quality_statements;
+
+DELETE FROM cqc_key_questions;
+
+DELETE FROM evidence_categories;
+
+-- 2. TAXONOMY (CQC Framework & Evidence Categories)
+-- =========================================================================================
+
+-- Evidence Categories
 INSERT INTO
-    practices (id, name)
+    evidence_categories (id, title)
 VALUES (
-        'practice_main',
-        'Riverside Medical Practice'
-    );
-
-INSERT INTO
-    roles (
-        id,
-        practice_id,
-        name,
-        description,
-        is_default
-    )
-VALUES (
-        'role_pm',
-        'practice_main',
-        'Practice Manager',
-        'Operational and compliance management',
-        1
+        'peoples_experience',
+        'People''s experience of health and care services'
     ),
     (
-        'role_gp_partner',
-        'practice_main',
-        'GP Partner',
-        'Clinical leadership and partnership',
-        0
+        'staff_feedback',
+        'Feedback from staff and leaders'
     ),
     (
-        'role_lead_nurse',
-        'practice_main',
-        'Lead Nurse',
-        'Nursing team leadership',
-        0
+        'partner_feedback',
+        'Feedback from partners'
     ),
-    (
-        'role_admin',
-        'practice_main',
-        'Administrator',
-        'Administrative support',
-        0
-    ),
-    (
-        'role_hca',
-        'practice_main',
-        'Healthcare Assistant',
-        'Clinical support',
-        0
-    );
-
-INSERT INTO
-    users (
-        id,
-        practice_id,
-        email,
-        full_name,
-        role_id,
-        is_active
-    )
-VALUES (
-        'user_sarah',
-        'practice_main',
-        'sarah.johnson@riverside.test',
-        'Sarah Johnson',
-        'role_pm',
-        1
-    ),
-    (
-        'user_james',
-        'practice_main',
-        'james.patterson@riverside.test',
-        'Dr. James Patterson',
-        'role_gp_partner',
-        1
-    ),
-    (
-        'user_emma',
-        'practice_main',
-        'emma.wilson@riverside.test',
-        'Emma Wilson',
-        'role_lead_nurse',
-        1
-    ),
-    (
-        'user_michael',
-        'practice_main',
-        'michael.brown@riverside.test',
-        'Michael Brown',
-        'role_hca',
-        1
-    ),
-    (
-        'user_admin',
-        'practice_main',
-        'admin@riverside.test',
-        'System Admin',
-        'role_admin',
-        1
-    );
-
--- ==========================================
--- 2. CQC Framework (Key Questions & Quality Statements)
--- ==========================================
+    ('observation', 'Observation'),
+    ('processes', 'Processes'),
+    ('outcomes', 'Outcomes');
 
 -- Key Questions
 INSERT INTO
-    key_questions (
-        id,
-        number,
-        short_name,
-        full_question
-    )
-VALUES (
-        'kq_safe',
-        1,
-        'Safe',
-        'Are services safe?'
-    ),
+    cqc_key_questions (id, title, display_order)
+VALUES ('safe', 'Safe', 10),
+    ('effective', 'Effective', 20),
+    ('caring', 'Caring', 30),
     (
-        'kq_effective',
-        2,
-        'Effective',
-        'Are services effective?'
-    ),
-    (
-        'kq_caring',
-        3,
-        'Caring',
-        'Are services caring?'
-    ),
-    (
-        'kq_responsive',
-        4,
+        'responsive',
         'Responsive',
-        'Are services responsive to people''s needs?'
+        40
     ),
-    (
-        'kq_well_led',
-        5,
-        'Well-led',
-        'Are services well-led?'
-    );
+    ('well_led', 'Well-led', 50);
 
 -- Quality Statements (Safe)
 INSERT INTO
-    quality_statements (
+    cqc_quality_statements (
         id,
         key_question_id,
-        statement_number,
-        statement_text
+        code,
+        title,
+        display_order
     )
 VALUES (
-        'qs_safe_1',
-        'kq_safe',
-        1,
-        'Learning culture'
+        'safe.learning_culture',
+        'safe',
+        'learning-culture',
+        'Learning culture',
+        1
     ),
     (
-        'qs_safe_2',
-        'kq_safe',
-        2,
-        'Safe systems, pathways and transitions'
+        'safe.safeguarding',
+        'safe',
+        'safeguarding',
+        'Safeguarding',
+        2
     ),
     (
-        'qs_safe_3',
-        'kq_safe',
-        3,
-        'Safeguarding'
+        'safe.involving_people_to_manage_risks',
+        'safe',
+        'involving-people-to-manage-risks',
+        'Involving people to manage risks',
+        3
     ),
     (
-        'qs_safe_4',
-        'kq_safe',
-        4,
-        'Involving people to manage risks'
+        'safe.safe_environments',
+        'safe',
+        'safe-environments',
+        'Safe environments',
+        4
     ),
     (
-        'qs_safe_5',
-        'kq_safe',
-        5,
-        'Safe environments'
+        'safe.infection_prevention_and_control',
+        'safe',
+        'infection-prevention-and-control',
+        'Infection prevention and control',
+        5
     ),
     (
-        'qs_safe_6',
-        'kq_safe',
-        6,
-        'Safe and effective staffing'
-    ),
-    (
-        'qs_safe_7',
-        'kq_safe',
-        7,
-        'Infection prevention and control'
-    ),
-    (
-        'qs_safe_8',
-        'kq_safe',
-        8,
-        'Medicines optimisation'
+        'safe.medicines_optimisation',
+        'safe',
+        'medicines-optimisation',
+        'Medicines optimisation',
+        6
     );
 
 -- Quality Statements (Effective)
 INSERT INTO
-    quality_statements (
+    cqc_quality_statements (
         id,
         key_question_id,
-        statement_number,
-        statement_text
+        code,
+        title,
+        display_order
     )
 VALUES (
-        'qs_eff_1',
-        'kq_effective',
-        1,
-        'Assessing needs'
+        'effective.assessing_needs',
+        'effective',
+        'assessing-needs',
+        'Assessing needs',
+        1
     ),
     (
-        'qs_eff_2',
-        'kq_effective',
-        2,
-        'Delivering evidence-based care and treatment'
+        'effective.delivering_evidence_based_care',
+        'effective',
+        'delivering-evidence-based-care-and-treatment',
+        'Delivering evidence-based care and treatment',
+        2
     ),
     (
-        'qs_eff_3',
-        'kq_effective',
-        3,
-        'How staff, teams and services work together'
+        'effective.how_staff_teams_work_together',
+        'effective',
+        'how-staff-teams-and-services-work-together',
+        'How staff, teams and services work together',
+        3
     ),
     (
-        'qs_eff_4',
-        'kq_effective',
-        4,
-        'Supporting people to live healthier lives'
+        'effective.supporting_healthier_lives',
+        'effective',
+        'supporting-people-to-live-healthier-lives',
+        'Supporting people to live healthier lives',
+        4
     ),
     (
-        'qs_eff_5',
-        'kq_effective',
-        5,
-        'Monitoring and improving outcomes'
+        'effective.monitoring_and_improving_outcomes',
+        'effective',
+        'monitoring-and-improving-outcomes',
+        'Monitoring and improving outcomes',
+        5
     ),
     (
-        'qs_eff_6',
-        'kq_effective',
-        6,
-        'Consent to care and treatment'
+        'effective.consent_to_care',
+        'effective',
+        'consent-to-care-and-treatment',
+        'Consent to care and treatment',
+        6
     );
 
 -- Quality Statements (Caring)
 INSERT INTO
-    quality_statements (
+    cqc_quality_statements (
         id,
         key_question_id,
-        statement_number,
-        statement_text
+        code,
+        title,
+        display_order
     )
 VALUES (
-        'qs_car_1',
-        'kq_caring',
-        1,
-        'Kindness, compassion and dignity'
+        'caring.kindness_compassion_dignity',
+        'caring',
+        'kindness-compassion-and-dignity',
+        'Kindness, compassion and dignity',
+        1
     ),
     (
-        'qs_car_2',
-        'kq_caring',
-        2,
-        'Treating people as individuals'
+        'caring.treating_people_as_individuals',
+        'caring',
+        'treating-people-as-individuals',
+        'Treating people as individuals',
+        2
     ),
     (
-        'qs_car_3',
-        'kq_caring',
-        3,
-        'Independence, choice and control'
+        'caring.independence_choice_control',
+        'caring',
+        'independence-choice-and-control',
+        'Independence, choice and control',
+        3
     ),
     (
-        'qs_car_4',
-        'kq_caring',
-        4,
-        'Responding to people''s immediate needs'
+        'caring.responding_to_immediate_needs',
+        'caring',
+        'responding-to-peoples-immediate-needs',
+        'Responding to people''s immediate needs',
+        4
     ),
     (
-        'qs_car_5',
-        'kq_caring',
-        5,
-        'Workforce wellbeing and enablement'
+        'caring.workforce_wellbeing_enablement',
+        'caring',
+        'workforce-wellbeing-and-enablement',
+        'Workforce wellbeing and enablement',
+        5
     );
 
 -- Quality Statements (Responsive)
 INSERT INTO
-    quality_statements (
+    cqc_quality_statements (
         id,
         key_question_id,
-        statement_number,
-        statement_text
+        code,
+        title,
+        display_order
     )
 VALUES (
-        'qs_resp_1',
-        'kq_responsive',
-        1,
-        'Person-centred care'
+        'responsive.person_centred_care',
+        'responsive',
+        'person-centred-care',
+        'Person-centred care',
+        1
     ),
     (
-        'qs_resp_2',
-        'kq_responsive',
-        2,
-        'Care provision, integration and continuity'
+        'responsive.providing_information',
+        'responsive',
+        'providing-information',
+        'Providing information',
+        2
     ),
     (
-        'qs_resp_3',
-        'kq_responsive',
-        3,
-        'Providing information'
+        'responsive.listening_involving_people',
+        'responsive',
+        'listening-to-and-involving-people',
+        'Listening to and involving people',
+        3
     ),
     (
-        'qs_resp_4',
-        'kq_responsive',
-        4,
-        'Listening to and involving people'
-    ),
-    (
-        'qs_resp_5',
-        'kq_responsive',
-        5,
-        'Equity in access'
-    ),
-    (
-        'qs_resp_6',
-        'kq_responsive',
-        6,
-        'Equity in experiences and outcomes'
-    ),
-    (
-        'qs_resp_7',
-        'kq_responsive',
-        7,
-        'Planning for the future'
+        'responsive.planning_for_the_future',
+        'responsive',
+        'planning-for-the-future',
+        'Planning for the future',
+        4
     );
 
 -- Quality Statements (Well-led)
 INSERT INTO
-    quality_statements (
+    cqc_quality_statements (
         id,
         key_question_id,
-        statement_number,
-        statement_text
+        code,
+        title,
+        display_order
     )
 VALUES (
-        'qs_well_1',
-        'kq_well_led',
+        'well_led.shared_direction_and_culture',
+        'well_led',
+        'shared-direction-and-culture',
+        'Shared direction and culture',
+        1
+    ),
+    (
+        'well_led.capable_compassionate_inclusive_leaders',
+        'well_led',
+        'capable-compassionate-and-inclusive-leaders',
+        'Capable, compassionate and inclusive leaders',
+        2
+    ),
+    (
+        'well_led.freedom_to_speak_up',
+        'well_led',
+        'freedom-to-speak-up',
+        'Freedom to speak up',
+        3
+    ),
+    (
+        'well_led.governance_management_sustainability',
+        'well_led',
+        'governance-management-and-sustainability',
+        'Governance, management and sustainability',
+        4
+    ),
+    (
+        'well_led.learning_improvement_innovation',
+        'well_led',
+        'learning-improvement-and-innovation',
+        'Learning, improvement and innovation',
+        5
+    ),
+    (
+        'well_led.environmental_sustainability',
+        'well_led',
+        'environmental-sustainability',
+        'Environmental sustainability',
+        6
+    );
+
+-- 3. TENANTS, SITES & USERS (Demo Data)
+-- =========================================================================================
+
+-- Tenant
+INSERT INTO
+    tenants (id, name, created_at)
+VALUES (
+        't_demo',
+        'Riverside Medical Group',
+        strftime('%s', 'now')
+    );
+
+-- Site
+INSERT INTO
+    sites (
+        id,
+        tenant_id,
+        name,
+        address,
+        created_at
+    )
+VALUES (
+        's_demo',
+        't_demo',
+        'Riverside Surgery',
+        '123 High Street, London',
+        strftime('%s', 'now')
+    );
+
+-- Roles
+INSERT INTO
+    roles (id, tenant_id, name)
+VALUES (
+        'r_pm',
+        't_demo',
+        'Practice Manager'
+    ),
+    (
+        'r_gp',
+        't_demo',
+        'GP Partner'
+    ),
+    (
+        'r_nurse',
+        't_demo',
+        'Lead Nurse'
+    ),
+    (
+        'r_admin',
+        't_demo',
+        'Administrator'
+    );
+
+-- Users
+-- Passwords are 'password' (pbkdf2 hash placeholder or specific hash if known, using a dummy for now)
+INSERT INTO
+    users (
+        id,
+        tenant_id,
+        email,
+        password_hash,
+        name,
+        created_at,
+        last_login_at
+    )
+VALUES (
+        'u_pm',
+        't_demo',
+        'sarah.pm@riverside.test',
+        'pbkdf2_sha256$100000$+FZ8ppKYwzqMK3SIKJNwzw==$AM1R/HVJr5l3gfrVEMtCeT8kHfqvndvTyS3P0bNifbc=',
+        'Sarah Johnson',
+        strftime('%s', 'now'),
+        strftime('%s', 'now')
+    ),
+    (
+        'u_gp',
+        't_demo',
+        'dr.james@riverside.test',
+        'pbkdf2_sha256$100000$7Qke19GWPgyhWdNt+6zr3Q==$95F2ocophyO2JjGGXbJH1oSdijZHp12xS1CWm9q16n4=',
+        'Dr. James Patterson',
+        strftime('%s', 'now'),
+        strftime('%s', 'now')
+    ),
+    (
+        'u_nurse',
+        't_demo',
+        'nurse.emma@riverside.test',
+        'pbkdf2_sha256$100000$YOtzW9lRe8uVbQ2E2lRO3w==$gmFs9RR+qcYfC3gTKtY6DK9NUVsy4CJxkYvIdK7jG5I=',
+        'Emma Wilson',
+        strftime('%s', 'now'),
+        strftime('%s', 'now')
+    ),
+    (
+        'u_admin',
+        't_demo',
+        'admin@riverside.test',
+        'pbkdf2_sha256$100000$smY0ZQdgOJmhWiBVRWW5/A==$y9hZIbvO3gK1cR40ySsgq0mf7g3SyN+4k6Rb8SZK0Tc=',
+        'System Admin',
+        strftime('%s', 'now'),
+        strftime('%s', 'now')
+    );
+
+-- User Roles
+INSERT INTO
+    user_roles (
+        user_id,
+        role_id,
+        site_id,
+        created_at
+    )
+VALUES (
+        'u_pm',
+        'r_pm',
+        's_demo',
+        strftime('%s', 'now')
+    ),
+    (
+        'u_gp',
+        'r_gp',
+        's_demo',
+        strftime('%s', 'now')
+    ),
+    (
+        'u_nurse',
+        'r_nurse',
+        's_demo',
+        strftime('%s', 'now')
+    ),
+    (
+        'u_admin',
+        'r_admin',
+        's_demo',
+        strftime('%s', 'now')
+    );
+
+-- 4. QS OWNERSHIP ASSIGNMENTS
+-- =========================================================================================
+
+-- Sarah (PM) owns Safe Environments, Governance
+INSERT INTO
+    qs_owners (
+        id,
+        tenant_id,
+        site_id,
+        qs_id,
+        owner_user_id,
+        review_cadence_days,
+        status,
+        created_at,
+        updated_at
+    )
+VALUES (
+        'qso_1',
+        't_demo',
+        's_demo',
+        'safe.safe_environments',
+        'u_pm',
+        90,
+        'assigned',
+        strftime('%s', 'now'),
+        strftime('%s', 'now')
+    ),
+    (
+        'qso_2',
+        't_demo',
+        's_demo',
+        'well_led.governance_management_sustainability',
+        'u_pm',
+        90,
+        'in_progress',
+        strftime('%s', 'now'),
+        strftime('%s', 'now')
+    );
+
+-- Dr. James (GP) owns Safeguarding, Medicines
+INSERT INTO
+    qs_owners (
+        id,
+        tenant_id,
+        site_id,
+        qs_id,
+        owner_user_id,
+        review_cadence_days,
+        status,
+        created_at,
+        updated_at
+    )
+VALUES (
+        'qso_3',
+        't_demo',
+        's_demo',
+        'safe.safeguarding',
+        'u_gp',
+        90,
+        'reviewed',
+        strftime('%s', 'now'),
+        strftime('%s', 'now')
+    ),
+    (
+        'qso_4',
+        't_demo',
+        's_demo',
+        'safe.medicines_optimisation',
+        'u_gp',
+        30,
+        'assigned',
+        strftime('%s', 'now'),
+        strftime('%s', 'now')
+    );
+
+-- Emma (Nurse) owns Infection Control
+INSERT INTO
+    qs_owners (
+        id,
+        tenant_id,
+        site_id,
+        qs_id,
+        owner_user_id,
+        review_cadence_days,
+        status,
+        created_at,
+        updated_at
+    )
+VALUES (
+        'qso_5',
+        't_demo',
+        's_demo',
+        'safe.infection_prevention_and_control',
+        'u_nurse',
+        30,
+        'in_progress',
+        strftime('%s', 'now'),
+        strftime('%s', 'now')
+    );
+
+-- 5. CONTENT (Policies, Evidence, Actions)
+-- =========================================================================================
+
+-- POLICIES
+-- -----------------------------------------------------------------------------------------
+
+-- Safeguarding Policy (Dr James)
+INSERT INTO
+    policies (
+        id,
+        tenant_id,
+        site_id,
+        qs_id,
+        title,
+        status,
+        owner_user_id,
+        created_at,
+        updated_at
+    )
+VALUES (
+        'pol_safe',
+        't_demo',
+        's_demo',
+        'safe.safeguarding',
+        'Safeguarding Adults & Children Policy',
+        'published',
+        'u_gp',
+        strftime('%s', 'now'),
+        strftime('%s', 'now')
+    );
+
+INSERT INTO
+    policy_versions (
+        id,
+        tenant_id,
+        policy_id,
+        version_no,
+        r2_key,
+        created_by,
+        created_at,
+        summary
+    )
+VALUES (
+        'pv_safe_1',
+        't_demo',
+        'pol_safe',
         1,
-        'Shared direction and culture'
-    ),
-    (
-        'qs_well_2',
-        'kq_well_led',
-        2,
-        'Capable, compassionate and inclusive leaders'
-    ),
-    (
-        'qs_well_3',
-        'kq_well_led',
-        3,
-        'Freedom to speak up'
-    ),
-    (
-        'qs_well_4',
-        'kq_well_led',
-        4,
-        'Workforce equality, diversity and inclusion'
-    ),
-    (
-        'qs_well_5',
-        'kq_well_led',
-        5,
-        'Governance, management and sustainability'
-    ),
-    (
-        'qs_well_6',
-        'kq_well_led',
-        6,
-        'Partnerships and communities'
-    ),
-    (
-        'qs_well_7',
-        'kq_well_led',
-        7,
-        'Learning, improvement and innovation'
-    ),
-    (
-        'qs_well_8',
-        'kq_well_led',
-        8,
-        'Environmental sustainability - sustainable development'
+        'dummy_r2_key_safe_v1',
+        'u_gp',
+        strftime('%s', 'now'),
+        'Initial version based on ICB guidelines.'
     );
 
--- Evidence Categories
+-- Infection Control Policy (Nurse Emma)
 INSERT INTO
-    evidence_categories (id, name, description)
+    policies (
+        id,
+        tenant_id,
+        site_id,
+        qs_id,
+        title,
+        status,
+        owner_user_id,
+        created_at,
+        updated_at
+    )
 VALUES (
-        'ec_feedback',
-        'People''s experience',
-        'Feedback from patients, families and carers'
-    ),
-    (
-        'ec_staff',
-        'Staff feedback',
-        'Feedback from staff and leaders'
-    ),
-    (
-        'ec_observ',
-        'Observation',
-        'Observation of care and environment'
-    ),
-    (
-        'ec_process',
-        'Processes',
-        'Policies, procedures and governance'
-    ),
-    (
-        'ec_outcome',
-        'Outcomes',
-        'Outcomes of care and treatment'
-    ),
-    (
-        'ec_partner',
-        'Partners',
-        'Feedback from partners'
+        'pol_inf',
+        't_demo',
+        's_demo',
+        'safe.infection_prevention_and_control',
+        'Infection Prevention & Control Policy',
+        'published',
+        'u_nurse',
+        strftime('%s', 'now'),
+        strftime('%s', 'now')
     );
 
--- ==========================================
--- 3. Realistic Evidence & Documents
--- ==========================================
+INSERT INTO
+    policy_versions (
+        id,
+        tenant_id,
+        policy_id,
+        version_no,
+        r2_key,
+        created_by,
+        created_at,
+        summary
+    )
+VALUES (
+        'pv_inf_1',
+        't_demo',
+        'pol_inf',
+        1,
+        'dummy_r2_key_inf_v1',
+        'u_nurse',
+        strftime('%s', 'now'),
+        'Annual update.'
+    );
 
--- 3.1 Policies (Some Expiring soon to generate alerts)
+-- EVIDENCE ITEMS
+-- -----------------------------------------------------------------------------------------
+
+-- Fire Risk Assessment (Uploaded by PM) - Observation
 INSERT INTO
     evidence_items (
         id,
-        practice_id,
-        title,
-        description,
-        owner_user_id,
-        evidence_date,
-        review_due_date,
-        status,
-        confidentiality_level,
-        evidence_type
-    )
-VALUES (
-        'doc_inf_ctrl',
-        'practice_main',
-        'Infection Control Protocol v3.1',
-        'Standard operating procedure for infection control',
-        'user_emma',
-        '2023-05-15',
-        '2024-05-15',
-        'active',
-        'internal',
-        'policy'
-    ), -- Expired/Due
-    (
-        'doc_safe_pol',
-        'practice_main',
-        'Safeguarding Adults Policy v2.0',
-        'Policy for safeguarding vulnerable adults',
-        'user_james',
-        '2023-11-20',
-        '2024-11-20',
-        'active',
-        'internal',
-        'policy'
-    ), -- Valid
-    (
-        'doc_fire_ra',
-        'practice_main',
-        'Fire Safety Risk Assessment 2023',
-        'Annual fire safety assessment report',
-        'user_sarah',
-        '2023-01-10',
-        '2024-01-10',
-        'active',
-        'internal',
-        'report'
-    ), -- Overdue
-    (
-        'doc_chaperone',
-        'practice_main',
-        'Chaperone Policy v1.5',
-        'Guidelines for chaperone usage during consultations',
-        'user_sarah',
-        '2023-08-01',
-        '2024-08-01',
-        'active',
-        'internal',
-        'policy'
-    ), -- Valid
-    (
-        'doc_bus_cont',
-        'practice_main',
-        'Business Continuity Plan v4',
-        'Disaster recovery and continuity procedures',
-        'user_sarah',
-        '2022-06-01',
-        '2023-06-01',
-        'active',
-        'internal',
-        'policy'
-    );
--- Overdue long time
-
--- Link Documents to Quality Statements (Tags)
-INSERT INTO
-    evidence_item_tags (
-        id,
-        evidence_item_id,
-        quality_statement_id,
+        tenant_id,
+        site_id,
+        qs_id,
         evidence_category_id,
-        why_it_supports
+        title,
+        r2_key,
+        mime_type,
+        size_bytes,
+        uploaded_by,
+        uploaded_at,
+        status,
+        created_at
     )
 VALUES (
-        'tag_inf_1',
-        'doc_inf_ctrl',
-        'qs_safe_7',
-        'ec_process',
-        'Defines core infection control procedures'
-    ),
-    (
-        'tag_safe_1',
-        'doc_safe_pol',
-        'qs_safe_3',
-        'ec_process',
-        'Outlines safeguarding responsibilities'
-    ),
-    (
-        'tag_fire_1',
-        'doc_fire_ra',
-        'qs_safe_5',
-        'ec_observ',
-        'Evidence of safe environment checks'
+        'ev_fire_ra',
+        't_demo',
+        's_demo',
+        'safe.safe_environments',
+        'observation',
+        'Fire Risk Assessment 2024.pdf',
+        'dummy_r2_fire',
+        'application/pdf',
+        1024000,
+        'u_pm',
+        strftime('%s', 'now'),
+        'approved',
+        strftime('%s', 'now')
     );
 
--- 3.2 Audits & Feedback
+-- Hand Hygiene Audit (Uploaded by Nurse) - Processes
 INSERT INTO
     evidence_items (
         id,
-        practice_id,
+        tenant_id,
+        site_id,
+        qs_id,
+        evidence_category_id,
         title,
-        description,
-        owner_user_id,
-        evidence_date,
+        r2_key,
+        mime_type,
+        size_bytes,
+        uploaded_by,
+        uploaded_at,
         status,
-        evidence_type
+        created_at
     )
 VALUES (
-        'aud_hand_hyg',
-        'practice_main',
-        'Hand Hygiene Audit Q4',
-        'Quarterly hand hygiene compliance check',
-        'user_emma',
-        '2023-12-10',
-        'active',
-        'audit'
-    ),
-    (
-        'fb_friends_fam',
-        'practice_main',
-        'Friends & Family Test - Dec 2023',
-        'Patient feedback summary',
-        'user_sarah',
-        '2024-01-02',
-        'active',
-        'feedback'
+        'ev_hh_audit',
+        't_demo',
+        's_demo',
+        'safe.infection_prevention_and_control',
+        'processes',
+        'Hand Hygiene Audit Q4.xlsx',
+        'dummy_r2_hh',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        50000,
+        'u_nurse',
+        strftime('%s', 'now'),
+        'approved',
+        strftime('%s', 'now')
     );
 
--- ==========================================
--- 4. Tasks & Actions (Populate Sidebar/Widgets)
--- ==========================================
-
--- Gaps (Problems identified)
+-- Patient Survey (Uploaded by Admin) - People's Experience
 INSERT INTO
-    gaps (
+    evidence_items (
         id,
-        quality_statement_id,
-        practice_id,
+        tenant_id,
+        site_id,
+        qs_id,
+        evidence_category_id,
         title,
-        description,
-        severity,
+        r2_key,
+        mime_type,
+        size_bytes,
+        uploaded_by,
+        uploaded_at,
         status,
-        created_by
+        created_at
     )
 VALUES (
-        'gap_fire_train',
-        'qs_safe_5',
-        'practice_main',
-        'Staff Fire Training Expiring',
-        '3 staff members need refresher training',
-        'high',
-        'open',
-        'user_sarah'
-    ),
-    (
-        'gap_pat_survey',
-        'qs_eff_1',
-        'practice_main',
-        'Patient Survey Response Low',
-        'Low response rate (12%) for annual survey',
-        'medium',
-        'open',
-        'user_james'
+        'ev_pat_survey',
+        't_demo',
+        's_demo',
+        'responsive.person_centred_care',
+        'peoples_experience',
+        'Annual Patient Survey Results.pdf',
+        'dummy_r2_survey',
+        'application/pdf',
+        2048000,
+        'u_admin',
+        strftime('%s', 'now'),
+        'draft',
+        strftime('%s', 'now')
     );
 
--- Actions (To-Do items)
+-- ACTIONS
+-- -----------------------------------------------------------------------------------------
+
+-- Action: Fix broken fire door (Linked to Safe Environments)
 INSERT INTO
     actions (
         id,
-        gap_id,
-        practice_id,
+        tenant_id,
+        site_id,
+        qs_id,
         title,
         description,
         owner_user_id,
-        due_date,
+        due_at,
         status,
-        priority
+        created_at,
+        updated_at
     )
 VALUES (
-        'act_fire_course',
-        'gap_fire_train',
-        'practice_main',
-        'Book Fire Safety Course',
-        'Schedule external trainer for next PLT',
-        'user_sarah',
-        '2024-02-15',
+        'act_fire_door',
+        't_demo',
+        's_demo',
+        'safe.safe_environments',
+        'Repair rear fire exit door',
+        'Door sticking - identified in risk assessment.',
+        'u_pm',
+        strftime('%s', 'now') + 604800,
         'open',
-        'high'
-    ),
-    (
-        'act_review_inf',
-        NULL,
-        'practice_main',
-        'Infection Control Audit',
-        'Complete Q1 audit including waiting room',
-        'user_emma',
-        '2024-01-20',
-        'due',
-        'medium'
-    ), -- Standalone action
-    (
-        'act_update_web',
-        NULL,
-        'practice_main',
-        'Update Website Staff Profiles',
-        'Add new registrar photos',
-        'user_admin',
-        '2024-02-01',
-        'open',
-        'low'
-    ),
-    (
-        'act_vacc_fridge',
-        NULL,
-        'practice_main',
-        'Check Vaccine Fridge Logs',
-        'Weekly temp check review',
-        'user_michael',
-        '2024-01-10',
-        'overdue',
-        'high'
+        strftime('%s', 'now'),
+        strftime('%s', 'now')
     );
 
--- ==========================================
--- 5. Readiness/Assessments
--- ==========================================
-
+-- Action: Update Safeguarding Training (Linked to Safeguarding)
 INSERT INTO
-    statement_assessments (
+    actions (
         id,
-        quality_statement_id,
-        practice_id,
-        assessment_text,
-        assessment_score,
-        assessed_by,
-        assessed_at
+        tenant_id,
+        site_id,
+        qs_id,
+        title,
+        description,
+        owner_user_id,
+        due_at,
+        status,
+        created_at,
+        updated_at
     )
 VALUES (
-        'asm_safe_1',
-        'qs_safe_1',
-        'practice_main',
-        'We have a strong system for reporting incidents.',
-        'Good',
-        'user_james',
-        '2023-11-15'
+        'act_sg_train',
+        't_demo',
+        's_demo',
+        'safe.safeguarding',
+        'Book Level 3 Safeguarding Update',
+        'For all clinical staff.',
+        'u_pm',
+        strftime('%s', 'now') + 1209600,
+        'in_progress',
+        strftime('%s', 'now'),
+        strftime('%s', 'now')
+    );
+
+-- LOCAL CONTROLS
+-- -----------------------------------------------------------------------------------------
+
+INSERT INTO
+    local_controls (
+        id,
+        tenant_id,
+        site_id,
+        qs_id,
+        title,
+        description,
+        cadence_days,
+        active,
+        created_at
+    )
+VALUES (
+        'lc_fridge',
+        't_demo',
+        's_demo',
+        'safe.medicines_optimisation',
+        'Daily Vaccine Fridge Temperature Checks',
+        'Record max/min temps twice daily.',
+        1,
+        1,
+        strftime('%s', 'now')
     ),
     (
-        'asm_safe_7',
-        'qs_safe_7',
-        'practice_main',
-        'Infection control measures are robust but audit frequency needs improvement.',
-        'Requires Improvement',
-        'user_emma',
-        '2023-12-01'
+        'lc_legionella',
+        't_demo',
+        's_demo',
+        'safe.safe_environments',
+        'Monthly Legionella Water Flushing',
+        'Run all taps for 2 mins.',
+        30,
+        1,
+        strftime('%s', 'now')
     );

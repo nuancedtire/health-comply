@@ -36,49 +36,103 @@ export const evidenceCategories = sqliteTable('evidence_categories', {
 export const tenants = sqliteTable('tenants', {
     id: text('id').primaryKey(),           // 't_<random>'
     name: text('name').notNull(),
-    createdAt: integer('created_at').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
 
 export const sites = sqliteTable('sites', {
     id: text('id').primaryKey(),           // 's_<random>'
-    tenantId: text('tenant_id').notNull().references(() => tenants.id),
+    tenantId: text('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
     address: text('address'),
-    createdAt: integer('created_at').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 }, (table) => [
     index('idx_sites_tenant_id').on(table.tenantId),
 ]);
 
-export const users = sqliteTable('users', {
-    id: text('id').primaryKey(),           // 'u_<random>'
-    tenantId: text('tenant_id').notNull().references(() => tenants.id),
-    email: text('email').notNull(),
-    passwordHash: text('password_hash').notNull(),
-    name: text('name'),
-    createdAt: integer('created_at').notNull(),
-    lastLoginAt: integer('last_login_at'),
-}, (table) => [
-    unique('uq_users_tenant_email').on(table.tenantId, table.email),
-    index('idx_users_tenant_id').on(table.tenantId),
-]);
+export const users = sqliteTable('user', {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    email: text('email').notNull().unique(),
+    emailVerified: integer('email_verified').notNull().default(0),
+    image: text('image'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+    // Custom fields for multi-tenancy
+    tenantId: text('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }),
+    isSystemAdmin: integer('is_system_admin', { mode: 'boolean' }).notNull().default(false),
+});
 
+// Custom roles table for our RBAC (Better Auth doesn't strictly dictate roles schema unless using plugin, but we have existing one)
 export const roles = sqliteTable('roles', {
     id: text('id').primaryKey(),           // 'r_pm', 'r_gp', etc.
-    tenantId: text('tenant_id').notNull().references(() => tenants.id),
+    tenantId: text('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),          // 'Practice Manager', 'GP Partner', etc.
 }, (table) => [
     index('idx_roles_tenant_id').on(table.tenantId),
 ]);
 
-export const userRoles = sqliteTable('user_roles', {
+export const sessions = sqliteTable('session', {
+    id: text('id').primaryKey(),
+    expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+    token: text('token').notNull().unique(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+    ipAddress: text('ip_address'),
+    userAgent: text('user_agent'),
     userId: text('user_id').notNull().references(() => users.id),
-    roleId: text('role_id').notNull().references(() => roles.id),
-    siteId: text('site_id').references(() => sites.id),  // optional: site-scoped role
-    createdAt: integer('created_at').notNull(),
+});
+
+export const accounts = sqliteTable('account', {
+    id: text('id').primaryKey(),
+    accountId: text('account_id').notNull(),
+    providerId: text('provider_id').notNull(),
+    userId: text('user_id').notNull().references(() => users.id),
+    accessToken: text('access_token'),
+    refreshToken: text('refresh_token'),
+    idToken: text('id_token'),
+    accessTokenExpiresAt: integer('access_token_expires_at', { mode: 'timestamp' }),
+    refreshTokenExpiresAt: integer('refresh_token_expires_at', { mode: 'timestamp' }),
+    scope: text('scope'),
+    password: text('password'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+});
+
+export const verifications = sqliteTable('verification', {
+    id: text('id').primaryKey(),
+    identifier: text('identifier').notNull(),
+    value: text('value').notNull(),
+    expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }),
+});
+
+export const userRoles = sqliteTable('user_roles', {
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    roleId: text('role_id').notNull().references(() => roles.id, { onDelete: 'cascade' }),
+    siteId: text('site_id').references(() => sites.id, { onDelete: 'cascade' }),  // optional: site-scoped role
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 }, (table) => [
     primaryKey({ columns: [table.userId, table.roleId, table.siteId || 'userId'] }), // Fallback for siteId being null in PK if needed, but strict SQL requires non-null PK parts usually. Drizzle handles composite PKs well.
     index('idx_user_roles_user_id').on(table.userId),
     index('idx_user_roles_role_id').on(table.roleId),
+]);
+
+export const invitations = sqliteTable('invitations', {
+    id: text('id').primaryKey(),
+    email: text('email').notNull(),
+    tenantId: text('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+    siteId: text('site_id').references(() => sites.id, { onDelete: 'cascade' }),
+    roleId: text('role_id').notNull().references(() => roles.id, { onDelete: 'cascade' }),
+    token: text('token').notNull().unique(),
+    expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+    status: text('status').notNull().default('pending'), // 'pending', 'accepted'
+    invitedBy: text('invited_by').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+}, (table) => [
+    index('idx_invitations_email').on(table.email),
+    index('idx_invitations_token').on(table.token),
+    index('idx_invitations_tenant').on(table.tenantId),
 ]);
 
 // ===== QS WORKSPACE =====
@@ -86,13 +140,13 @@ export const userRoles = sqliteTable('user_roles', {
 export const qsOwners = sqliteTable('qs_owners', {
     id: text('id').primaryKey(),
     tenantId: text('tenant_id').notNull().references(() => tenants.id),
-    siteId: text('site_id').notNull().references(() => sites.id),
+    siteId: text('site_id').notNull().references(() => sites.id, { onDelete: 'cascade' }),
     qsId: text('qs_id').notNull().references(() => cqcQualityStatements.id),
     ownerUserId: text('owner_user_id').notNull().references(() => users.id),
     reviewCadenceDays: integer('review_cadence_days'),
     status: text('status').notNull().default('assigned'), // 'assigned', 'in_progress', 'reviewed'
-    createdAt: integer('created_at').notNull(),
-    updatedAt: integer('updated_at').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 }, (table) => [
     unique('uq_qs_owners').on(table.tenantId, table.siteId, table.qsId),
     index('idx_qs_owners_site').on(table.tenantId, table.siteId),
@@ -100,14 +154,14 @@ export const qsOwners = sqliteTable('qs_owners', {
 
 export const localControls = sqliteTable('local_controls', {
     id: text('id').primaryKey(),
-    tenantId: text('tenant_id').notNull().references(() => tenants.id),
-    siteId: text('site_id').notNull().references(() => sites.id),
+    tenantId: text('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+    siteId: text('site_id').notNull().references(() => sites.id, { onDelete: 'cascade' }),
     qsId: text('qs_id').notNull().references(() => cqcQualityStatements.id),
     title: text('title').notNull(),
     description: text('description'),
     cadenceDays: integer('cadence_days'),
     active: integer('active').notNull().default(1),
-    createdAt: integer('created_at').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 }, (table) => [
     index('idx_local_controls_qs').on(table.tenantId, table.siteId, table.qsId),
 ]);
@@ -116,8 +170,8 @@ export const localControls = sqliteTable('local_controls', {
 
 export const evidenceItems = sqliteTable('evidence_items', {
     id: text('id').primaryKey(),           // 'ev_<random>'
-    tenantId: text('tenant_id').notNull().references(() => tenants.id),
-    siteId: text('site_id').notNull().references(() => sites.id),
+    tenantId: text('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+    siteId: text('site_id').notNull().references(() => sites.id, { onDelete: 'cascade' }),
     qsId: text('qs_id').notNull().references(() => cqcQualityStatements.id),
     evidenceCategoryId: text('evidence_category_id').notNull().references(() => evidenceCategories.id),
     title: text('title').notNull(),
@@ -125,10 +179,10 @@ export const evidenceItems = sqliteTable('evidence_items', {
     mimeType: text('mime_type').notNull(),
     sizeBytes: integer('size_bytes').notNull(),
     uploadedBy: text('uploaded_by').notNull().references(() => users.id),
-    uploadedAt: integer('uploaded_at').notNull(),
-    reviewDueAt: integer('review_due_at'),
+    uploadedAt: integer('uploaded_at', { mode: 'timestamp' }).notNull(),
+    reviewDueAt: integer('review_due_at', { mode: 'timestamp' }),
     status: text('status').notNull().default('draft'), // 'draft', 'approved', 'expired'
-    createdAt: integer('created_at').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 }, (table) => [
     index('idx_evidence_items_qs').on(table.tenantId, table.siteId, table.qsId),
     index('idx_evidence_items_date').on(table.uploadedAt),
@@ -136,11 +190,11 @@ export const evidenceItems = sqliteTable('evidence_items', {
 
 export const evidenceLinks = sqliteTable('evidence_links', {
     id: text('id').primaryKey(),
-    tenantId: text('tenant_id').notNull().references(() => tenants.id),
+    tenantId: text('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
     fromType: text('from_type').notNull(),  // 'policy', 'action', 'local_control'
     fromId: text('from_id').notNull(),
-    evidenceId: text('evidence_id').notNull().references(() => evidenceItems.id),
-    createdAt: integer('created_at').notNull(),
+    evidenceId: text('evidence_id').notNull().references(() => evidenceItems.id, { onDelete: 'cascade' }),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 }, (table) => [
     unique('uq_evidence_links').on(table.tenantId, table.fromType, table.fromId, table.evidenceId),
 ]);
@@ -149,16 +203,16 @@ export const evidenceLinks = sqliteTable('evidence_links', {
 
 export const actions = sqliteTable('actions', {
     id: text('id').primaryKey(),           // 'ac_<random>'
-    tenantId: text('tenant_id').notNull().references(() => tenants.id),
-    siteId: text('site_id').notNull().references(() => sites.id),
+    tenantId: text('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+    siteId: text('site_id').notNull().references(() => sites.id, { onDelete: 'cascade' }),
     qsId: text('qs_id').notNull().references(() => cqcQualityStatements.id),
     title: text('title').notNull(),
     description: text('description'),
     ownerUserId: text('owner_user_id').notNull().references(() => users.id),
-    dueAt: integer('due_at'),
+    dueAt: integer('due_at', { mode: 'timestamp' }),
     status: text('status').notNull().default('open'), // 'open', 'in_progress', 'closed'
-    createdAt: integer('created_at').notNull(),
-    updatedAt: integer('updated_at').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 }, (table) => [
     index('idx_actions_qs').on(table.tenantId, table.siteId, table.qsId),
     index('idx_actions_owner').on(table.ownerUserId),
@@ -166,10 +220,10 @@ export const actions = sqliteTable('actions', {
 
 export const actionApprovals = sqliteTable('action_approvals', {
     id: text('id').primaryKey(),
-    tenantId: text('tenant_id').notNull().references(() => tenants.id),
-    actionId: text('action_id').notNull().references(() => actions.id),
+    tenantId: text('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+    actionId: text('action_id').notNull().references(() => actions.id, { onDelete: 'cascade' }),
     approvedBy: text('approved_by').notNull().references(() => users.id),
-    approvedAt: integer('approved_at').notNull(),
+    approvedAt: integer('approved_at', { mode: 'timestamp' }).notNull(),
     comment: text('comment'),
     closureEvidenceId: text('closure_evidence_id').references(() => evidenceItems.id),
 }, (table) => [
@@ -180,26 +234,26 @@ export const actionApprovals = sqliteTable('action_approvals', {
 
 export const policies = sqliteTable('policies', {
     id: text('id').primaryKey(),           // 'po_<random>'
-    tenantId: text('tenant_id').notNull().references(() => tenants.id),
-    siteId: text('site_id').notNull().references(() => sites.id),
+    tenantId: text('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+    siteId: text('site_id').notNull().references(() => sites.id, { onDelete: 'cascade' }),
     qsId: text('qs_id').notNull().references(() => cqcQualityStatements.id),
     title: text('title').notNull(),
     status: text('status').notNull().default('draft'), // 'draft', 'published', 'archived'
     ownerUserId: text('owner_user_id').notNull().references(() => users.id),
-    createdAt: integer('created_at').notNull(),
-    updatedAt: integer('updated_at').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 }, (table) => [
     index('idx_policies_qs').on(table.tenantId, table.siteId, table.qsId),
 ]);
 
 export const policyVersions = sqliteTable('policy_versions', {
     id: text('id').primaryKey(),
-    tenantId: text('tenant_id').notNull().references(() => tenants.id),
-    policyId: text('policy_id').notNull().references(() => policies.id),
+    tenantId: text('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+    policyId: text('policy_id').notNull().references(() => policies.id, { onDelete: 'cascade' }),
     versionNo: integer('version_no').notNull(),
     r2Key: text('r2_key').notNull(),       // e.g., 't/{tenantId}/s/{siteId}/qs/{qsId}/policies/...'
     createdBy: text('created_by').notNull().references(() => users.id),
-    createdAt: integer('created_at').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
     summary: text('summary'),
 }, (table) => [
     unique('uq_policy_versions').on(table.policyId, table.versionNo),
@@ -208,10 +262,10 @@ export const policyVersions = sqliteTable('policy_versions', {
 
 export const policyApprovals = sqliteTable('policy_approvals', {
     id: text('id').primaryKey(),
-    tenantId: text('tenant_id').notNull().references(() => tenants.id),
-    policyVersionId: text('policy_version_id').notNull().references(() => policyVersions.id),
+    tenantId: text('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+    policyVersionId: text('policy_version_id').notNull().references(() => policyVersions.id, { onDelete: 'cascade' }),
     approvedBy: text('approved_by').notNull().references(() => users.id),
-    approvedAt: integer('approved_at').notNull(),
+    approvedAt: integer('approved_at', { mode: 'timestamp' }).notNull(),
     comment: text('comment'),
 }, (table) => [
     index('idx_policy_approvals_version').on(table.policyVersionId),
@@ -219,10 +273,10 @@ export const policyApprovals = sqliteTable('policy_approvals', {
 
 export const policyReadAttestations = sqliteTable('policy_read_attestations', {
     id: text('id').primaryKey(),
-    tenantId: text('tenant_id').notNull().references(() => tenants.id),
-    policyVersionId: text('policy_version_id').notNull().references(() => policyVersions.id),
-    userId: text('user_id').notNull().references(() => users.id),
-    readAt: integer('read_at').notNull(),
+    tenantId: text('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+    policyVersionId: text('policy_version_id').notNull().references(() => policyVersions.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    readAt: integer('read_at', { mode: 'timestamp' }).notNull(),
 }, (table) => [
     unique('uq_read_attestations').on(table.policyVersionId, table.userId),
 ]);
@@ -231,12 +285,12 @@ export const policyReadAttestations = sqliteTable('policy_read_attestations', {
 
 export const inspectionPacks = sqliteTable('inspection_packs', {
     id: text('id').primaryKey(),           // 'pk_<random>'
-    tenantId: text('tenant_id').notNull().references(() => tenants.id),
-    siteId: text('site_id').notNull().references(() => sites.id),
+    tenantId: text('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+    siteId: text('site_id').notNull().references(() => sites.id, { onDelete: 'cascade' }),
     scopeType: text('scope_type').notNull(), // 'full_site', 'quality_statements'
     scopeData: text('scope_data'),         // JSON array of QS IDs or null for full
     createdBy: text('created_by').notNull().references(() => users.id),
-    createdAt: integer('created_at').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
     status: text('status').notNull().default('building'), // 'building', 'ready', 'error'
 }, (table) => [
     index('idx_inspection_packs_site').on(table.tenantId, table.siteId),
@@ -244,11 +298,11 @@ export const inspectionPacks = sqliteTable('inspection_packs', {
 
 export const inspectionPackOutputs = sqliteTable('inspection_pack_outputs', {
     id: text('id').primaryKey(),
-    tenantId: text('tenant_id').notNull().references(() => tenants.id),
-    packId: text('pack_id').notNull().references(() => inspectionPacks.id),
+    tenantId: text('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+    packId: text('pack_id').notNull().references(() => inspectionPacks.id, { onDelete: 'cascade' }),
     kind: text('kind').notNull(),          // 'zip', 'pdf', 'tree'
     r2Key: text('r2_key').notNull(),       // e.g., 't/{tenantId}/packs/{packId}/zip/...'
-    createdAt: integer('created_at').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 }, (table) => [
     unique('uq_pack_outputs').on(table.packId, table.kind),
     index('idx_pack_outputs_pack').on(table.packId),
@@ -258,13 +312,13 @@ export const inspectionPackOutputs = sqliteTable('inspection_pack_outputs', {
 
 export const auditLog = sqliteTable('audit_log', {
     id: text('id').primaryKey(),
-    tenantId: text('tenant_id').notNull().references(() => tenants.id),
+    tenantId: text('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
     actorUserId: text('actor_user_id').references(() => users.id),
     action: text('action').notNull(),      // 'created', 'updated', 'deleted', 'approved', etc.
     entityType: text('entity_type').notNull(), // 'evidence_item', 'policy', 'action', etc.
     entityId: text('entity_id').notNull(),
     jsonDiff: text('json_diff'),           // JSON representation of changes
-    createdAt: integer('created_at').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 }, (table) => [
     index('idx_audit_log_tenant').on(table.tenantId),
     index('idx_audit_log_entity').on(table.entityType, table.entityId),
@@ -310,4 +364,15 @@ export const actionRelations = relations(actions, ({ one, many }) => ({
     qs: one(cqcQualityStatements, { fields: [actions.qsId], references: [cqcQualityStatements.id] }),
     owner: one(users, { fields: [actions.ownerUserId], references: [users.id] }),
     approvals: many(actionApprovals),
+}));
+
+export const roleRelations = relations(roles, ({ one }) => ({
+    tenant: one(tenants, { fields: [roles.tenantId], references: [tenants.id] }),
+}));
+
+export const invitationRelations = relations(invitations, ({ one }) => ({
+    tenant: one(tenants, { fields: [invitations.tenantId], references: [tenants.id] }),
+    site: one(sites, { fields: [invitations.siteId], references: [sites.id] }),
+    role: one(roles, { fields: [invitations.roleId], references: [roles.id] }),
+    invitedByUser: one(users, { fields: [invitations.invitedBy], references: [users.id] }),
 }));

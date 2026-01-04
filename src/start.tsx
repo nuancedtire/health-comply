@@ -5,6 +5,8 @@ declare module "@tanstack/react-start" {
     server: {
       requestContext: {
         fromFetch: boolean;
+        env: { DB: D1Database };
+        request: Request;
       };
     };
   }

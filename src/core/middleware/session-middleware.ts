@@ -1,11 +1,10 @@
-import { createMiddleware } from "@tanstack/react-start";
 
+import { createMiddleware } from "@tanstack/react-start";
 import { createAuth } from "@/lib/auth";
 import { drizzle } from "drizzle-orm/d1";
 import * as schema from "@/db/schema";
-import { APIError } from "better-auth/api";
 
-export const authMiddleware = createMiddleware({
+export const sessionMiddleware = createMiddleware({
     type: "function",
 }).server(async ({ next, context }) => {
     // Access env and request from the global context passed in src/server.ts
@@ -24,15 +23,11 @@ export const authMiddleware = createMiddleware({
         headers: request.headers
     });
 
-    if (!sessionData) {
-        throw new APIError("UNAUTHORIZED", { message: "Unauthorized" });
-    }
-
     return next({
         context: {
-            user: sessionData.user,
-            session: sessionData.session,
-            db // Pass properly initialized DB instance too
+            user: sessionData?.user || null,
+            session: sessionData?.session || null,
+            db
         }
     });
 });

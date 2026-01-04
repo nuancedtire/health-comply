@@ -9,23 +9,35 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AppTeamRouteImport } from './routes/_app/team'
-import { Route as AppSignOffRouteImport } from './routes/_app/sign-off'
-import { Route as AppSettingsRouteImport } from './routes/_app/settings'
-import { Route as AppPresentationRouteImport } from './routes/_app/presentation'
-import { Route as AppDocumentsRouteImport } from './routes/_app/documents'
-import { Route as AppChecklistRouteImport } from './routes/_app/checklist'
-import { Route as AppDashboardIndexRouteImport } from './routes/_app/dashboard/index'
-import { Route as AppEvidenceEvidenceIdRouteImport } from './routes/_app/evidence/$evidenceId'
-import { Route as AppDashboardQsIndexRouteImport } from './routes/_app/dashboard/qs/index'
-import { Route as AppDashboardQsQsIdRouteImport } from './routes/_app/dashboard/qs/$qsId'
+import { Route as AdminUsersRouteImport } from './routes/admin/users'
+import { Route as AdminTenantsRouteImport } from './routes/admin/tenants'
+import { Route as AdminDebugRouteImport } from './routes/admin/debug'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
@@ -37,160 +49,137 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppTeamRoute = AppTeamRouteImport.update({
-  id: '/team',
-  path: '/team',
-  getParentRoute: () => AppRoute,
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
 } as any)
-const AppSignOffRoute = AppSignOffRouteImport.update({
-  id: '/sign-off',
-  path: '/sign-off',
-  getParentRoute: () => AppRoute,
+const AdminTenantsRoute = AdminTenantsRouteImport.update({
+  id: '/tenants',
+  path: '/tenants',
+  getParentRoute: () => AdminRoute,
 } as any)
-const AppSettingsRoute = AppSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AppRoute,
+const AdminDebugRoute = AdminDebugRouteImport.update({
+  id: '/debug',
+  path: '/debug',
+  getParentRoute: () => AdminRoute,
 } as any)
-const AppPresentationRoute = AppPresentationRouteImport.update({
-  id: '/presentation',
-  path: '/presentation',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppDocumentsRoute = AppDocumentsRouteImport.update({
-  id: '/documents',
-  path: '/documents',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppChecklistRoute = AppChecklistRouteImport.update({
-  id: '/checklist',
-  path: '/checklist',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppDashboardIndexRoute = AppDashboardIndexRouteImport.update({
-  id: '/dashboard/',
-  path: '/dashboard/',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppEvidenceEvidenceIdRoute = AppEvidenceEvidenceIdRouteImport.update({
-  id: '/evidence/$evidenceId',
-  path: '/evidence/$evidenceId',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppDashboardQsIndexRoute = AppDashboardQsIndexRouteImport.update({
-  id: '/dashboard/qs/',
-  path: '/dashboard/qs/',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppDashboardQsQsIdRoute = AppDashboardQsQsIdRouteImport.update({
-  id: '/dashboard/qs/$qsId',
-  path: '/dashboard/qs/$qsId',
-  getParentRoute: () => AppRoute,
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
-  '/checklist': typeof AppChecklistRoute
-  '/documents': typeof AppDocumentsRoute
-  '/presentation': typeof AppPresentationRoute
-  '/settings': typeof AppSettingsRoute
-  '/sign-off': typeof AppSignOffRoute
-  '/team': typeof AppTeamRoute
-  '/evidence/$evidenceId': typeof AppEvidenceEvidenceIdRoute
-  '/dashboard': typeof AppDashboardIndexRoute
-  '/dashboard/qs/$qsId': typeof AppDashboardQsQsIdRoute
-  '/dashboard/qs': typeof AppDashboardQsIndexRoute
+  '/signup': typeof SignupRoute
+  '/admin/debug': typeof AdminDebugRoute
+  '/admin/tenants': typeof AdminTenantsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
-  '/checklist': typeof AppChecklistRoute
-  '/documents': typeof AppDocumentsRoute
-  '/presentation': typeof AppPresentationRoute
-  '/settings': typeof AppSettingsRoute
-  '/sign-off': typeof AppSignOffRoute
-  '/team': typeof AppTeamRoute
-  '/evidence/$evidenceId': typeof AppEvidenceEvidenceIdRoute
-  '/dashboard': typeof AppDashboardIndexRoute
-  '/dashboard/qs/$qsId': typeof AppDashboardQsQsIdRoute
-  '/dashboard/qs': typeof AppDashboardQsIndexRoute
+  '/signup': typeof SignupRoute
+  '/admin/debug': typeof AdminDebugRoute
+  '/admin/tenants': typeof AdminTenantsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/_app': typeof AppRouteWithChildren
+  '/_app': typeof AppRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
-  '/_app/checklist': typeof AppChecklistRoute
-  '/_app/documents': typeof AppDocumentsRoute
-  '/_app/presentation': typeof AppPresentationRoute
-  '/_app/settings': typeof AppSettingsRoute
-  '/_app/sign-off': typeof AppSignOffRoute
-  '/_app/team': typeof AppTeamRoute
-  '/_app/evidence/$evidenceId': typeof AppEvidenceEvidenceIdRoute
-  '/_app/dashboard/': typeof AppDashboardIndexRoute
-  '/_app/dashboard/qs/$qsId': typeof AppDashboardQsQsIdRoute
-  '/_app/dashboard/qs/': typeof AppDashboardQsIndexRoute
+  '/signup': typeof SignupRoute
+  '/admin/debug': typeof AdminDebugRoute
+  '/admin/tenants': typeof AdminTenantsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/login'
-    | '/checklist'
-    | '/documents'
-    | '/presentation'
-    | '/settings'
-    | '/sign-off'
-    | '/team'
-    | '/evidence/$evidenceId'
+    | '/admin'
     | '/dashboard'
-    | '/dashboard/qs/$qsId'
-    | '/dashboard/qs'
+    | '/login'
+    | '/signup'
+    | '/admin/debug'
+    | '/admin/tenants'
+    | '/admin/users'
+    | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/login'
-    | '/checklist'
-    | '/documents'
-    | '/presentation'
-    | '/settings'
-    | '/sign-off'
-    | '/team'
-    | '/evidence/$evidenceId'
+    | '/admin'
     | '/dashboard'
-    | '/dashboard/qs/$qsId'
-    | '/dashboard/qs'
+    | '/login'
+    | '/signup'
+    | '/admin/debug'
+    | '/admin/tenants'
+    | '/admin/users'
+    | '/api/auth/$'
   id:
     | '__root__'
     | '/'
     | '/_app'
+    | '/admin'
+    | '/dashboard'
     | '/login'
-    | '/_app/checklist'
-    | '/_app/documents'
-    | '/_app/presentation'
-    | '/_app/settings'
-    | '/_app/sign-off'
-    | '/_app/team'
-    | '/_app/evidence/$evidenceId'
-    | '/_app/dashboard/'
-    | '/_app/dashboard/qs/$qsId'
-    | '/_app/dashboard/qs/'
+    | '/signup'
+    | '/admin/debug'
+    | '/admin/tenants'
+    | '/admin/users'
+    | '/api/auth/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AppRoute: typeof AppRouteWithChildren
+  AppRoute: typeof AppRoute
+  AdminRoute: typeof AdminRouteWithChildren
+  DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
+  SignupRoute: typeof SignupRoute
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app': {
@@ -207,111 +196,59 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/team': {
-      id: '/_app/team'
-      path: '/team'
-      fullPath: '/team'
-      preLoaderRoute: typeof AppTeamRouteImport
-      parentRoute: typeof AppRoute
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
     }
-    '/_app/sign-off': {
-      id: '/_app/sign-off'
-      path: '/sign-off'
-      fullPath: '/sign-off'
-      preLoaderRoute: typeof AppSignOffRouteImport
-      parentRoute: typeof AppRoute
+    '/admin/tenants': {
+      id: '/admin/tenants'
+      path: '/tenants'
+      fullPath: '/admin/tenants'
+      preLoaderRoute: typeof AdminTenantsRouteImport
+      parentRoute: typeof AdminRoute
     }
-    '/_app/settings': {
-      id: '/_app/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AppSettingsRouteImport
-      parentRoute: typeof AppRoute
+    '/admin/debug': {
+      id: '/admin/debug'
+      path: '/debug'
+      fullPath: '/admin/debug'
+      preLoaderRoute: typeof AdminDebugRouteImport
+      parentRoute: typeof AdminRoute
     }
-    '/_app/presentation': {
-      id: '/_app/presentation'
-      path: '/presentation'
-      fullPath: '/presentation'
-      preLoaderRoute: typeof AppPresentationRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/documents': {
-      id: '/_app/documents'
-      path: '/documents'
-      fullPath: '/documents'
-      preLoaderRoute: typeof AppDocumentsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/checklist': {
-      id: '/_app/checklist'
-      path: '/checklist'
-      fullPath: '/checklist'
-      preLoaderRoute: typeof AppChecklistRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/dashboard/': {
-      id: '/_app/dashboard/'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AppDashboardIndexRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/evidence/$evidenceId': {
-      id: '/_app/evidence/$evidenceId'
-      path: '/evidence/$evidenceId'
-      fullPath: '/evidence/$evidenceId'
-      preLoaderRoute: typeof AppEvidenceEvidenceIdRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/dashboard/qs/': {
-      id: '/_app/dashboard/qs/'
-      path: '/dashboard/qs'
-      fullPath: '/dashboard/qs'
-      preLoaderRoute: typeof AppDashboardQsIndexRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/dashboard/qs/$qsId': {
-      id: '/_app/dashboard/qs/$qsId'
-      path: '/dashboard/qs/$qsId'
-      fullPath: '/dashboard/qs/$qsId'
-      preLoaderRoute: typeof AppDashboardQsQsIdRouteImport
-      parentRoute: typeof AppRoute
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
 
-interface AppRouteChildren {
-  AppChecklistRoute: typeof AppChecklistRoute
-  AppDocumentsRoute: typeof AppDocumentsRoute
-  AppPresentationRoute: typeof AppPresentationRoute
-  AppSettingsRoute: typeof AppSettingsRoute
-  AppSignOffRoute: typeof AppSignOffRoute
-  AppTeamRoute: typeof AppTeamRoute
-  AppEvidenceEvidenceIdRoute: typeof AppEvidenceEvidenceIdRoute
-  AppDashboardIndexRoute: typeof AppDashboardIndexRoute
-  AppDashboardQsQsIdRoute: typeof AppDashboardQsQsIdRoute
-  AppDashboardQsIndexRoute: typeof AppDashboardQsIndexRoute
+interface AdminRouteChildren {
+  AdminDebugRoute: typeof AdminDebugRoute
+  AdminTenantsRoute: typeof AdminTenantsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
 }
 
-const AppRouteChildren: AppRouteChildren = {
-  AppChecklistRoute: AppChecklistRoute,
-  AppDocumentsRoute: AppDocumentsRoute,
-  AppPresentationRoute: AppPresentationRoute,
-  AppSettingsRoute: AppSettingsRoute,
-  AppSignOffRoute: AppSignOffRoute,
-  AppTeamRoute: AppTeamRoute,
-  AppEvidenceEvidenceIdRoute: AppEvidenceEvidenceIdRoute,
-  AppDashboardIndexRoute: AppDashboardIndexRoute,
-  AppDashboardQsQsIdRoute: AppDashboardQsQsIdRoute,
-  AppDashboardQsIndexRoute: AppDashboardQsIndexRoute,
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminDebugRoute: AdminDebugRoute,
+  AdminTenantsRoute: AdminTenantsRoute,
+  AdminUsersRoute: AdminUsersRoute,
 }
 
-const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AppRoute: AppRouteWithChildren,
+  AppRoute: AppRoute,
+  AdminRoute: AdminRouteWithChildren,
+  DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
+  SignupRoute: SignupRoute,
+  ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

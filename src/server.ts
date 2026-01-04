@@ -2,20 +2,16 @@
 // This file is a good smoke test to make sure the custom server entry is working
 import handler from "@tanstack/react-start/server-entry";
 
+import { Env } from "./utils/env";
+
 console.log("[server-entry]: using custom server entry in 'src/server.ts'");
 
-// Export named entrypoints for Cloudflare Workflows / Durable Objects
-export { EvidenceIngestWorkflow } from "./core/workflows/evidence-ingest";
-
 export default {
-  fetch(request: Request, env: unknown, ctx: unknown) {
+  fetch(request: Request, env: Env) {
     return handler.fetch(request, {
       context: {
-        // @ts-ignore - env/ctx are passed to server functions
         env,
-        // @ts-ignore
-        ctx,
-        request, // Inject Request for manual cookie handling
+        request,
         fromFetch: true,
       },
     });

@@ -1,42 +1,29 @@
 {
-	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "health-comply",
-	"compatibility_date": "2024-09-23",
-	"compatibility_flags": [
-		"nodejs_compat"
-	],
-	"main": "./src/server.ts",
-	"vars": {
-		"MY_VAR": "Hello from Cloudflare"
-	},
-	"d1_databases": [
-		{
-			"binding": "DB",
-			"database_name": "health-comply",
-			"database_id": "84f8a56b-2113-44e5-8854-8dd52cb6d09f",
-			"migrations_dir": "drizzle"
-		}
-	],
-	"r2_buckets": [
-		{
-			"bucket_name": "health-comply",
-			"binding": "R2"
-		}
-	],
-	"ai": {
-		"binding": "AI"
-	},
-	"vectorize": [
-		{
-			"binding": "AI_SEARCH",
-			"index_name": "health-comply"
-		}
-	],
-	"workflows": [
-		{
-			"name": "evidenceIngest",
-			"binding": "EVIDENCE_INGEST",
-			"class_name": "EvidenceIngestWorkflow"
-		}
-	]
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "health-comply",
+  "compatibility_date": "2025-09-02",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "main": "./src/server.ts",
+  "vars": {
+    "MY_VAR": "Hello from Cloudflare"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "health-comply",
+      "database_id": "84f8a56b-2113-44e5-8854-8dd52cb6d09f",
+      "migrations_dir": "drizzle"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "bucket_name": "health-comply",
+      "binding": "R2"
+    }
+  ],
+  "ai": {
+    "binding": "AI"
+  }
 }
