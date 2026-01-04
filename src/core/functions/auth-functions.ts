@@ -3,6 +3,7 @@ import * as schema from "@/db/schema";
 import { drizzle } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { authMiddleware } from "@/core/middleware/auth-middleware";
 
 const getDb = (env: any) => drizzle(env.DB, { schema: schema as any });
 
@@ -126,5 +127,93 @@ export const createSystemAdminFn = createServerFn({ method: "POST" })
             .set({ isSystemAdmin: true })
             .where(eq(schema.users.id, user.user.id));
 
+
         return { success: true, user: user.user };
     });
+
+export const getCurrentUserRoleFn = createServerFn({ method: "GET" })
+    .middleware([authMiddleware])
+    .handler(async (ctx) => {
+        const { db, user } = ctx.context;
+
+        // System Admin override
+        if ((user as any).isSystemAdmin) {
+            return { role: "Super Admin" };
+        }
+
+        // Using db.select to avoid type issues with db.query in middleware context
+        const userRoles = await db.select({
+            roleName: schema.roles.name
+        })
+            .from(schema.userRoles)
+            .innerJoin(schema.roles, eq(schema.userRoles.roleId, schema.roles.id))
+            .where(eq(schema.userRoles.userId, user.id))
+            .limit(1);
+
+        return { role: userRoles[0]?.roleName || "User" };
+    });
+
+const RequestPasswordResetSchema = z.object({
+    email: z.string().email()
+});
+
+export const requestPasswordResetFn = createServerFn({ method: "POST" })
+    .inputValidator((data: z.infer<typeof RequestPasswordResetSchema>) => RequestPasswordResetSchema.parse(data))
+    .handler(async (ctx) => {
+        const { email } = ctx.data;
+        const db = getDb((ctx.context as any).env) as any;
+        const { createAuth } = await import("@/lib/auth");
+        const auth = createAuth(db);
+
+        // 1. Trigger Better Auth's forget password
+        // This usually sends an email. 
+        // We'll catch errors if user not found.
+        try {
+            // Using 'any' bypasses potential type mismatches with Better Auth plugins/versions
+            await (auth.api as any).forgetPassword({
+                body: { email, redirectTo: "/reset-password" }
+            });
+        } catch (e) {
+            // If user doesn't exist, BA might throw or just return. 
+            // For security, generally return success.
+            // But for this debug/demo, we want the token.
+            console.error(e);
+        }
+
+        // 2. Peek into DB to find the token (DEMO ONLY)
+        const verification = await db.query.verifications.findFirst({
+            where: (v: any, { eq }: any) => eq(v.identifier, email),
+            orderBy: (v: any, { desc }: any) => [desc(v.createdAt)]
+        });
+
+        // The token value is what we need.
+        return { success: true, token: verification?.value };
+    });
+
+const ResetPasswordSchema = z.object({
+    token: z.string(),
+    newPassword: z.string().min(8)
+});
+
+export const resetPasswordFn = createServerFn({ method: "POST" })
+    .inputValidator((data: z.infer<typeof ResetPasswordSchema>) => ResetPasswordSchema.parse(data))
+    .handler(async (ctx) => {
+        const { token, newPassword } = ctx.data;
+        const db = getDb((ctx.context as any).env) as any;
+        const { createAuth } = await import("@/lib/auth");
+        const auth = createAuth(db);
+
+        const res = await auth.api.resetPassword({
+            body: {
+                token,
+                newPassword
+            }
+        });
+
+        if ((res as any)?.error) {
+            throw new Error((res as any).error.message);
+        }
+
+        return { success: true };
+    });
+

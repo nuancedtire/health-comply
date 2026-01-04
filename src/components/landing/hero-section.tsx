@@ -1,62 +1,71 @@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ArrowRight, Github } from "lucide-react"
+import { ArrowRight } from "lucide-react"
+import { Link } from "@tanstack/react-router"
+import { AuroraBackground } from "@/components/ui/aurora-background"
+import { motion } from "motion/react"
 
 export function HeroSection() {
   return (
-    <section className="relative px-6 lg:px-8 py-24 sm:py-32">
-      <div className="mx-auto max-w-4xl text-center">
-        <div className="mb-8">
-          <Badge variant="secondary" className="mb-4">
-            Built with React 19, TypeScript & Vite
+    <AuroraBackground className="min-h-screen">
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{
+          delay: 0.3,
+          duration: 0.8,
+          ease: "easeInOut",
+        }}
+        className="relative flex flex-col items-center justify-center gap-4 px-4 text-center max-w-4xl mx-auto py-24 sm:py-32"
+      >
+        <div className="mb-4 flex justify-center">
+          <Badge variant="outline" className="px-4 py-1.5 text-sm bg-background/50 backdrop-blur-sm border-blue-200 text-blue-800 dark:text-blue-200 dark:border-blue-800 rounded-full">
+            Now in Public Beta
           </Badge>
         </div>
-        
-        <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-6xl lg:text-7xl">
-          TanStack Start
-          <span className="block text-primary">Template</span>
+
+        <h1 className="text-4xl font-extrabold tracking-tight md:text-7xl text-foreground">
+          Compass
         </h1>
-        
-        <p className="mt-6 text-lg leading-8 text-muted-foreground max-w-2xl mx-auto">
-          A modern, type-safe, full-stack React framework combining the power of 
-          TanStack Router and Query with the latest web technologies. Start building 
-          production-ready applications today.
+        <p className="text-xl font-medium text-muted-foreground/80 mb-6">
+          by <span className="text-foreground font-semibold">aiigent.io</span>
         </p>
-        
-        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Button size="lg" className="group">
-            Get Started
-            <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+
+        <div className="font-extrabold text-3xl md:text-5xl dark:text-white text-slate-900 mb-6 leading-tight">
+          Navigating CQC Compliance <br className="hidden sm:block" /> with Confidence
+        </div>
+
+        <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+          The complete operating system for GP practices. Continuous, auditable, evidence-backed compliance.
+          Stop scrambling for inspections and start leading with data.
+        </p>
+
+        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
+          <Button size="lg" className="h-12 px-8 text-base bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-500/20 rounded-full w-full sm:w-auto" asChild>
+            <Link to="/signup">
+              Get Started for Free
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
           </Button>
-          
-          <Button variant="outline" size="lg" asChild>
-            <a 
-              href="https://github.com/tanstack" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-flex items-center"
-            >
-              <Github className="mr-2 h-4 w-4" />
-              View on GitHub
-            </a>
+
+          <Button variant="outline" size="lg" className="h-12 px-8 text-base rounded-full backdrop-blur-sm bg-background/50 hover:bg-background/80 w-full sm:w-auto border-slate-200 dark:border-slate-800" asChild>
+            <Link to="/login">
+              Sign In
+            </Link>
           </Button>
         </div>
-        
-        <div className="mt-16 text-sm text-muted-foreground">
-          <p>Trusted by developers building modern web applications</p>
+
+        <div className="mt-12 flex flex-wrap justify-center gap-6 text-sm font-medium text-muted-foreground">
+          <div className="flex items-center gap-2 bg-background/40 backdrop-blur-md px-3 py-1 rounded-full border border-border/50">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+            <span>CQC Framework Ready</span>
+          </div>
+          <div className="flex items-center gap-2 bg-background/40 backdrop-blur-md px-3 py-1 rounded-full border border-border/50">
+            <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+            <span>AI-Powered Evidence</span>
+          </div>
         </div>
-      </div>
-      
-      {/* Background gradient */}
-      <div className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80">
-        <div
-          className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-primary to-secondary opacity-20 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]"
-          style={{
-            clipPath:
-              'polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)',
-          }}
-        />
-      </div>
-    </section>
+      </motion.div>
+    </AuroraBackground>
   )
 }

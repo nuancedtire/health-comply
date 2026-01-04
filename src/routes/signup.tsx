@@ -333,6 +333,29 @@ function TenantLookup() {
     const [query, setQuery] = React.useState("")
     const [manualToken, setManualToken] = React.useState("")
 
+    const handleTokenChange = (val: string) => {
+        if (val.includes('token=')) {
+            try {
+                // Handle full URLs or relative paths like /signup?token=...
+                const searchPart = val.includes('?') ? val.split('?')[1] : val;
+                const params = new URLSearchParams(searchPart);
+                const tokenParam = params.get('token');
+                if (tokenParam) {
+                    setManualToken(tokenParam);
+                    return;
+                }
+            } catch (e) {
+                // Fallback to regex if URLSearchParams fails for some reason
+                const match = val.match(/[?&]token=([^&]+)/);
+                if (match && match[1]) {
+                    setManualToken(match[1]);
+                    return;
+                }
+            }
+        }
+        setManualToken(val);
+    }
+
     // Debounce query slightly to avoid too many requests
     const [debouncedQuery, setDebouncedQuery] = React.useState("")
     React.useEffect(() => {
@@ -431,9 +454,9 @@ function TenantLookup() {
                             </p>
                             <div className="space-y-2">
                                 <Input
-                                    placeholder="Paste invitation token here..."
+                                    placeholder="Paste invitation token or link here..."
                                     value={manualToken}
-                                    onChange={(e) => setManualToken(e.target.value)}
+                                    onChange={(e) => handleTokenChange(e.target.value)}
                                 />
                                 <Button className="w-full" onClick={handleJoin} disabled={!manualToken}>
                                     Validate & Join
@@ -444,11 +467,8 @@ function TenantLookup() {
 
                 </CardContent>
                 <CardFooter className="flex flex-col gap-4 text-center">
-                    <div className="text-sm text-muted-foreground">
-                        Don't have an organization account?
-                    </div>
                     <Link to="/login" className="text-primary text-sm hover:underline">
-                        Are you a System Admin? Sign In
+                        Already have an account? Sign In
                     </Link>
                 </CardFooter>
             </Card>

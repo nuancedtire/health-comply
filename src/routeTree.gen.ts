@@ -9,20 +9,50 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TeamRouteImport } from './routes/team'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as SignOffRouteImport } from './routes/sign-off'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as PresentationRouteImport } from './routes/presentation'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as DocumentsRouteImport } from './routes/documents'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as CreateSiteRouteImport } from './routes/create-site'
+import { Route as ChecklistRouteImport } from './routes/checklist'
 import { Route as AdminRouteImport } from './routes/admin'
-import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LegalTermsRouteImport } from './routes/legal/terms'
+import { Route as LegalPrivacyRouteImport } from './routes/legal/privacy'
+import { Route as LegalCookiesRouteImport } from './routes/legal/cookies'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminTenantsRouteImport } from './routes/admin/tenants'
 import { Route as AdminDebugRouteImport } from './routes/admin/debug'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
+const TeamRoute = TeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignOffRoute = SignOffRouteImport.update({
+  id: '/sign-off',
+  path: '/sign-off',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PresentationRoute = PresentationRouteImport.update({
+  id: '/presentation',
+  path: '/presentation',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -30,9 +60,29 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocumentsRoute = DocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreateSiteRoute = CreateSiteRouteImport.update({
+  id: '/create-site',
+  path: '/create-site',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChecklistRoute = ChecklistRouteImport.update({
+  id: '/checklist',
+  path: '/checklist',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -40,13 +90,24 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppRoute = AppRouteImport.update({
-  id: '/_app',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalTermsRoute = LegalTermsRouteImport.update({
+  id: '/legal/terms',
+  path: '/legal/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalPrivacyRoute = LegalPrivacyRouteImport.update({
+  id: '/legal/privacy',
+  path: '/legal/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalCookiesRoute = LegalCookiesRouteImport.update({
+  id: '/legal/cookies',
+  path: '/legal/cookies',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
@@ -73,36 +134,68 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/checklist': typeof ChecklistRoute
+  '/create-site': typeof CreateSiteRoute
   '/dashboard': typeof DashboardRoute
+  '/documents': typeof DocumentsRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/presentation': typeof PresentationRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/sign-off': typeof SignOffRoute
   '/signup': typeof SignupRoute
+  '/team': typeof TeamRoute
   '/admin/debug': typeof AdminDebugRoute
   '/admin/tenants': typeof AdminTenantsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/legal/cookies': typeof LegalCookiesRoute
+  '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/terms': typeof LegalTermsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/checklist': typeof ChecklistRoute
+  '/create-site': typeof CreateSiteRoute
   '/dashboard': typeof DashboardRoute
+  '/documents': typeof DocumentsRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/presentation': typeof PresentationRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/sign-off': typeof SignOffRoute
   '/signup': typeof SignupRoute
+  '/team': typeof TeamRoute
   '/admin/debug': typeof AdminDebugRoute
   '/admin/tenants': typeof AdminTenantsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/legal/cookies': typeof LegalCookiesRoute
+  '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/terms': typeof LegalTermsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/_app': typeof AppRoute
   '/admin': typeof AdminRouteWithChildren
+  '/checklist': typeof ChecklistRoute
+  '/create-site': typeof CreateSiteRoute
   '/dashboard': typeof DashboardRoute
+  '/documents': typeof DocumentsRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/presentation': typeof PresentationRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/sign-off': typeof SignOffRoute
   '/signup': typeof SignupRoute
+  '/team': typeof TeamRoute
   '/admin/debug': typeof AdminDebugRoute
   '/admin/tenants': typeof AdminTenantsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/legal/cookies': typeof LegalCookiesRoute
+  '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/terms': typeof LegalTermsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRouteTypes {
@@ -110,55 +203,125 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/checklist'
+    | '/create-site'
     | '/dashboard'
+    | '/documents'
+    | '/forgot-password'
     | '/login'
+    | '/presentation'
+    | '/reset-password'
+    | '/sign-off'
     | '/signup'
+    | '/team'
     | '/admin/debug'
     | '/admin/tenants'
     | '/admin/users'
+    | '/legal/cookies'
+    | '/legal/privacy'
+    | '/legal/terms'
     | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/admin'
+    | '/checklist'
+    | '/create-site'
     | '/dashboard'
+    | '/documents'
+    | '/forgot-password'
     | '/login'
+    | '/presentation'
+    | '/reset-password'
+    | '/sign-off'
     | '/signup'
+    | '/team'
     | '/admin/debug'
     | '/admin/tenants'
     | '/admin/users'
+    | '/legal/cookies'
+    | '/legal/privacy'
+    | '/legal/terms'
     | '/api/auth/$'
   id:
     | '__root__'
     | '/'
-    | '/_app'
     | '/admin'
+    | '/checklist'
+    | '/create-site'
     | '/dashboard'
+    | '/documents'
+    | '/forgot-password'
     | '/login'
+    | '/presentation'
+    | '/reset-password'
+    | '/sign-off'
     | '/signup'
+    | '/team'
     | '/admin/debug'
     | '/admin/tenants'
     | '/admin/users'
+    | '/legal/cookies'
+    | '/legal/privacy'
+    | '/legal/terms'
     | '/api/auth/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AppRoute: typeof AppRoute
   AdminRoute: typeof AdminRouteWithChildren
+  ChecklistRoute: typeof ChecklistRoute
+  CreateSiteRoute: typeof CreateSiteRoute
   DashboardRoute: typeof DashboardRoute
+  DocumentsRoute: typeof DocumentsRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
+  PresentationRoute: typeof PresentationRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
+  SignOffRoute: typeof SignOffRoute
   SignupRoute: typeof SignupRoute
+  TeamRoute: typeof TeamRoute
+  LegalCookiesRoute: typeof LegalCookiesRoute
+  LegalPrivacyRoute: typeof LegalPrivacyRoute
+  LegalTermsRoute: typeof LegalTermsRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/team': {
+      id: '/team'
+      path: '/team'
+      fullPath: '/team'
+      preLoaderRoute: typeof TeamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
       fullPath: '/signup'
       preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-off': {
+      id: '/sign-off'
+      path: '/sign-off'
+      fullPath: '/sign-off'
+      preLoaderRoute: typeof SignOffRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/presentation': {
+      id: '/presentation'
+      path: '/presentation'
+      fullPath: '/presentation'
+      preLoaderRoute: typeof PresentationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -168,11 +331,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/documents': {
+      id: '/documents'
+      path: '/documents'
+      fullPath: '/documents'
+      preLoaderRoute: typeof DocumentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/create-site': {
+      id: '/create-site'
+      path: '/create-site'
+      fullPath: '/create-site'
+      preLoaderRoute: typeof CreateSiteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checklist': {
+      id: '/checklist'
+      path: '/checklist'
+      fullPath: '/checklist'
+      preLoaderRoute: typeof ChecklistRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -182,18 +373,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app': {
-      id: '/_app'
-      path: ''
-      fullPath: ''
-      preLoaderRoute: typeof AppRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/terms': {
+      id: '/legal/terms'
+      path: '/legal/terms'
+      fullPath: '/legal/terms'
+      preLoaderRoute: typeof LegalTermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/privacy': {
+      id: '/legal/privacy'
+      path: '/legal/privacy'
+      fullPath: '/legal/privacy'
+      preLoaderRoute: typeof LegalPrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/cookies': {
+      id: '/legal/cookies'
+      path: '/legal/cookies'
+      fullPath: '/legal/cookies'
+      preLoaderRoute: typeof LegalCookiesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/users': {
@@ -243,11 +448,21 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AppRoute: AppRoute,
   AdminRoute: AdminRouteWithChildren,
+  ChecklistRoute: ChecklistRoute,
+  CreateSiteRoute: CreateSiteRoute,
   DashboardRoute: DashboardRoute,
+  DocumentsRoute: DocumentsRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
+  PresentationRoute: PresentationRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
+  SignOffRoute: SignOffRoute,
   SignupRoute: SignupRoute,
+  TeamRoute: TeamRoute,
+  LegalCookiesRoute: LegalCookiesRoute,
+  LegalPrivacyRoute: LegalPrivacyRoute,
+  LegalTermsRoute: LegalTermsRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport

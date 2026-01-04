@@ -17,6 +17,8 @@ import { seo } from "@/utils/seo";
 import type { users, sessions } from "@/db/schema";
 import type { InferSelectModel } from "drizzle-orm";
 import { getUser } from "@/lib/auth-server";
+import { SiteProvider } from "@/components/site-context";
+import { Toaster } from "@/components/ui/sonner";
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
@@ -38,8 +40,8 @@ export const Route = createRootRouteWithContext<{
       },
       ...seo({
         title:
-          "TanStack Start | Type-Safe, Client-First, Full-Stack React Framework",
-        description: `TanStack Start is a type-safe, client-first, full-stack React framework. `,
+          "Compass by aiigent.io",
+        description: `Compass by aiigent.io is a type-safe, client-first, full-stack React framework. `,
       }),
     ],
     links: [
@@ -85,7 +87,10 @@ function RootComponent() {
         enableSystem
         disableTransitionOnChange={false}
       >
-        <Outlet />
+        <SiteProvider>
+          <Outlet />
+          <Toaster />
+        </SiteProvider>
       </ThemeProvider>
     </RootDocument>
   );

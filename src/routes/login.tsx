@@ -102,6 +102,11 @@ function LoginComponent() {
                             <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
                                 {form.formState.isSubmitting ? "Signing in..." : "Sign In"}
                             </Button>
+                            <div className="flex justify-center">
+                                <Link to="/forgot-password" className="text-sm underline">
+                                    Forgot your password?
+                                </Link>
+                            </div>
                         </form>
                     </Form>
                 </CardContent>

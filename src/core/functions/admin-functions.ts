@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import * as schema from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { authMiddleware } from "@/core/middleware/auth-middleware";
 
@@ -63,6 +63,22 @@ export const inviteUserFn = createServerFn({ method: "POST" })
         const data = ctx.data;
         const { db, user } = ctx.context;
 
+        // Check for existing pending invitation
+        const existingInvite = await db.select()
+            .from(schema.invitations as any)
+            .where(
+                and(
+                    eq(schema.invitations.email, data.email) as any,
+                    eq(schema.invitations.tenantId, data.tenantId) as any,
+                    eq(schema.invitations.status, 'pending') as any
+                )
+            )
+            .limit(1);
+
+        if (existingInvite.length > 0) {
+            throw new Error("An active invitation already exists for this email.");
+        }
+
         const token = crypto.randomUUID();
 
         await db.insert(schema.invitations as any).values({
@@ -81,12 +97,223 @@ export const inviteUserFn = createServerFn({ method: "POST" })
         return { token };
     });
 
+const GetUsersAndInvitesSchema = z.object({
+    tenantId: z.string().optional()
+});
+
+export const getUsersAndInvitesFn = createServerFn({ method: "GET" })
+    .middleware([authMiddleware])
+    .inputValidator((data: z.infer<typeof GetUsersAndInvitesSchema>) => GetUsersAndInvitesSchema.parse(data))
+    .handler(async (ctx) => {
+        const { tenantId } = ctx.data;
+        const { db } = ctx.context;
+
+        // Users Query
+        const userConditions: any[] = [];
+        if (tenantId) {
+            userConditions.push(eq(schema.users.tenantId, tenantId));
+        }
+
+        const usersList = await db.select({
+            id: schema.users.id,
+            name: schema.users.name,
+            email: schema.users.email,
+            image: schema.users.image,
+            tenantId: schema.users.tenantId,
+            tenantName: schema.tenants.name,
+            roleId: schema.userRoles.roleId,
+            roleName: schema.roles.name,
+            siteId: schema.userRoles.siteId,
+            siteName: schema.sites.name,
+            createdAt: schema.users.createdAt,
+            isSystemAdmin: schema.users.isSystemAdmin
+        })
+            .from(schema.users)
+            .leftJoin(schema.tenants, eq(schema.users.tenantId, schema.tenants.id))
+            .leftJoin(schema.userRoles, eq(schema.users.id, schema.userRoles.userId))
+            .leftJoin(schema.roles, eq(schema.userRoles.roleId, schema.roles.id))
+            .leftJoin(schema.sites, eq(schema.userRoles.siteId, schema.sites.id))
+            .where(userConditions.length > 0 ? and(...userConditions) : undefined);
+
+        // Invitations Query
+        const inviteConditions: any[] = [eq(schema.invitations.status, 'pending')];
+        if (tenantId) {
+            inviteConditions.push(eq(schema.invitations.tenantId, tenantId));
+        }
+
+        const invitationsList = await db.select({
+            id: schema.invitations.id,
+            email: schema.invitations.email,
+            token: schema.invitations.token,
+            tenantId: schema.invitations.tenantId,
+            tenantName: schema.tenants.name,
+            roleId: schema.invitations.roleId,
+            roleName: schema.roles.name,
+            siteId: schema.invitations.siteId,
+            siteName: schema.sites.name,
+            status: schema.invitations.status,
+            createdAt: schema.invitations.createdAt,
+            expiresAt: schema.invitations.expiresAt
+        })
+            .from(schema.invitations)
+            .leftJoin(schema.tenants, eq(schema.invitations.tenantId, schema.tenants.id))
+            .leftJoin(schema.roles, eq(schema.invitations.roleId, schema.roles.id))
+            .leftJoin(schema.sites, eq(schema.invitations.siteId, schema.sites.id))
+            .where(and(...inviteConditions));
+
+        return {
+            users: usersList,
+            invitations: invitationsList
+        };
+    });
+
+const RevokeInviteSchema = z.object({
+    inviteId: z.string()
+});
+
+export const revokeInviteFn = createServerFn({ method: "POST" })
+    .middleware([authMiddleware])
+    .inputValidator((data: z.infer<typeof RevokeInviteSchema>) => RevokeInviteSchema.parse(data))
+    .handler(async (ctx) => {
+        const { inviteId } = ctx.data;
+        const { db } = ctx.context;
+        await db.delete(schema.invitations).where(eq(schema.invitations.id, inviteId));
+        return { success: true };
+    });
+
+const DeleteUserSchema = z.object({
+    userId: z.string()
+});
+
+export const deleteUserFn = createServerFn({ method: "POST" })
+    .middleware([authMiddleware])
+    .inputValidator((data: z.infer<typeof DeleteUserSchema>) => DeleteUserSchema.parse(data))
+    .handler(async (ctx) => {
+        const { userId } = ctx.data;
+        const { db } = ctx.context;
+
+        // Cascade delete handled by Drizzle Schema? 
+        // Schema text says { onDelete: 'cascade' }, but Drizzle SQLite support for FKs depends on PRAGMA foreign_keys=ON usually.
+        // Let's explicitly delete key related items just in case, similar to tenant delete.
+
+        await db.delete(schema.sessions).where(eq(schema.sessions.userId, userId));
+        await db.delete(schema.accounts).where(eq(schema.accounts.userId, userId));
+        await db.delete(schema.userRoles).where(eq(schema.userRoles.userId, userId));
+        // Other items like policies owned by user might need reassignment or delete. 
+        // For now, let's just delete the user and let the DB throw if constraint (or cascade if enabled).
+        // Safest is to just delete the user if Schema has onDelete cascade.
+        // Given 'deleteTenantFn' did explicit deletes, I will do explicit deletes for safety for auth tables.
+
+        await db.delete(schema.users).where(eq(schema.users.id, userId));
+
+        return { success: true };
+    });
+
+const UpdateUserSchema = z.object({
+    userId: z.string(),
+    email: z.string().email().optional(),
+    // password: z.string().optional() // Too complex for now without hashing util
+});
+
+export const updateUserFn = createServerFn({ method: "POST" })
+    .middleware([authMiddleware])
+    .inputValidator((data: z.infer<typeof UpdateUserSchema>) => UpdateUserSchema.parse(data))
+    .handler(async (ctx) => {
+        const { userId, email } = ctx.data;
+        const { db } = ctx.context;
+
+        if (email) {
+            await db.update(schema.users)
+                .set({ email })
+                .where(eq(schema.users.id, userId));
+        }
+
+        return { success: true };
+    });
+
+const GenerateResetLinkSchema = z.object({
+    userId: z.string()
+});
+
+export const generatePasswordResetLinkFn = createServerFn({ method: "POST" })
+    .middleware([authMiddleware])
+    .inputValidator((data: z.infer<typeof GenerateResetLinkSchema>) => GenerateResetLinkSchema.parse(data))
+    .handler(async (ctx) => {
+        const { userId } = ctx.data;
+        const { db } = ctx.context;
+
+        // Create a verification token
+        const token = crypto.randomUUID();
+        const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24); // 24 hours
+
+        await db.insert(schema.verifications as any).values({
+            id: `ver_${crypto.randomUUID()}`,
+            identifier: `pwd_reset:${userId}`,
+            value: token,
+            expiresAt,
+            createdAt: new Date(),
+            updatedAt: new Date()
+        });
+
+        return { token };
+    });
+
 export const getTenantsFn = createServerFn({ method: "GET" })
     .middleware([authMiddleware])
     .handler(async (ctx) => {
         const { db } = ctx.context;
+
+        // 1. Get all tenants
         const tenants = await db.select().from(schema.tenants as any);
-        return tenants;
+
+        // 2. Get all sites
+        const sites = await db.select().from(schema.sites as any);
+
+        // 3. Get all Practice Managers (users with PM role)
+        // We need to join users -> userRoles -> roles
+        const practiceManagers = await db.select({
+            userId: schema.users.id,
+            userName: schema.users.name,
+            email: schema.users.email,
+            tenantId: schema.users.tenantId
+        })
+            .from(schema.users as any)
+            .innerJoin(schema.userRoles as any, eq(schema.users.id, schema.userRoles.userId) as any)
+            .innerJoin(schema.roles as any, eq(schema.userRoles.roleId, schema.roles.id) as any)
+            .where(eq(schema.roles.name, 'Practice Manager') as any);
+
+        // 4. Get 'Practice Manager' role IDs for each tenant to facilitate invites
+        const pmRoles = await db.select({
+            id: schema.roles.id,
+            tenantId: schema.roles.tenantId
+        })
+            .from(schema.roles as any)
+            .where(eq(schema.roles.name, 'Practice Manager') as any);
+
+        // 5. Get Pending Invitations for PMs
+        const pendingInvitations = await db.select({
+            id: schema.invitations.id,
+            email: schema.invitations.email,
+            tenantId: schema.invitations.tenantId,
+            roleId: schema.invitations.roleId
+        })
+            .from(schema.invitations as any)
+            .innerJoin(schema.roles as any, eq(schema.invitations.roleId, schema.roles.id) as any)
+            .where(
+                and(
+                    eq(schema.invitations.status, 'pending') as any,
+                    eq(schema.roles.name, 'Practice Manager') as any
+                )
+            );
+
+        // Stitch data
+        return tenants.map((tenant: any) => ({
+            ...tenant,
+            sites: sites.filter((s: any) => s.tenantId === tenant.id),
+            practiceManagers: practiceManagers.filter((pm: any) => pm.tenantId === tenant.id),
+            practiceManagerRoleId: pmRoles.find((r: any) => r.tenantId === tenant.id)?.id,
+            pendingInvitations: pendingInvitations.filter((inv: any) => inv.tenantId === tenant.id)
+        }));
     });
 
 const DeleteTenantSchema = z.object({
@@ -99,7 +326,65 @@ export const deleteTenantFn = createServerFn({ method: "POST" })
     .handler(async (ctx) => {
         const { tenantId } = ctx.data;
         const { db } = ctx.context;
+
+        // Manual Cascade Delete due to potential SQLite FK limitations on D1
+        // Delete in order of dependency (leaf nodes first)
+
+        // 1. Delete Evidence Links (references tenants)
+        await db.delete(schema.evidenceLinks as any).where(eq(schema.evidenceLinks.tenantId, tenantId) as any);
+
+        // 2. Delete Evidence (references tenants) - also clears user dependencies if any
+        await db.delete(schema.evidenceItems as any).where(eq(schema.evidenceItems.tenantId, tenantId) as any);
+
+        // 3. Delete Policy Approvals & Read Attestations (references tenants)
+        await db.delete(schema.policyReadAttestations as any).where(eq(schema.policyReadAttestations.tenantId, tenantId) as any);
+        await db.delete(schema.policyApprovals as any).where(eq(schema.policyApprovals.tenantId, tenantId) as any);
+
+        // 4. Delete Policy Versions & Policies
+        await db.delete(schema.policyVersions as any).where(eq(schema.policyVersions.tenantId, tenantId) as any);
+        await db.delete(schema.policies as any).where(eq(schema.policies.tenantId, tenantId) as any);
+
+        // 5. Delete Action Approvals & Actions
+        await db.delete(schema.actionApprovals as any).where(eq(schema.actionApprovals.tenantId, tenantId) as any);
+        await db.delete(schema.actions as any).where(eq(schema.actions.tenantId, tenantId) as any);
+
+        // 6. Delete Inspection Pack Outputs & Packs
+        await db.delete(schema.inspectionPackOutputs as any).where(eq(schema.inspectionPackOutputs.tenantId, tenantId) as any);
+        await db.delete(schema.inspectionPacks as any).where(eq(schema.inspectionPacks.tenantId, tenantId) as any);
+
+        // 7. Delete QS Owners & Local Controls
+        await db.delete(schema.qsOwners as any).where(eq(schema.qsOwners.tenantId, tenantId) as any);
+        await db.delete(schema.localControls as any).where(eq(schema.localControls.tenantId, tenantId) as any);
+
+        // 8. Delete Audit Log
+        await db.delete(schema.auditLog as any).where(eq(schema.auditLog.tenantId, tenantId) as any);
+
+        // 9. Delete Invitations
+        await db.delete(schema.invitations as any).where(eq(schema.invitations.tenantId, tenantId) as any);
+
+        // 10. Delete Sessions & Accounts for Users in this Tenant
+        // First find users
+        const tenantUsers = await db.select({ id: schema.users.id }).from(schema.users as any).where(eq(schema.users.tenantId, tenantId) as any);
+        const userIds = tenantUsers.map((u: any) => u.id);
+
+        if (userIds.length > 0) {
+            await db.delete(schema.sessions as any).where(inArray(schema.sessions.userId, userIds) as any);
+            await db.delete(schema.accounts as any).where(inArray(schema.accounts.userId, userIds) as any);
+            await db.delete(schema.userRoles as any).where(inArray(schema.userRoles.userId, userIds) as any); // Explicit delete just in case
+        }
+
+        // 11. Delete Users
+        await db.delete(schema.users as any).where(eq(schema.users.tenantId, tenantId) as any);
+
+        // 12. Delete Roles
+        await db.delete(schema.roles as any).where(eq(schema.roles.tenantId, tenantId) as any);
+
+        // 13. Delete Sites
+        await db.delete(schema.sites as any).where(eq(schema.sites.tenantId, tenantId) as any);
+
+        // 14. Finally, Delete Tenant
         await db.delete(schema.tenants as any).where(eq(schema.tenants.id, tenantId) as any);
+
         return { success: true };
     });
 
@@ -134,7 +419,22 @@ export const createSiteFn = createServerFn({ method: "POST" })
     .inputValidator((data: z.infer<typeof CreateSiteSchema>) => CreateSiteSchema.parse(data))
     .handler(async (ctx) => {
         const { name, tenantId, address } = ctx.data;
-        const { db } = ctx.context;
+        const { db, user } = ctx.context;
+
+        // AUTH CHECK
+        if (!(user as any).isSystemAdmin) {
+            const userRoles = await db.select({
+                name: schema.roles.name
+            })
+                .from(schema.userRoles as any)
+                .innerJoin(schema.roles as any, eq(schema.userRoles.roleId, schema.roles.id) as any)
+                .where(eq(schema.userRoles.userId, user.id) as any);
+
+            const hasManagerRole = userRoles.some((r: any) => r.name === 'Practice Manager');
+            if (!hasManagerRole) {
+                throw new Error("Unauthorized: Only Practice Managers can create sites.");
+            }
+        }
 
         const siteId = `s_${crypto.randomUUID().split('-')[0]}`;
 
@@ -160,7 +460,15 @@ export const getSitesFn = createServerFn({ method: "GET" })
         const { tenantId } = ctx.data;
         const { db } = ctx.context;
 
-        const sites = await db.select().from(schema.sites as any)
+        const sites = await db.select({
+            id: schema.sites.id,
+            name: schema.sites.name,
+            tenantId: schema.sites.tenantId,
+            tenantName: schema.tenants.name,
+            address: schema.sites.address,
+            createdAt: schema.sites.createdAt,
+        }).from(schema.sites as any)
+            .innerJoin(schema.tenants as any, eq(schema.sites.tenantId, schema.tenants.id) as any)
             .where(eq(schema.sites.tenantId, tenantId) as any);
 
         return sites;

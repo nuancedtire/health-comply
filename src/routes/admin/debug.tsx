@@ -32,7 +32,7 @@ function AdminDebugComponent() {
     const user = session.user as any // Cast because updated schema might not be fully inferred in client types yet
 
     return (
-        <div className="p-8 space-y-6">
+        <div className="px-3 space-y-6 py-0">
             <h1 className="text-3xl font-bold">Admin / Debug Console</h1>
 
             <Card>
