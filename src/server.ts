@@ -6,6 +6,10 @@ import { Env } from "./utils/env";
 
 console.log("[server-entry]: using custom server entry in 'src/server.ts'");
 
+import { EvidenceIngestWorkflow } from "./core/workflows/evidence-ingest";
+
+export { EvidenceIngestWorkflow };
+
 export default {
   fetch(request: Request, env: Env) {
     return handler.fetch(request, {
@@ -13,7 +17,7 @@ export default {
         env,
         request,
         fromFetch: true,
-      },
+      } as any,
     });
   },
 };

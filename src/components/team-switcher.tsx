@@ -36,7 +36,13 @@ export function TeamSwitcher() {
   });
 
   const userRole = roleData?.role || (session as any)?.role || "User";
-  const canManageSites = isSystemAdmin || userRole === "Practice Manager";
+  const roleType = roleData?.type || "site";
+
+  // Can switch sites if System Admin OR Tenant-scoped role (Practice Manager, Compliance Officer, etc.)
+  const canSwitchSites = isSystemAdmin || roleType === 'tenant';
+
+  // Can CREATE sites only if System Admin or Practice Manager
+  const canCreateSites = isSystemAdmin || userRole === "Practice Manager";
 
   if (isSystemAdmin) {
     return (
@@ -72,9 +78,9 @@ export function TeamSwitcher() {
         <SidebarMenuItem>
           <SidebarMenuButton
             size="lg"
-            onClick={() => canManageSites && router.navigate({ to: '/create-site' })}
-            className={!canManageSites ? "opacity-50 cursor-not-allowed" : ""}
-            disabled={!canManageSites}
+            onClick={() => canCreateSites && router.navigate({ to: '/create-site' })}
+            className={!canCreateSites ? "opacity-50 cursor-not-allowed" : ""}
+            disabled={!canCreateSites}
           >
             <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
               <Plus className="size-4" />
@@ -93,7 +99,7 @@ export function TeamSwitcher() {
     <SidebarMenu>
       <SidebarMenuItem>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild disabled={!canManageSites}>
+          <DropdownMenuTrigger asChild disabled={!canSwitchSites}>
             <SidebarMenuButton
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground disabled:opacity-100"
@@ -105,10 +111,10 @@ export function TeamSwitcher() {
                 <span className="truncate font-medium">{activeSite.name}</span>
                 <span className="truncate text-xs">{activeSite.tenantName}</span>
               </div>
-              {canManageSites && <ChevronsUpDown className="ml-auto" />}
+              {canSwitchSites && <ChevronsUpDown className="ml-auto" />}
             </SidebarMenuButton>
           </DropdownMenuTrigger>
-          {canManageSites && (
+          {canSwitchSites && (
             <DropdownMenuContent
               className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
               align="start"
@@ -131,12 +137,14 @@ export function TeamSwitcher() {
                 </DropdownMenuItem>
               ))}
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="gap-2 p-2" onClick={() => router.navigate({ to: '/create-site' })}>
-                <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
-                  <Plus className="size-4" />
-                </div>
-                <div className="text-muted-foreground font-medium">Add site</div>
-              </DropdownMenuItem>
+              {canCreateSites && (
+                <DropdownMenuItem className="gap-2 p-2" onClick={() => router.navigate({ to: '/create-site' })}>
+                  <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
+                    <Plus className="size-4" />
+                  </div>
+                  <div className="text-muted-foreground font-medium">Add site</div>
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           )}
         </DropdownMenu>

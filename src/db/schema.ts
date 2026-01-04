@@ -67,6 +67,7 @@ export const roles = sqliteTable('roles', {
     id: text('id').primaryKey(),           // 'r_pm', 'r_gp', etc.
     tenantId: text('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),          // 'Practice Manager', 'GP Partner', etc.
+    type: text('type').notNull().default('site'), // 'tenant' | 'site'
 }, (table) => [
     index('idx_roles_tenant_id').on(table.tenantId),
 ]);
@@ -182,6 +183,8 @@ export const evidenceItems = sqliteTable('evidence_items', {
     uploadedAt: integer('uploaded_at', { mode: 'timestamp' }).notNull(),
     reviewDueAt: integer('review_due_at', { mode: 'timestamp' }),
     status: text('status').notNull().default('draft'), // 'draft', 'approved', 'expired'
+    summary: text('summary'),
+    aiConfidence: integer('ai_confidence'), // Store as integer percentage (0-100) or arguably real. Let's use integer for simplicity if mapped to 0-100, or user wants 0.9. Let's import real.
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 }, (table) => [
     index('idx_evidence_items_qs').on(table.tenantId, table.siteId, table.qsId),

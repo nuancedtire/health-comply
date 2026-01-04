@@ -143,14 +143,20 @@ export const getCurrentUserRoleFn = createServerFn({ method: "GET" })
 
         // Using db.select to avoid type issues with db.query in middleware context
         const userRoles = await db.select({
-            roleName: schema.roles.name
+            roleName: schema.roles.name,
+            roleType: schema.roles.type,
+            siteId: schema.userRoles.siteId
         })
             .from(schema.userRoles)
             .innerJoin(schema.roles, eq(schema.userRoles.roleId, schema.roles.id))
             .where(eq(schema.userRoles.userId, user.id))
             .limit(1);
 
-        return { role: userRoles[0]?.roleName || "User" };
+        return {
+            role: userRoles[0]?.roleName || "User",
+            type: userRoles[0]?.roleType || "site", // Default to site/restricted
+            siteId: userRoles[0]?.siteId
+        };
     });
 
 const RequestPasswordResetSchema = z.object({

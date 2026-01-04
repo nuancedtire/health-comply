@@ -81,7 +81,7 @@ const items = [
     icon: Building,
   },
   {
-    title: "Invite Users",
+    title: "Users",
     url: "/admin/users",
     icon: UserPlus,
   }
@@ -92,7 +92,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { data: session } = authClient.useSession()
 
   // Logic:
-  // If isSystemAdmin (Superadmin): Show ONLY Debug, Tenants, Invite Users, Settings.
+  // If isSystemAdmin (Superadmin): Show ONLY Debug, Tenants, Users, Settings.
   // Else (Practice Manager/User): Show Dashboard, Checklist, Documents, Team, Sign-off, Presentation, Settings, Tenants.
 
   // Explicitly cast user to allow access to custom fields not yet in client type
@@ -100,10 +100,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const filteredItems = items.filter(item => {
     // List of strict superadmin-only items
-    const superAdminItems = ["Debug", "Tenants", "Invite Users"];
+    const superAdminItems = ["Debug", "Tenants", "Users"];
 
     if (isSystemAdmin) {
-      return ["Debug", "Tenants", "Invite Users"].includes(item.title);
+      return ["Compliance Checklist", "Debug", "Tenants", "Users"].includes(item.title);
     } else {
       // Standard/Practice Manager view: 
       // MUST NOT include superAdminItems

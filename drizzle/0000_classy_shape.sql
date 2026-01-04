@@ -102,6 +102,8 @@ CREATE TABLE `evidence_items` (
 	`uploaded_at` integer NOT NULL,
 	`review_due_at` integer,
 	`status` text DEFAULT 'draft' NOT NULL,
+	`summary` text,
+	`ai_confidence` integer,
 	`created_at` integer NOT NULL,
 	FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`site_id`) REFERENCES `sites`(`id`) ON UPDATE no action ON DELETE cascade,
@@ -269,6 +271,7 @@ CREATE TABLE `roles` (
 	`id` text PRIMARY KEY NOT NULL,
 	`tenant_id` text NOT NULL,
 	`name` text NOT NULL,
+	`type` text DEFAULT 'site' NOT NULL,
 	FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint

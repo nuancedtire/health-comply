@@ -3,7 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import * as schema from '@/db/schema';
 import { eq } from "drizzle-orm";
 import { APIError } from "better-auth/api";
-import { admin } from "better-auth/plugins";
+
 
 export const createAuth = (db: any, options?: {
     sendResetPassword?: (data: any, request: any) => Promise<void>
@@ -36,9 +36,7 @@ export const createAuth = (db: any, options?: {
             console.log("----------------------------------------");
         }
     },
-    plugins: [
-        admin()
-    ],
+    plugins: [],
     user: {
         fields: {
             isSystemAdmin: "is_system_admin",

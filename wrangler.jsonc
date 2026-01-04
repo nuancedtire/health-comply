@@ -25,5 +25,12 @@
   ],
   "ai": {
     "binding": "AI"
-  }
+  },
+  "workflows": [
+    {
+      "name": "evidence-ingest",
+      "binding": "EVIDENCE_INGEST_WORKFLOW",
+      "class_name": "EvidenceIngestWorkflow"
+    }
+  ]
 }

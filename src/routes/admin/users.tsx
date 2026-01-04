@@ -1,24 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import {
-    inviteUserFn,
-    getTenantsFn,
-    getRolesFn,
-    getSitesFn,
     getUsersAndInvitesFn,
     revokeInviteFn,
     deleteUserFn,
-    updateUserFn,
     generatePasswordResetLinkFn
 } from '@/core/functions/admin-functions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useForm, Controller } from 'react-hook-form'
-import { z } from 'zod'
-import { zodResolver } from '@hookform/resolvers/zod'
 import { authClient } from '@/lib/auth-client'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -28,30 +18,19 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { useState } from 'react'
-import { MoreHorizontal, Loader2, Trash2, Mail, Link as LinkIcon, KeyRound, Copy } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { Loader2, Copy, Search, X, ChevronDown, ChevronRight, User, UserPlus, LayoutList, Rows } from 'lucide-react'
 import { toast } from 'sonner'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { MultiSelectFilter } from '@/components/ui/multi-select-filter'
+import { UserTable } from '@/components/users/user-table'
+import { InviteUserDialog } from '@/components/users/invite-user-dialog'
+import { ChangeEmailDialog } from '@/components/users/change-email-dialog'
 
 export const Route = createFileRoute('/admin/users')({
     component: UsersPage,
 })
-
-const inviteUserSchema = z.object({
-    email: z.string().email("Invalid email address"),
-    tenantId: z.string().min(1, "Tenant is required"),
-    roleId: z.string().min(1, "Role is required"),
-    siteId: z.string().optional(),
-});
 
 function UsersPage() {
     const { data: session } = authClient.useSession()
@@ -65,6 +44,9 @@ function UsersPage() {
     const [revokeDialogOpen, setRevokeDialogOpen] = useState(false);
     const [resetPwdResult, setResetPwdResult] = useState<string | null>(null); // Stores the generated link
     const [changeEmailDialogOpen, setChangeEmailDialogOpen] = useState(false);
+
+    // Better: Standardized Reset Confirmation Dialog approach
+    const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
 
     const { data, isLoading, refetch } = useQuery({
         queryKey: ['users-and-invites'],
@@ -101,9 +83,6 @@ function UsersPage() {
         onSuccess: (res) => {
             const link = `${window.location.origin}/reset-password?token=${res.token}`;
             setResetPwdResult(link);
-            // Dialog for key link is essentially managed by resetPwdResult being non-null? 
-            // Or we can have a generic "Success Dialog" or just reuse logic.
-            // Actually let's use a specific state for showing the link dialog.
         },
         onError: (err) => toast.error(err.message)
     });
@@ -117,28 +96,10 @@ function UsersPage() {
         } else if (action === 'revoke') {
             setRevokeDialogOpen(true);
         } else if (action === 'reset-pwd') {
-            // For reset password, maybe we confirm first? 
-            // "I want the confirmation dialog box"
-            // Let's create a confirmation dialog state for reset too? 
-            // Or just do it immediately? Let's assume Confirm -> Show Link.
-            // Actually, generating a link is harmless until used, but let's be safe.
-            // Wait, reusing Delete dialog might be confusing. Let's make a ResetConfirmDialog.
-            // For simplicity, let's just run it immediately and result is the "dialog" showing the link. 
-            // But prompt asked for confirmation.
-            if (confirm(`Generate password reset link for ${item.name || item.email}?`)) {
-                resetPwdMutation.mutate({ data: { userId: item.id } });
-            }
+            setResetConfirmOpen(true);
         } else if (action === 'change-email') {
             setChangeEmailDialogOpen(true);
         }
-    };
-
-    // Better: Standardized Reset Confirmation Dialog approach
-    const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
-
-    const openResetConfirm = (item: any) => {
-        setSelectedItem(item);
-        setResetConfirmOpen(true);
     };
 
     const confirmReset = () => {
@@ -153,71 +114,262 @@ function UsersPage() {
         return <div className="p-8">Access Denied: System Admins only.</div>
     }
 
-    const allItems = [
+    // -- Filtering & Sorting State --
+    const [searchQuery, setSearchQuery] = useState('');
+    const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>({ key: 'createdAt', direction: 'desc' });
+    const [roleFilter, setRoleFilter] = useState<string[]>([]);
+    const [tenantFilter, setTenantFilter] = useState<string[]>([]);
+    const [siteFilter, setSiteFilter] = useState<string[]>([]);
+    const [statusFilter, setStatusFilter] = useState<string>('all');
+    const [isGroupedByTenant, setIsGroupedByTenant] = useState(true);
+
+    const allItems = useMemo(() => [
         ...(data?.users || []).map((u: any) => ({ ...u, type: 'user', status: 'active' })),
         ...(data?.invitations || []).map((i: any) => ({ ...i, type: 'invitation', status: 'pending' }))
-    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    ], [data]);
+
+    // Derived Filter Options
+    const uniqueRoles = useMemo(() => Array.from(new Set(allItems.map(i => i.roleName).filter(Boolean))).sort(), [allItems]);
+    const uniqueTenants = useMemo(() => Array.from(new Set(allItems.map(i => i.tenantName).filter(Boolean))).sort(), [allItems]);
+    const uniqueSites = useMemo(() => Array.from(new Set(allItems.map(i => i.siteName).filter(Boolean))).sort(), [allItems]);
+
+    const filteredAndSortedItems = useMemo(() => {
+        let items = [...allItems];
+
+        // 1. Search
+        if (searchQuery) {
+            const lowerQuery = searchQuery.toLowerCase();
+            const terms = lowerQuery.split(" ").filter(t => t.trim().length > 0);
+
+            items = items.filter(item => {
+                return terms.every(term =>
+                    (item.name && item.name.toLowerCase().includes(term)) ||
+                    (item.email && item.email.toLowerCase().includes(term)) ||
+                    (item.tenantName && item.tenantName.toLowerCase().includes(term)) ||
+                    (item.siteName && item.siteName.toLowerCase().includes(term)) ||
+                    (item.roleName && item.roleName.toLowerCase().includes(term))
+                );
+            });
+        }
+
+        // 2. Filters
+        if (roleFilter.length > 0) {
+            items = items.filter(item => roleFilter.includes(item.roleName || ''));
+        }
+        if (tenantFilter.length > 0) {
+            items = items.filter(item => tenantFilter.includes(item.tenantName || ''));
+        }
+        if (siteFilter.length > 0) {
+            items = items.filter(item => siteFilter.includes(item.siteName || ''));
+        }
+        if (statusFilter !== 'all') {
+            items = items.filter(item =>
+                statusFilter === 'active' ? item.status === 'active' : item.status === 'pending'
+            );
+        }
+
+        // 3. Sort
+        if (sortConfig) {
+            items.sort((a, b) => {
+                let aValue = a[sortConfig.key];
+                let bValue = b[sortConfig.key];
+
+                if (aValue === undefined || aValue === null) aValue = '';
+                if (bValue === undefined || bValue === null) bValue = '';
+
+                if (sortConfig.key === 'createdAt') {
+                    aValue = new Date(aValue).getTime();
+                    bValue = new Date(bValue).getTime();
+                } else if (typeof aValue === 'string' && typeof bValue === 'string') {
+                    aValue = aValue.toLowerCase();
+                    bValue = bValue.toLowerCase();
+                }
+
+                if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+                if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+
+        return items;
+    }, [allItems, searchQuery, roleFilter, tenantFilter, siteFilter, statusFilter, sortConfig]);
+
+    // 4. Group by Tenant
+    const groupedItems = useMemo(() => {
+        const groups: Record<string, { users: any[], invites: any[] }> = {};
+
+        filteredAndSortedItems.forEach(item => {
+            const tenantName = item.tenantName || 'No Tenant (System)';
+            if (!groups[tenantName]) {
+                groups[tenantName] = { users: [], invites: [] };
+            }
+            if (item.type === 'user') {
+                groups[tenantName].users.push(item);
+            } else {
+                groups[tenantName].invites.push(item);
+            }
+        });
+
+        // Sort groups by tenant name, but keep "No Tenant (System)" at the bottom
+        return Object.entries(groups).sort((a, b) => {
+            if (a[0] === 'No Tenant (System)') return 1;
+            if (b[0] === 'No Tenant (System)') return -1;
+            return a[0].localeCompare(b[0]);
+        });
+    }, [filteredAndSortedItems]);
+
+
+    const handleSort = (key: string) => {
+        setSortConfig(current => {
+            if (current?.key === key) {
+                return { key, direction: current.direction === 'asc' ? 'desc' : 'asc' };
+            }
+            return { key, direction: 'asc' };
+        });
+    };
 
     return (
         <div className="p-6 space-y-6">
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">User Management</h1>
-                    <p className="text-muted-foreground">Manage users, roles, and pending invitations across all tenants.</p>
+                    <p className="text-muted-foreground">Manage users and invitations grouped by tenant.</p>
                 </div>
                 <InviteUserDialog onSuccess={refetch} />
             </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Users & Invitations</CardTitle>
-                    <CardDescription>
-                        A global view of all users and their access levels.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {isLoading ? (
-                        <div className="flex justify-center p-8">
-                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                        </div>
-                    ) : (
-                        <div className="rounded-md border">
-                            <table className="w-full text-sm text-left">
-                                <thead className="bg-muted/50 text-muted-foreground font-medium">
-                                    <tr>
-                                        <th className="p-4">User</th>
-                                        <th className="p-4">Tenant</th>
-                                        <th className="p-4">Site</th>
-                                        <th className="p-4">Role</th>
-                                        <th className="p-4">Status</th>
-                                        <th className="p-4 text-right">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y">
-                                    {allItems.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={6} className="p-8 text-center text-muted-foreground">
-                                                No users or invitations found.
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        allItems.map((item: any) => (
-                                            <UserRow
-                                                key={item.id}
-                                                item={item}
-                                                onDelete={() => handleAction(item, 'delete')}
-                                                onRevoke={() => handleAction(item, 'revoke')}
-                                                onChangeEmail={() => handleAction(item, 'change-email')}
-                                                onResetPwd={() => openResetConfirm(item)}
-                                            />
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+            <div className="flex flex-col space-y-4">
+                {/* Toolbar */}
+                <div className="flex flex-col sm:flex-row gap-4 justify-between bg-card p-4 rounded-lg border shadow-sm">
+                    <div className="relative flex-1 max-w-sm">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search users, emails..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-8 h-9 text-sm"
+                        />
+                    </div>
+                    <div className="flex gap-2 flex-wrap items-center">
+                        <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <SelectTrigger className="w-[130px] h-9 text-sm border-dashed">
+                                <SelectValue placeholder="Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Status</SelectItem>
+                                <SelectItem value="active">Active</SelectItem>
+                                <SelectItem value="pending">Pending</SelectItem>
+                            </SelectContent>
+                        </Select>
+
+                        <MultiSelectFilter
+                            title="Tenant"
+                            options={uniqueTenants.map(t => ({ label: t, value: t }))}
+                            selectedValues={tenantFilter}
+                            onSelect={setTenantFilter}
+                        />
+
+                        <MultiSelectFilter
+                            title="Site"
+                            options={uniqueSites.map(s => ({ label: s, value: s }))}
+                            selectedValues={siteFilter}
+                            onSelect={setSiteFilter}
+                        />
+
+                        <MultiSelectFilter
+                            title="Role"
+                            options={uniqueRoles.map(r => ({ label: r, value: r }))}
+                            selectedValues={roleFilter}
+                            onSelect={setRoleFilter}
+                        />
+
+                        {(searchQuery || roleFilter.length > 0 || tenantFilter.length > 0 || siteFilter.length > 0 || statusFilter !== 'all') && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                    setSearchQuery('');
+                                    setRoleFilter([]);
+                                    setTenantFilter([]);
+                                    setSiteFilter([]);
+                                    setStatusFilter('all');
+                                }}
+                                className="h-9 px-2 text-muted-foreground hover:text-foreground"
+                            >
+                                <X className="h-4 w-4 mr-1" /> Clear
+                            </Button>
+                        )}
+
+                        <div className="h-8 w-px bg-border mx-2" />
+
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setIsGroupedByTenant(!isGroupedByTenant)}
+                            className="h-9"
+                        >
+                            {isGroupedByTenant ? (
+                                <>
+                                    <Rows className="h-4 w-4 mr-2" />
+                                    Ungroup
+                                </>
+                            ) : (
+                                <>
+                                    <LayoutList className="h-4 w-4 mr-2" />
+                                    Group by Tenant
+                                </>
+                            )}
+                        </Button>
+                    </div>
+                </div>
+
+                {isLoading ? (
+                    <div className="flex justify-center p-12">
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    </div>
+                ) : groupedItems.length === 0 ? (
+                    <div className="text-center p-12 border rounded-lg bg-muted/10">
+                        <p className="text-muted-foreground">No users found matching your criteria.</p>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {isGroupedByTenant ? (
+                            groupedItems.map(([tenantName, { users, invites }]) => (
+                                <TenantGroup
+                                    key={tenantName}
+                                    tenantName={tenantName}
+                                    users={users}
+                                    invites={invites}
+                                    sortConfig={sortConfig}
+                                    onSort={handleSort}
+                                    actions={{
+                                        onDelete: (item: any) => handleAction(item, 'delete'),
+                                        onRevoke: (item: any) => handleAction(item, 'revoke'),
+                                        onChangeEmail: (item: any) => handleAction(item, 'change-email'),
+                                        onResetPwd: (item: any) => handleAction(item, 'reset-pwd')
+                                    }}
+                                />
+                            ))
+                        ) : (
+                            <div className="rounded-md border bg-card text-card-foreground shadow-sm overflow-hidden">
+                                <UserTable
+                                    items={filteredAndSortedItems}
+                                    actions={{
+                                        onDelete: (item: any) => handleAction(item, 'delete'),
+                                        onRevoke: (item: any) => handleAction(item, 'revoke'),
+                                        onChangeEmail: (item: any) => handleAction(item, 'change-email'),
+                                        onResetPwd: (item: any) => handleAction(item, 'reset-pwd')
+                                    }}
+                                    sortConfig={sortConfig}
+                                    onSort={handleSort}
+                                    type="mixed"
+                                    showTenant={true}
+                                />
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
 
             {/* --- Dialogs --- */}
 
@@ -316,361 +468,79 @@ function UsersPage() {
                 }}
             />
 
-        </div>
+        </div >
     )
 }
 
-function UserRow({ item, onDelete, onRevoke, onChangeEmail, onResetPwd }: {
-    item: any,
-    onDelete: () => void,
-    onRevoke: () => void,
-    onChangeEmail: () => void,
-    onResetPwd: () => void
+function TenantGroup({ tenantName, users, invites, sortConfig, onSort, actions }: {
+    tenantName: string,
+    users: any[],
+    invites: any[],
+    sortConfig: any,
+    onSort: (key: string) => void,
+    actions: any
 }) {
-    const isInvite = item.type === 'invitation';
-
-    const copyInviteLink = () => {
-        const link = `${window.location.origin}/signup?token=${item.token}`;
-        navigator.clipboard.writeText(link);
-        toast.success("Invite link copied to clipboard");
-    }
+    const [isOpen, setIsOpen] = useState(true);
 
     return (
-        <tr className="hover:bg-muted/50 transition-colors">
-            <td className="p-4">
-                <div className="flex flex-col">
-                    <span className="font-medium text-foreground">{item.name || item.email}</span>
-                    {!isInvite && item.name && <span className="text-xs text-muted-foreground">{item.email}</span>}
-                </div>
-            </td>
-            <td className="p-4">{item.tenantName || <span className="text-muted-foreground italic">None</span>}</td>
-            <td className="p-4">{item.siteName || <span className="text-muted-foreground italic">All Sites</span>}</td>
-            <td className="p-4">
-                <Badge variant="outline" className="font-normal">
-                    {item.roleName}
-                </Badge>
-            </td>
-            <td className="p-4">
-                <Badge variant={isInvite ? "secondary" : "default"}>
-                    {isInvite ? "Pending Invite" : "Active"}
-                </Badge>
-            </td>
-            <td className="p-4 text-right">
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        {isInvite ? (
-                            <>
-                                <DropdownMenuItem onClick={copyInviteLink}>
-                                    <LinkIcon className="mr-2 h-4 w-4" />
-                                    Copy Invite Link
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                    className="text-red-600 focus:text-red-600"
-                                    onClick={onRevoke}
-                                >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Revoke Invitation
-                                </DropdownMenuItem>
-                            </>
-                        ) : (
-                            <>
-                                <DropdownMenuItem onClick={onChangeEmail}>
-                                    <Mail className="mr-2 h-4 w-4" />
-                                    Change Email
-                                </DropdownMenuItem>
-
-                                <DropdownMenuItem onClick={onResetPwd}>
-                                    <KeyRound className="mr-2 h-4 w-4" />
-                                    Reset Password
-                                </DropdownMenuItem>
-
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                    className="text-red-600 focus:text-red-600"
-                                    onClick={onDelete}
-                                >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete User
-                                </DropdownMenuItem>
-                            </>
-                        )}
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </td>
-        </tr>
-    )
-}
-
-function ChangeEmailDialog({ open, onOpenChange, user, onSuccess }: { open: boolean, onOpenChange: (open: boolean) => void, user: any, onSuccess: () => void }) {
-    const [newEmail, setNewEmail] = useState('');
-    const updateMutation = useMutation({
-        mutationFn: updateUserFn,
-        onSuccess: () => {
-            toast.success("Email updated successfully");
-            onOpenChange(false);
-            onSuccess();
-        },
-        onError: (err) => toast.error(err.message)
-    });
-
-    // Reset email state when dialog opens
-    // (Simplistic: doing this via useEffect or just letting unmount handle it if strictly conditional, but Dialog keeps mounted usually. 
-    // Ideally use form or reset effect. Simple fix: reset on submit or close.)
-
-    return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Change Email Address</DialogTitle>
-                    <DialogDescription>
-                        Update email address for {user?.name}.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                        <Label>New Email</Label>
-                        <Input
-                            placeholder={user?.email}
-                            value={newEmail}
-                            onChange={(e) => setNewEmail(e.target.value)}
-                        />
-                    </div>
-                </div>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-                    <Button
-                        onClick={() => updateMutation.mutate({ data: { userId: user.id, email: newEmail } })}
-                        disabled={updateMutation.isPending || !newEmail || newEmail === user?.email}
-                    >
-                        {updateMutation.isPending ? "Updating..." : "Update Email"}
+        <Collapsible open={isOpen} onOpenChange={setIsOpen} className="border rounded-md bg-card shadow-sm overflow-hidden">
+            <div className="flex items-center p-3 bg-muted/30 hover:bg-muted/50 transition-colors">
+                <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm" className="p-0 hover:bg-transparent mr-2 h-auto">
+                        {isOpen ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
                     </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    )
-}
+                </CollapsibleTrigger>
 
-
-function InviteUserDialog({ onSuccess }: { onSuccess: () => void }) {
-    const [open, setOpen] = useState(false);
-
-    const form = useForm<z.infer<typeof inviteUserSchema>>({
-        resolver: zodResolver(inviteUserSchema),
-        defaultValues: {
-            email: '',
-            tenantId: '',
-            roleId: '',
-            siteId: 'default', // Using 'default' as undefined placeholder
-        }
-    })
-
-    const selectedTenantId = form.watch('tenantId');
-    const selectedRoleId = form.watch('roleId');
-
-    // Fetch Tenants
-    const { data: tenants } = useQuery({
-        queryKey: ['tenants'],
-        queryFn: () => getTenantsFn(),
-    });
-
-    // Fetch Roles
-    const { data: roles } = useQuery({
-        queryKey: ['roles', selectedTenantId],
-        queryFn: () => getRolesFn({ data: { tenantId: selectedTenantId } }),
-        enabled: !!selectedTenantId
-    });
-
-    // Fetch Sites
-    const { data: sites } = useQuery({
-        queryKey: ['sites', selectedTenantId],
-        queryFn: () => getSitesFn({ data: { tenantId: selectedTenantId } }),
-        enabled: !!selectedTenantId
-    });
-
-    const selectedRoleName = roles?.find((r: any) => r.id === selectedRoleId)?.name;
-    const isPracticeManager = selectedRoleName === 'Practice Manager';
-    const isTenantAdmin = selectedRoleName === 'Admin'; // Assuming 'Admin' is tenant admin
-
-    // Logic: 
-    // Practice Manager -> Site Optional (can be invited to Tenant)
-    // Tenant Admin -> Site Optional (can be invited to Tenant)
-    // Others -> Site REQUIRED
-
-    const isSiteRequired = !isPracticeManager && !isTenantAdmin && !!selectedRoleId;
-
-    const mutation = useMutation({
-        mutationFn: inviteUserFn,
-        onSuccess: (result) => {
-            const link = `${window.location.origin}/signup?token=${result.token}`;
-            toast.success("Invitation created!", {
-                description: "Link copied to clipboard",
-            });
-            navigator.clipboard.writeText(link);
-            form.reset();
-            setOpen(false);
-            onSuccess();
-        },
-        onError: (error) => {
-            toast.error(`Error: ${error.message}`)
-        }
-    })
-
-    const onSubmit = (values: z.infer<typeof inviteUserSchema>) => {
-        // Validation for site requirement
-        if (isSiteRequired && (!values.siteId || values.siteId === 'default')) {
-            form.setError('siteId', { message: "Site is required for this role" });
-            return;
-        }
-
-        mutation.mutate({
-            data: {
-                ...values,
-                siteId: values.siteId === 'default' ? undefined : values.siteId
-            }
-        })
-    }
-
-    return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button>
-                    <Mail className="mr-2 h-4 w-4" />
-                    Invite User
-                </Button>
-            </DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Invite New User</DialogTitle>
-                    <DialogDescription>
-                        Send an invitation to join. They will receive an email with a signup link.
-                        {/* Actually we just generate link for now */}
-                    </DialogDescription>
-                </DialogHeader>
-
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="email">Email Address</Label>
-                        <Input
-                            id="email"
-                            placeholder="user@example.com"
-                            {...form.register('email')}
-                        />
-                        {form.formState.errors.email && (
-                            <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>
+                <div className="flex-1 flex items-center justify-between cursor-pointer" onClick={() => setIsOpen(!isOpen)}>
+                    <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-sm">{tenantName}</h3>
+                        <Badge variant="outline" className="text-xs font-normal">
+                            {users.length} Users
+                        </Badge>
+                        {invites.length > 0 && (
+                            <Badge variant="secondary" className="text-xs font-normal text-amber-600 bg-amber-50 border-amber-200">
+                                {invites.length} Pending
+                            </Badge>
                         )}
                     </div>
+                </div>
+            </div>
 
-                    <div className="space-y-2">
-                        <Label>Tenant</Label>
-                        <Controller
-                            control={form.control}
-                            name="tenantId"
-                            render={({ field }) => (
-                                <Select onValueChange={(val) => {
-                                    field.onChange(val);
-                                    form.setValue('roleId', ''); // Reset role on tenant change
-                                    form.setValue('siteId', 'default');
-                                }} value={field.value}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select a tenant" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {tenants?.map((t: any) => (
-                                            <SelectItem key={t.id} value={t.id}>
-                                                {t.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            )}
-                        />
-                        {form.formState.errors.tenantId && (
-                            <p className="text-sm text-red-500">{form.formState.errors.tenantId.message}</p>
-                        )}
-                    </div>
+            <CollapsibleContent>
+                <div className="p-0">
+                    {/* Active Users Section */}
+                    {users.length > 0 && (
+                        <div className="border-t">
+                            <div className="bg-muted/10 px-4 py-2 text-xs font-medium text-muted-foreground flex items-center">
+                                <User className="w-3 h-3 mr-2" /> Active Users
+                            </div>
+                            <UserTable
+                                items={users}
+                                actions={actions}
+                                sortConfig={sortConfig}
+                                onSort={onSort}
+                                type="user"
+                            />
+                        </div>
+                    )}
 
-                    <div className="space-y-2">
-                        <Label>Role</Label>
-                        <Controller
-                            control={form.control}
-                            name="roleId"
-                            render={({ field }) => (
-                                <Select onValueChange={field.onChange} value={field.value} disabled={!selectedTenantId}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder={selectedTenantId ? "Select a role" : "Select a tenant first"} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {roles?.map((r: any) => (
-                                            <SelectItem key={r.id} value={r.id}>
-                                                {r.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            )}
-                        />
-                        {form.formState.errors.roleId && (
-                            <p className="text-sm text-red-500">{form.formState.errors.roleId.message}</p>
-                        )}
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label>Site {isSiteRequired && <span className="text-red-500">*</span>}</Label>
-                        <Controller
-                            control={form.control}
-                            name="siteId"
-                            render={({ field }) => (
-                                <Select
-                                    onValueChange={field.onChange}
-                                    value={field.value}
-                                    disabled={!selectedTenantId || !sites || sites.length === 0}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder={
-                                            !selectedTenantId ? "Select a tenant first" :
-                                                (sites?.length === 0 ? "No sites available" :
-                                                    (isSiteRequired ? "Select a site" : "Optional (Tenant Level)"))
-                                        } />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {!isSiteRequired && (
-                                            <SelectItem value="default">None (Tenant Level)</SelectItem>
-                                        )}
-                                        {sites?.map((s: any) => (
-                                            <SelectItem key={s.id} value={s.id}>
-                                                {s.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            )}
-                        />
-                        {isSiteRequired && (!sites || sites.length === 0) && selectedTenantId && (
-                            <p className="text-sm text-amber-600">
-                                This role requires a site, but no sites exist for this tenant.
-                                <br />Please create a site first.
-                            </p>
-                        )}
-                        {form.formState.errors.siteId && (
-                            <p className="text-sm text-red-500">{form.formState.errors.siteId.message}</p>
-                        )}
-                    </div>
-
-                    <DialogFooter>
-                        <Button type="submit" disabled={mutation.isPending || (isSiteRequired && (!sites || sites.length === 0))}>
-                            {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Generate Link
-                        </Button>
-                    </DialogFooter>
-                </form>
-            </DialogContent>
-        </Dialog>
+                    {/* Pending Invites Section */}
+                    {invites.length > 0 && (
+                        <div className="border-t">
+                            <div className="bg-amber-50/50 px-4 py-2 text-xs font-medium text-amber-700 flex items-center">
+                                <UserPlus className="w-3 h-3 mr-2" /> Pending Invitations
+                            </div>
+                            <UserTable
+                                items={invites}
+                                actions={actions}
+                                sortConfig={sortConfig}
+                                onSort={onSort}
+                                type="invite"
+                            />
+                        </div>
+                    )}
+                </div>
+            </CollapsibleContent>
+        </Collapsible>
     )
 }

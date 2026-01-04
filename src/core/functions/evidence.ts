@@ -1,37 +1,45 @@
-
-// src/core/functions/evidence.ts
-// import { createServerFn } from "@tanstack/react-start";
-import { authenticatedFn } from "../base.server";
-import { evidenceItems } from "@/db/schema";
-import { desc } from "drizzle-orm";
+import { createServerFn } from "@tanstack/react-start";
+import * as schema from "@/db/schema";
+import { eq, desc } from "drizzle-orm";
+import { authMiddleware } from "@/core/middleware/auth-middleware";
 import { z } from "zod";
 
-// TEMPORARY STUB to fix build
-// Needs schema alignment for evidenceVersions and Tags
+// Helper to get sites for the current user's tenant
+export const getUserSitesFn = createServerFn({ method: "GET" })
+    .middleware([authMiddleware])
+    .handler(async (ctx) => {
+        const { db, user } = ctx.context;
+        const tenantId = (user as any).tenantId;
 
-const CreateEvidenceSchema = z.object({
-    title: z.string().min(1),
-    description: z.string().optional(),
-    evidenceDate: z.string(),
-    categoryIds: z.array(z.string()),
-    statementIds: z.array(z.string()).optional(),
-    fileData: z.string().optional(),
-    fileName: z.string().optional(),
-    mimeType: z.string().optional(),
-});
+        if (!tenantId) {
+            return []; // Should not happen for auth user
+        }
 
-export const createEvidenceItemFn = authenticatedFn
-    .inputValidator((data: unknown) => CreateEvidenceSchema.parse(data))
-    .handler(async () => {
-        // Implementation disabled until schema is fixed
-        throw new Error("Not implemented yet - Waiting for schema alignment");
+        const sites = await db.select({
+            id: schema.sites.id,
+            name: schema.sites.name
+        })
+            .from(schema.sites as any)
+            .where(eq(schema.sites.tenantId, tenantId) as any);
+
+        return sites;
     });
 
-export const listEvidenceFn = authenticatedFn
-    .handler(async ({ context }) => {
-        const { db, session } = context;
-        if (!session) throw new Error("Unauthorized");
+export const getEvidenceForSiteFn = createServerFn({ method: "GET" })
+    .middleware([authMiddleware])
+    .inputValidator((data: unknown) => z.object({ siteId: z.string() }).parse(data))
+    .handler(async ({ context, data }) => {
+        const { db } = context;
 
-        const items = await db.select().from(evidenceItems).orderBy(desc(evidenceItems.createdAt));
-        return items;
+        const evidence = await db.query.evidenceItems.findMany({
+            where: eq(schema.evidenceItems.siteId, data.siteId),
+            orderBy: desc(schema.evidenceItems.uploadedAt),
+            with: {
+                uploadedByUser: true,
+                qs: true,
+                category: true
+            }
+        });
+
+        return evidence;
     });
