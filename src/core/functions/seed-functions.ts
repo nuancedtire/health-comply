@@ -125,6 +125,30 @@ export const seedCqcTaxonomyFn = createServerFn({ method: "POST" })
         return { success: true, results, summary };
     });
 
+export const resetCqcTaxonomyFn = createServerFn({ method: "POST" })
+    .middleware([authMiddleware])
+    .handler(async (ctx) => {
+        const { db, user } = ctx.context;
+
+        if (!(user as any).isSystemAdmin) {
+            throw new Error("Unauthorized: Only System Admins can reset the CQC taxonomy.");
+        }
+
+        try {
+            await db.delete(schema.cqcQualityStatements as any);
+            await db.delete(schema.cqcKeyQuestions as any);
+            await db.delete(schema.evidenceCategories as any);
+            return { success: true, message: "CQC Taxonomy reset successfully." };
+        } catch (error: any) {
+            console.error("Failed to reset CQC taxonomy:", error);
+            // Check for foreign key constraint errors (SQLITE_CONSTRAINT)
+            if (error.message?.includes('FOREIGN KEY constraint failed') || error.code === 'SQLITE_CONSTRAINT_FOREIGNKEY') {
+                throw new Error("Cannot reset CQC taxonomy because operational data (Policies, Evidence, etc.) still exists. Please 'Reset Database' first.");
+            }
+            throw error;
+        }
+    });
+
 export const seedDatabaseFn = createServerFn({ method: "POST" })
     .middleware([authMiddleware])
     .handler(async (ctx) => {
@@ -310,20 +334,13 @@ export const resetDatabaseFn = createServerFn({ method: "POST" })
 
         const tenants = await db.select().from(schema.tenants as any);
         let deletedCount = 0;
+        let cqcReset = false;
 
         for (const tenant of tenants) {
-            // Skip the tenant the current user belongs to
-            // Check if user.tenantId matches.
-            // Note: user object from context might be stale if we just switched? 
-            // But we rely on the session token which contains tenantId usually.
-            if ((user as any).tenantId === tenant.id) {
-                console.log(`Skipping deletion of current user's tenant: ${tenant.name}`);
-                continue;
-            }
-
-            // Perform Delete
             const tenantId = tenant.id;
+            const isCurrentTenant = (user as any).tenantId === tenantId;
 
+            // Common delete operations (Operational Data) - Apply to ALL tenants
             // 1. Delete Evidence Links (references tenants)
             await db.delete(schema.evidenceLinks as any).where(eq(schema.evidenceLinks.tenantId, tenantId) as any);
 
@@ -353,33 +370,49 @@ export const resetDatabaseFn = createServerFn({ method: "POST" })
             // 8. Delete Audit Log
             await db.delete(schema.auditLog as any).where(eq(schema.auditLog.tenantId, tenantId) as any);
 
-            // 9. Delete Invitations
-            await db.delete(schema.invitations as any).where(eq(schema.invitations.tenantId, tenantId) as any);
+            // Structure Deletion - ONLY for OTHER tenants
+            if (!isCurrentTenant) {
+                // 9. Delete Invitations
+                await db.delete(schema.invitations as any).where(eq(schema.invitations.tenantId, tenantId) as any);
 
-            // 10. Delete Sessions & Accounts for Users in this Tenant
-            const tenantUsers = await db.select({ id: schema.users.id }).from(schema.users as any).where(eq(schema.users.tenantId, tenantId) as any);
-            const userIds = tenantUsers.map((u: any) => u.id);
+                // 10. Delete Sessions & Accounts for Users in this Tenant
+                const tenantUsers = await db.select({ id: schema.users.id }).from(schema.users as any).where(eq(schema.users.tenantId, tenantId) as any);
+                const userIds = tenantUsers.map((u: any) => u.id);
 
-            if (userIds.length > 0) {
-                await db.delete(schema.sessions as any).where(inArray(schema.sessions.userId, userIds) as any);
-                await db.delete(schema.accounts as any).where(inArray(schema.accounts.userId, userIds) as any);
-                await db.delete(schema.userRoles as any).where(inArray(schema.userRoles.userId, userIds) as any);
+                if (userIds.length > 0) {
+                    await db.delete(schema.sessions as any).where(inArray(schema.sessions.userId, userIds) as any);
+                    await db.delete(schema.accounts as any).where(inArray(schema.accounts.userId, userIds) as any);
+                    await db.delete(schema.userRoles as any).where(inArray(schema.userRoles.userId, userIds) as any);
+                }
+
+                // 11. Delete Users
+                await db.delete(schema.users as any).where(eq(schema.users.tenantId, tenantId) as any);
+
+                // 12. Delete Roles
+                await db.delete(schema.roles as any).where(eq(schema.roles.tenantId, tenantId) as any);
+
+                // 13. Delete Sites
+                await db.delete(schema.sites as any).where(eq(schema.sites.tenantId, tenantId) as any);
+
+                // 14. Finally, Delete Tenant
+                await db.delete(schema.tenants as any).where(eq(schema.tenants.id, tenantId) as any);
+
+                deletedCount++;
+            } else {
+                console.log(`Cleared operational data for current tenant: ${tenant.name}, but preserved structure.`);
             }
-
-            // 11. Delete Users
-            await db.delete(schema.users as any).where(eq(schema.users.tenantId, tenantId) as any);
-
-            // 12. Delete Roles
-            await db.delete(schema.roles as any).where(eq(schema.roles.tenantId, tenantId) as any);
-
-            // 13. Delete Sites
-            await db.delete(schema.sites as any).where(eq(schema.sites.tenantId, tenantId) as any);
-
-            // 14. Finally, Delete Tenant
-            await db.delete(schema.tenants as any).where(eq(schema.tenants.id, tenantId) as any);
-
-            deletedCount++;
         }
 
-        return { success: true, deletedCount };
+        // After clearing all operational data from all tenants (including current), we can safely reset CQC taxonomy
+        try {
+            await db.delete(schema.cqcQualityStatements as any);
+            await db.delete(schema.cqcKeyQuestions as any);
+            await db.delete(schema.evidenceCategories as any);
+            cqcReset = true;
+        } catch (error) {
+            console.error("Failed to reset CQC taxonomy during full reset:", error);
+            // This shouldn't happen if we cleared all children, but theoretically possible if new dependencies exist
+        }
+
+        return { success: true, deletedCount, cqcReset };
     });

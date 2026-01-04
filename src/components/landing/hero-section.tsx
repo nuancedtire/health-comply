@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react"
 import { Link } from "@tanstack/react-router"
 import { AuroraBackground } from "@/components/ui/aurora-background"
 import { motion } from "motion/react"
+import { CompassLogo } from "@/components/compass-logo"
 
 export function HeroSection() {
   return (
@@ -22,6 +23,11 @@ export function HeroSection() {
           <Badge variant="outline" className="px-4 py-1.5 text-sm bg-background/50 backdrop-blur-sm border-blue-200 text-blue-800 dark:text-blue-200 dark:border-blue-800 rounded-full">
             Now in Public Beta
           </Badge>
+        </div>
+
+        <div className="relative mb-2">
+          <div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full" />
+          <CompassLogo className="w-24 h-24 md:w-32 md:h-32 relative drop-shadow-2xl" />
         </div>
 
         <h1 className="text-4xl font-extrabold tracking-tight md:text-7xl text-foreground">

@@ -2,8 +2,8 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { HeroSection } from '@/components/landing/hero-section'
 import { FeaturesSection } from '@/components/landing/features-section'
 import { Footer } from '@/components/landing/footer'
-import logoSrc from '@/logo.svg'
 import { ThemeToggle } from '@/components/theme'
+import { CompassLogo } from '@/components/compass-logo'
 
 export const Route = createFileRoute('/')({
   component: Home,
@@ -15,7 +15,7 @@ function Home() {
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 max-w-screen-2xl items-center px-4 md:px-6">
           <Link to="/" className="flex items-center gap-2 font-bold tracking-tight text-lg hover:opacity-90 transition-opacity">
-            <img src={logoSrc} alt="Compass Logo" className="h-8 w-8" />
+            <CompassLogo className="h-8 w-8" />
             <span className="text-xl">Compass</span>
             <span className="text-muted-foreground/60 font-medium text-sm ml-1">by aiigent.io</span>
           </Link>

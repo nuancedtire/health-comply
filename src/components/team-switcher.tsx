@@ -18,8 +18,8 @@ import {
 } from "@/components/ui/sidebar"
 import { useSite } from "@/components/site-context"
 import { useRouter } from "@tanstack/react-router"
-import logo from '@/logo.svg'
 import { authClient } from "@/lib/auth-client"
+import { CompassLogo } from "@/components/compass-logo"
 
 export function TeamSwitcher() {
   const { isMobile } = useSidebar()
@@ -50,7 +50,7 @@ export function TeamSwitcher() {
         <SidebarMenuItem>
           <SidebarMenuButton size="lg" className="hover:bg-sidebar-accent/50">
             <div className="bg-primary/10 text-primary flex aspect-square size-8 items-center justify-center rounded-lg">
-              <img src={logo} alt="Logo" className="size-5" />
+              <CompassLogo className="size-5" />
             </div>
             <div className="grid flex-1 text-left text-sm leading-tight">
               <span className="truncate font-medium">System Admin</span>
@@ -105,7 +105,7 @@ export function TeamSwitcher() {
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground disabled:opacity-100"
             >
               <div className="bg-muted-foreground/20 text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                <img src={logo} alt="Logo" className="size-5" />
+                <CompassLogo className="size-5" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{activeSite.name}</span>

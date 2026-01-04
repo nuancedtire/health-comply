@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { useMutation } from '@tanstack/react-query'
-import { seedDatabaseFn, resetDatabaseFn, seedCqcTaxonomyFn } from '@/core/functions/seed-functions'
+import { seedDatabaseFn, resetDatabaseFn, seedCqcTaxonomyFn, resetCqcTaxonomyFn } from '@/core/functions/seed-functions'
 import { useState } from 'react'
 import { Loader2 } from 'lucide-react'
 
@@ -60,13 +60,26 @@ function AdminDebugComponent() {
         }
     });
 
+    const resetCqcMutation = useMutation({
+        mutationFn: () => resetCqcTaxonomyFn(),
+        onSuccess: (data: any) => {
+            setResult({ type: 'success', message: data.message });
+            toast.success("CQC Taxonomy reset successfully");
+        },
+        onError: (err) => {
+            setResult({ type: 'error', message: err.message });
+            toast.error("Failed to reset CQC taxonomy");
+        }
+    });
+
     const resetMutation = useMutation({
         mutationFn: () => resetDatabaseFn(),
         onSuccess: (data: any) => {
-            setResult({ type: 'success', message: `Database reset successfully! Deleted ${data.deletedCount} tenants.` });
+            const cqcMsg = data.cqcReset ? " CQC Taxonomy was also reset." : " CQC Taxonomy was NOT reset (check logs).";
+            setResult({ type: 'success', message: `Database reset successfully! Deleted ${data.deletedCount} tenants.${cqcMsg}` });
             setResetDialogOpen(false);
             setResetConfirmation("");
-            toast.success(`Database reset: ${data.deletedCount} tenants deleted`);
+            toast.success(`Database reset complete`);
         },
         onError: (err) => {
             setResult({ type: 'error', message: err.message });
@@ -150,6 +163,15 @@ function AdminDebugComponent() {
                                     Seed CQC Taxonomy
                                 </Button>
                                 <Button
+                                    onClick={() => resetCqcMutation.mutate()}
+                                    disabled={seedCqcMutation.isPending || seedMutation.isPending || resetMutation.isPending || resetCqcMutation.isPending}
+                                    variant="outline"
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                >
+                                    {resetCqcMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Reset CQC
+                                </Button>
+                                <Button
                                     onClick={() => seedMutation.mutate()}
                                     disabled={seedCqcMutation.isPending || seedMutation.isPending || resetMutation.isPending}
                                 >
@@ -200,7 +222,9 @@ function AdminDebugComponent() {
                     <DialogHeader>
                         <DialogTitle>Reset Database</DialogTitle>
                         <DialogDescription>
-                            Are you sure you want to reset the database? This will delete <span className="text-red-500 font-bold">ALL</span> tenants, sites, and users except for your own.
+                            Are you sure you want to reset the database? This will delete <span className="text-red-500 font-bold">ALL</span> tenants (except basic structure of your own) and <span className="text-red-500 font-bold">ALL</span> CQC Taxonomy data.
+                            <br /><br />
+                            Your account, tenant, and sites will be preserved, but all operational data (Evidence, Policies, Actions, etc.) will be wiped.
                             <br /><br />
                             This action cannot be undone.
                         </DialogDescription>
@@ -225,6 +249,6 @@ function AdminDebugComponent() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </div>
+        </div >
     )
 }
