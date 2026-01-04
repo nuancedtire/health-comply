@@ -181,10 +181,15 @@ export const requestPasswordResetFn = createServerFn({ method: "POST" })
         }
 
         // 2. Peek into DB to find the token (DEMO ONLY)
-        const verification = await db.query.verifications.findFirst({
-            where: (v: any, { eq }: any) => eq(v.identifier, email),
-            orderBy: (v: any, { desc }: any) => [desc(v.createdAt)]
-        });
+        // Switch to db.select to avoid query builder type issues if schemas mismatch
+        const { desc } = await import("drizzle-orm");
+
+        const verification = await db.select({ value: schema.verifications.value })
+            .from(schema.verifications as any)
+            .where(eq(schema.verifications.identifier, email) as any)
+            .orderBy(desc(schema.verifications.createdAt))
+            .limit(1)
+            .get();
 
         // The token value is what we need.
         return { success: true, token: verification?.value };
@@ -203,7 +208,7 @@ export const resetPasswordFn = createServerFn({ method: "POST" })
         const { createAuth } = await import("@/lib/auth");
         const auth = createAuth(db);
 
-        const res = await auth.api.resetPassword({
+        const res = await (auth.api as any).resetPassword({
             body: {
                 token,
                 newPassword

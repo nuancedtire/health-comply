@@ -3,8 +3,11 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import * as schema from '@/db/schema';
 import { eq } from "drizzle-orm";
 import { APIError } from "better-auth/api";
+import { admin } from "better-auth/plugins";
 
-export const createAuth = (db: any) => betterAuth({
+export const createAuth = (db: any, options?: {
+    sendResetPassword?: (data: any, request: any) => Promise<void>
+}) => betterAuth({
     database: drizzleAdapter(db, {
         provider: "sqlite",
         schema: {
@@ -18,7 +21,24 @@ export const createAuth = (db: any) => betterAuth({
     }),
     emailAndPassword: {
         enabled: true,
+        async sendResetPassword(data, request) {
+            if (options?.sendResetPassword) {
+                await options.sendResetPassword(data, request);
+                return;
+            }
+            // In a real app, send email here.
+            // For dev/demo, we log it or you can store it in a temporary table if strictly needed.
+            // but usually logging to console is enough for local dev.
+            console.log("----------------------------------------");
+            console.log("Password Reset Link:");
+            console.log(data.url);
+            console.log("Token:", data.token);
+            console.log("----------------------------------------");
+        }
     },
+    plugins: [
+        admin()
+    ],
     user: {
         fields: {
             isSystemAdmin: "is_system_admin",

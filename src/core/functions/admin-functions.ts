@@ -242,20 +242,38 @@ export const generatePasswordResetLinkFn = createServerFn({ method: "POST" })
         const { userId } = ctx.data;
         const { db } = ctx.context;
 
-        // Create a verification token
-        const token = crypto.randomUUID();
-        const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24); // 24 hours
+        // 1. Get user email
+        const user = await db.select({ email: schema.users.email }).from(schema.users as any).where(eq(schema.users.id, userId)).get();
 
-        await db.insert(schema.verifications as any).values({
-            id: `ver_${crypto.randomUUID()}`,
-            identifier: `pwd_reset:${userId}`,
-            value: token,
-            expiresAt,
-            createdAt: new Date(),
-            updatedAt: new Date()
+        if (!user) {
+            throw new Error("User not found");
+        }
+
+        const { createAuth } = await import("@/lib/auth");
+
+        let capturedToken: string | undefined;
+
+        // Create a local auth instance that captures the token
+        const auth = createAuth(db, {
+            sendResetPassword: async (data: any) => {
+                capturedToken = data.token;
+            }
         });
 
-        return { token };
+        // 2. Trigger Better Auth forgetPassword
+        // This will call our captured sendResetPassword handler
+        await auth.api.requestPasswordReset({
+            body: {
+                email: user.email,
+                redirectTo: "/reset-password"
+            }
+        });
+
+        if (!capturedToken) {
+            throw new Error("Failed to generate token: Callback was not triggered.");
+        }
+
+        return { token: capturedToken };
     });
 
 export const getTenantsFn = createServerFn({ method: "GET" })

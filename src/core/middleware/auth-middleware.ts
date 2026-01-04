@@ -16,7 +16,7 @@ export const authMiddleware = createMiddleware({
         throw new Error("Database binding (env.DB) is missing in context.");
     }
 
-    const db = drizzle(env.DB, { schema: schema as any });
+    const db = drizzle(env.DB, { schema: schema });
     const auth = createAuth(db);
 
     // Validate session using the request headers

@@ -32,15 +32,11 @@ function ForgotPasswordPage() {
 
     const mutation = useMutation({
         mutationFn: requestPasswordResetFn,
-        onSuccess: (data) => {
-            if (data.token) {
-                // In a real app we wouldn't show this, but for demo:
-                const link = `${window.location.origin}/reset-password?token=${data.token}`;
-                setResetLink(link);
-                toast.success("Reset link generated (Demo)");
-            } else {
-                toast.success("If an account exists, an email has been sent.");
-            }
+        onSuccess: () => {
+            // res is { success: true }
+            toast.success("Reset link sent!");
+            // Demo link logic removed since token is not returned
+            setResetLink(null);
         },
         onError: (err) => {
             // For security, don't reveal much, but for debugging:
