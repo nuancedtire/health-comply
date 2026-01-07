@@ -160,8 +160,21 @@ export const localControls = sqliteTable('local_controls', {
     qsId: text('qs_id').notNull().references(() => cqcQualityStatements.id),
     title: text('title').notNull(),
     description: text('description'),
-    cadenceDays: integer('cadence_days'),
-    active: integer('active').notNull().default(1),
+    evidenceHint: text('evidence_hint'), // AI or manual hint for what to upload
+
+    // Scheduling
+    frequencyType: text('frequency_type').notNull().default('recurring'), // 'recurring' | 'one_off' | 'ad_hoc'
+    frequencyDays: integer('frequency_days'), // e.g. 30, 90, 365
+
+    // Status / Timeline
+    lastEvidenceAt: integer('last_evidence_at', { mode: 'timestamp' }), // Date of the "event" (not upload)
+    nextDueAt: integer('next_due_at', { mode: 'timestamp' }), // lastEvidenceAt + frequencyDays
+
+    // Assignments
+    defaultReviewerRole: text('default_reviewer_role'), // e.g., 'Practice Manager', 'Nurse Lead'
+    fallbackReviewerRole: text('fallback_reviewer_role'),
+
+    active: integer('active', { mode: 'boolean' }).notNull().default(true),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 }, (table) => [
     index('idx_local_controls_qs').on(table.tenantId, table.siteId, table.qsId),
@@ -173,19 +186,33 @@ export const evidenceItems = sqliteTable('evidence_items', {
     id: text('id').primaryKey(),           // 'ev_<random>'
     tenantId: text('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
     siteId: text('site_id').notNull().references(() => sites.id, { onDelete: 'cascade' }),
+
+    // Links
     qsId: text('qs_id').notNull().references(() => cqcQualityStatements.id),
-    evidenceCategoryId: text('evidence_category_id').notNull().references(() => evidenceCategories.id),
+    localControlId: text('local_control_id').references(() => localControls.id, { onDelete: 'set null' }), // The specific bucket
+    evidenceCategoryId: text('evidence_category_id').references(() => evidenceCategories.id), // Can be null if tied to control? Keeping it for now.
+
     title: text('title').notNull(),
     r2Key: text('r2_key').notNull(),      // e.g., 't/{tenantId}/s/{siteId}/qs/{qsId}/evidence/...'
     mimeType: text('mime_type').notNull(),
     sizeBytes: integer('size_bytes').notNull(),
+
     uploadedBy: text('uploaded_by').notNull().references(() => users.id),
     uploadedAt: integer('uploaded_at', { mode: 'timestamp' }).notNull(),
-    reviewDueAt: integer('review_due_at', { mode: 'timestamp' }),
-    status: text('status').notNull().default('draft'), // 'draft', 'approved', 'expired'
+
+    // Time Machine Dates
+    evidenceDate: integer('evidence_date', { mode: 'timestamp' }), // When it actually happened
+    validUntil: integer('valid_until', { mode: 'timestamp' }),     // When it expires
+    isArchived: integer('is_archived', { mode: 'boolean' }).default(false), // Historical record
+
+    // Review Workflow
+    status: text('status').notNull().default('pending_review'), // 'pending_review', 'approved', 'rejected', 'archived'
+
     summary: text('summary'),
-    aiConfidence: integer('ai_confidence'), // Store as integer percentage (0-100) or arguably real. Let's use integer for simplicity if mapped to 0-100, or user wants 0.9. Let's import real.
+    textContent: text('text_content'), // Extracted text/markdown from the file
+    aiConfidence: integer('ai_confidence'), // Store as integer percentage (0-100)
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+
 }, (table) => [
     index('idx_evidence_items_qs').on(table.tenantId, table.siteId, table.qsId),
     index('idx_evidence_items_date').on(table.uploadedAt),
@@ -378,4 +405,9 @@ export const invitationRelations = relations(invitations, ({ one }) => ({
     site: one(sites, { fields: [invitations.siteId], references: [sites.id] }),
     role: one(roles, { fields: [invitations.roleId], references: [roles.id] }),
     invitedByUser: one(users, { fields: [invitations.invitedBy], references: [users.id] }),
+}));
+
+export const localControlRelations = relations(localControls, ({ one }) => ({
+    qs: one(cqcQualityStatements, { fields: [localControls.qsId], references: [cqcQualityStatements.id] }),
+    site: one(sites, { fields: [localControls.siteId], references: [sites.id] }),
 }));

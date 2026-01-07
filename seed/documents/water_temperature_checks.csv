@@ -1,0 +1,10 @@
+Date,Outlet ID,Location,Type,Temp (°C),Standard,Limit,Pass/Fail,Initials
+2026-01-05,TAP-01,Infection Control Room,Hot,55.5,Min 50,>50,Pass,TC
+2026-01-05,TAP-01,Infection Control Room,Cold,18.2,Max 20,<20,Pass,TC
+2026-01-05,TAP-02,Patient Toilet (Disabled),Hot,41.0,TMV Controlled,41 +/- 2,Pass,TC
+2026-01-05,TAP-02,Patient Toilet (Disabled),Cold,19.1,Max 20,<20,Pass,TC
+2026-01-05,TAP-03,Staff Kitchen,Hot,58.0,Min 50,>50,Pass,TC
+2026-01-05,TAP-03,Staff Kitchen,Cold,17.5,Max 20,<20,Pass,TC
+2026-01-05,SHOWER-01,Staff Shower,Mixed,40.5,TMV Controlled,41 +/- 2,Pass,TC
+2026-02-05,TAP-01,Infection Control Room,Hot,54.8,Min 50,>50,Pass,TC
+2026-02-05,TAP-01,Infection Control Room,Cold,18.5,Max 20,<20,Pass,TC

@@ -32,7 +32,8 @@ export const authMiddleware = createMiddleware({
         context: {
             user: sessionData.user,
             session: sessionData.session,
-            db // Pass properly initialized DB instance too
+            db, // Pass properly initialized DB instance too
+            env // Pass env through for bindings like AI/R2
         }
     });
 });

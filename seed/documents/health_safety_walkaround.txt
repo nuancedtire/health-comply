@@ -1,0 +1,34 @@
+# Health & Safety Walkaround Checklist
+
+**Date:** Feb 1, 2026
+**Inspector:** Alice Manager & Charlie Nurse
+**Location:** Uptown Surgery
+
+## 1. General Environment
+- [x] **Lighting:** All bulbs working? (Note: Bulb flickering in corridor - reported).
+- [x] **Floors:** Free from trip hazards/trailing cables? (Yes).
+- [x] **Temperature:** Comfortable? (Yes).
+
+## 2. Fire Safety
+- [x] **Exits:** Routes clear and unlocked? (Yes).
+- [x] **Extinguishers:** In place and tags intact? (Yes).
+- [x] **Call Points:** Accessible? (Yes).
+
+## 3. Clinical Rooms
+- [x] **Privacy Curtains:** Changed within last 6 months? (Yes, marked Jan 2026).
+- [x] **Consumables:** No expired stock on shelves? (Found one box of expired gloves - discarded).
+- [x] **Sharps Bins:** Assembly correct? (Yes).
+
+## 4. Electrical
+- [x] **Sockets:** No overloaded sockets/daisy-chained extension leads? (Yes).
+- [x] **Heaters:** No portable heaters near flammable materials? (N/A - none used).
+
+## 5. Welfare Facilities
+- [x] **Toilets:** Clean, soap and towels available? (Yes).
+- [x] **Kitchen:** Fridge clean? Microwave clean? (Microwave needs cleaning - note left for staff).
+
+**Actions:**
+1. Maintainance to fix corridor light.
+2. Email to all staff re: microwave cleanliness.
+
+**Signed:** Alice Manager

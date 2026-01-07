@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "2a499086-6724-4cd5-a754-b80453fc66e2",
+  "id": "71f2aaa5-17b3-4a5a-ab45-1897197608df",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "account": {
@@ -673,11 +673,18 @@
           "notNull": true,
           "autoincrement": false
         },
+        "local_control_id": {
+          "name": "local_control_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "evidence_category_id": {
           "name": "evidence_category_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "title": {
@@ -722,12 +729,27 @@
           "notNull": true,
           "autoincrement": false
         },
-        "review_due_at": {
-          "name": "review_due_at",
+        "evidence_date": {
+          "name": "evidence_date",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "valid_until": {
+          "name": "valid_until",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "is_archived": {
+          "name": "is_archived",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": false
         },
         "status": {
           "name": "status",
@@ -735,10 +757,17 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'draft'"
+          "default": "'pending_review'"
         },
         "summary": {
           "name": "summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "text_content": {
+          "name": "text_content",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -810,6 +839,19 @@
           "tableTo": "cqc_quality_statements",
           "columnsFrom": [
             "qs_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "evidence_items_local_control_id_local_controls_id_fk": {
+          "name": "evidence_items_local_control_id_local_controls_id_fk",
+          "tableFrom": "evidence_items",
+          "tableTo": "local_controls",
+          "columnsFrom": [
+            "local_control_id"
           ],
           "columnsTo": [
             "id"
@@ -1357,9 +1399,52 @@
           "notNull": false,
           "autoincrement": false
         },
-        "cadence_days": {
-          "name": "cadence_days",
+        "evidence_hint": {
+          "name": "evidence_hint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "frequency_type": {
+          "name": "frequency_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'recurring'"
+        },
+        "frequency_days": {
+          "name": "frequency_days",
           "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "last_evidence_at": {
+          "name": "last_evidence_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "next_due_at": {
+          "name": "next_due_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "default_reviewer_role": {
+          "name": "default_reviewer_role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "fallback_reviewer_role": {
+          "name": "fallback_reviewer_role",
+          "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -1370,7 +1455,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": 1
+          "default": true
         },
         "created_at": {
           "name": "created_at",

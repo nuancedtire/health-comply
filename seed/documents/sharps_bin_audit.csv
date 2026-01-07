@@ -1,0 +1,7 @@
+Date,Room,Bin Size,Date Opened,Labelled?,Overfilled?,Temporary Closure Active?,Stand Used?,Initials,Action
+2026-01-15,Treatment Room,5L,2025-12-20,Yes,No,Yes,Yes,CN,None
+2026-01-15,Consulting Rm 1,2.5L,2026-01-02,Yes,No,Yes,Yes,CN,None
+2026-01-15,Consulting Rm 2,2.5L,2025-11-15,No (Missing Date),No,Yes,Yes,CN,Added date (re-educated GP)
+2026-01-15,Minor Ops,5L (Purple),2026-01-10,Yes,No,Yes,Yes,CN,None
+2026-01-15,Dirty Utility,11.5L,2026-01-05,Yes,No,Yes,Yes,CN,None
+2026-01-15,Nurse Rm 2,2.5L,2026-01-01,Yes,Yes (Full to line),No,Yes,CN,Bin sealed and replaced immediately.

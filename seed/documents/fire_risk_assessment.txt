@@ -1,0 +1,41 @@
+# Fire Safety Risk Assessment 2025-2026
+
+**Premises:** Uptown Surgery, 123 High Street
+**Date of Assessment:** November 10, 2025
+**Assessor:** SafeFire Consultants Ltd
+**Responsible Person:** Alice Manager
+
+## 1. Executive Summary
+The overall fire risk rating for the premises is **LOW/MEDIUM**. Several good practices were observed, but two key actions are required to maintain compliance.
+
+## 2. Fire Hazards
+- **Electrical Sources:** All PAT testing is up to date (sticker date: Aug 2025). Server room temp is monitored.
+- **Smoking:** Strict "No Smoking" policy on site. Signage is visible.
+- **Arson:** Waste bins are stored in a locked compound away from the building.
+
+## 3. Fire Protection Measures
+- **Fire Detection:** Automatic detection system (L2) installed. Serviced Oct 2025.
+- **Extinguishers:** Annual service completed Sept 2025. All seals intact.
+- **Emergency Lighting:** Monthly flick tests recorded by Practice Manager. Annual discharge test passed Aug 2025.
+
+## 4. Means of Escape
+- All fire exits were clear at the time of inspection.
+- "Fire Exit" signage is compliant with BS 5499.
+- **Observation:** The rear fire exit door was slightly sticking.
+  - *Action:* Maintenance called. Adjusted on 12/11/2025. Now opens freely.
+
+## 5. Staff Training & Drills
+- Fire Warden: Alice Manager & Charlie Nurse.
+- Last Fire Drill: September 1, 2025. Evacuation time: 2 mins 30 secs.
+- Staff Training: All staff completed annual "Fire Safety Awareness" e-learning.
+
+## 6. Action Plan
+| Ref | Hazard / Defect | Action Required | Priority | Due Date | Status |
+|-----|-----------------|-----------------|----------|----------|--------|
+| F-01| Rear Exit Door | Adjust hinges to ensure ease of opening. | High | Immediate | Completed |
+| F-02| Server Room | Remove cardboard boxes stored near server. | Medium | 1 week | Completed |
+| F-03| Drill Record | Document names of absentees from drill. | Low | Next Drill | Open |
+
+---
+*Verified by:* Alice Manager
+*Date:* 15/11/2025

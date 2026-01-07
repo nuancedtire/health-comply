@@ -1,0 +1,7 @@
+Audit Date,Staff ID,Staff Name,Role,App Form,Interview Notes,Refs (x2),ID Check,DBS,Right to Work,Immunisation Status,Outcome
+2025-12-10,EMP-001,Dr. Sarah Smith,GP,Yes,Yes,Yes,Yes,Yes,Yes,Yes,Pass
+2025-12-10,EMP-002,Charlie Nurse,Nurse Lead,Yes,Yes,Yes,Yes,Yes,Yes,Yes,Pass
+2025-12-10,EMP-003,George Clinician,Clinician,Yes,Yes,Yes,Yes,Yes,Yes,Yes,Pass
+2025-12-10,EMP-004,Alice Manager,Practice Manager,Yes,Yes,Yes,Yes,Yes,Yes,N/A,Pass
+2025-12-10,EMP-NEW1,Uptown Receptionist,Receptionist,Yes,Yes,Pending 1,Yes,Yes,Yes,N/A,Conditional Pass
+2025-12-10,EMP-NEW2,Uptown Admin,Admin,Yes,Yes,Yes,Yes,Yes,Yes,N/A,Pass

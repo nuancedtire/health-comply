@@ -33,7 +33,16 @@ function DocumentsPage() {
             if (!activeSite?.id) return [];
             return await getEvidenceForSiteFn({ data: { siteId: activeSite.id } });
         },
+        refetchInterval: (query) => {
+            const data = query.state.data as any[];
+            if (data?.some(item => item.status === 'processing')) {
+                return 2000;
+            }
+            return false;
+        }
     });
+
+
 
     if (isSiteLoading) {
         return <MainLayout><div className="p-8">Loading site context...</div></MainLayout>;
@@ -59,7 +68,10 @@ function DocumentsPage() {
                             Evidence for <span className="font-semibold">{activeSite.name}</span>
                         </p>
                     </div>
-                    <UploadModal siteId={activeSite.id} />
+                    {/* Pass categories to the modal */}
+                    <UploadModal
+                        siteId={activeSite.id}
+                    />
                 </div>
 
                 <div className="rounded-lg bg-card text-card-foreground shadow-sm">

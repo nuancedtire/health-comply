@@ -83,24 +83,87 @@ export const getChecklistDataFn = createServerFn({ method: "GET" })
 
                 const actionsCount = actionsCountResult?.count || 0;
 
-                // 6. Calculate completion percentage
-                // Simple logic: if has approved evidence and no open actions = 100%, else based on evidence count
+                // 7. Fetch Local Controls for this QS
+                const siteId = (user as any).siteId;
+                // NOTE: Similar to seed, we might need to find the siteId if not in user context.
+                // fetch first site if needed.
+                let targetSiteId = siteId;
+                if (!targetSiteId) {
+                    const firstSite = await db.query.sites.findFirst({
+                        where: eq(schema.sites.tenantId, tenantId)
+                    });
+                    targetSiteId = firstSite?.id;
+                }
+
+                let relevantControls: any[] = [];
+                if (targetSiteId) {
+                    relevantControls = await db.query.localControls.findMany({
+                        where: and(
+                            eq(schema.localControls.tenantId, tenantId),
+                            eq(schema.localControls.siteId, targetSiteId),
+                            eq(schema.localControls.qsId, qs.id),
+                            eq(schema.localControls.active, true)
+                        )
+                    });
+                }
+
+                // 8. Fetch distinct localControlIds that have APPROVED evidence
+                // This is the source of truth for "Met" controls
+                const approvedControlIds = new Set<string>();
+                if (targetSiteId) {
+                    const approvedEvidence = await db
+                        .select({ localControlId: schema.evidenceItems.localControlId })
+                        .from(schema.evidenceItems as any)
+                        .where(
+                            and(
+                                eq(schema.evidenceItems.tenantId, tenantId),
+                                eq(schema.evidenceItems.siteId, targetSiteId),
+                                eq(schema.evidenceItems.qsId, qs.id),
+                                eq(schema.evidenceItems.status, 'approved')
+                            ) as any
+                        );
+
+                    approvedEvidence.forEach(e => {
+                        if (e.localControlId) approvedControlIds.add(e.localControlId);
+                    });
+                }
+
+                // REVISED SCORING LOGIC (STRICT APPROVAL):
+                // If Local Controls exist, they form the denominator.
+                // Progress = (Controls with APPROVED evidence / Total Controls) * 100
+                // If NO Controls exist, fall back to "Approved Evidence > 0" logic (Legacy/Simple mode)
+
+                // Count controls that have at least one approved evidence item linked
+                const controlsWithEvidence = relevantControls.filter(c => approvedControlIds.has(c.id)).length;
+                const totalControls = relevantControls.length;
+
                 let completionPercentage = 0;
                 let status: 'complete' | 'in-progress' | 'needs-attention' = 'needs-attention';
 
-                if (approvedEvidenceCount > 0 && actionsCount === 0) {
-                    completionPercentage = 100;
-                    status = 'complete';
-                } else if (evidenceCount > 0 || actionsCount > 0) {
-                    // In progress if has any evidence or actions being worked on
-                    completionPercentage = Math.min(
-                        Math.round((approvedEvidenceCount / Math.max(1, evidenceCount)) * 100),
-                        90 // Cap at 90% if there are open actions
-                    );
-                    status = 'in-progress';
+                if (totalControls > 0) {
+                    completionPercentage = Math.round((controlsWithEvidence / totalControls) * 100);
+                    if (completionPercentage === 100) status = 'complete';
+                    else if (completionPercentage > 0) status = 'in-progress';
+                    else {
+                        // If we have evidence but it's not approved or not attached to controls properly
+                        if (evidenceCount > 0) {
+                            status = 'in-progress'; // Evidence exists but pending approval/sorting
+                        } else {
+                            status = 'needs-attention';
+                        }
+                    }
                 } else {
-                    completionPercentage = 0;
-                    status = 'needs-attention';
+                    // Fallback if no controls defined yet (Simple Mode)
+                    if (approvedEvidenceCount > 0 && actionsCount === 0) {
+                        completionPercentage = 100;
+                        status = 'complete';
+                    } else if (evidenceCount > 0 || actionsCount > 0) {
+                        completionPercentage = 50; // "In Progress" if ANY evidence exists (even processing/pending)
+                        status = 'in-progress';
+                    } else {
+                        completionPercentage = 0;
+                        status = 'needs-attention';
+                    }
                 }
 
                 qsWithCounts.push({
@@ -112,6 +175,9 @@ export const getChecklistDataFn = createServerFn({ method: "GET" })
                     actionsCount,
                     completionPercentage,
                     status,
+                    localControls: relevantControls,
+                    controlsMet: controlsWithEvidence, // Now strictly based on approved evidence
+                    totalControls: totalControls
                 });
             }
 

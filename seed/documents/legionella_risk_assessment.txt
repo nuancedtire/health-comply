@@ -1,0 +1,35 @@
+# Water Safety & Legionella Risk Assessment
+
+**Site:** Uptown Surgery
+**Assessment Date:** October 5, 2025
+**Review Date:** October 2027
+**Assessor:** HydroSafe Services
+
+## 1. System Description
+- **Type:** Mains fed cold water system. Instantaneous electric hot water heaters (point of use).
+- **Storage:** No cold water storage tanks (CWST) on site. Direct mains feed.
+- **Outlets:** 8 WHBs (Wash Hand Basins), 1 Kitchen Sink, 2 Showers (Staff).
+
+## 2. Risk Rating
+**Overall Risk: LOW**
+Rationale: Simple water system, high turnover of water, no storage tanks.
+
+## 3. Temperature Control Checks (Sentinel Points)
+| Outlet | Type | Standard | Measured Temp | Result |
+|--------|------|----------|---------------|--------|
+| Room 1 (Nurse) | Hot Tap | >50°C (1 min) | 55.2°C | Pass |
+| Room 1 (Nurse) | Cold Tap | <20°C (2 mins) | 18.5°C | Pass |
+| Kitchen | Hot Tap | >50°C | 58.0°C | Pass |
+| Staff Shower | Mixed | Thermostatic | 41°C | N/A (TMV Fitted) |
+
+*Note:* All TMVs (Thermostatic Mixing Valves) serviced and failsafe tested during visit.
+
+## 4. Recommendations
+1. **Shower Usage:** Staff shower is infrequently used. **Action:** Implement weekly flushing regime for the shower to prevent stagnation.
+2. **Dead Legs:** No dead legs identified.
+3. **Monitoring:** Continue monthly temperature checks of sentinel taps.
+
+---
+*Signed:*
+J. Waters
+HydroSafe Services

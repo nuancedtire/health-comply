@@ -1,0 +1,45 @@
+# Business Continuity Plan (BCP)
+
+**Practice:** Uptown Surgery
+**Version:** 3.0
+**Date:** Jan 2026
+**Responsible Person:** Practice Manager
+
+## 1. Introduction
+This plan sets out the procedures to ensure the practice can continue to provide essential services in the event of a disruption (e.g., power failure, IT failure, flooding, pandemic).
+
+## 2. Emergency Contacts
+- **Practice Manager (Alice):** 07700 900000
+- **Senior Partner (Dr. Bob):** 07700 900001
+- **IT Support (Egton):** 0300 000 1111
+- **Electricity (National Grid):** 105
+- **Water Board:** 0800 111 222
+
+## 3. Critical Functions (Priority Order)
+1. **Emergency Access:** Divert phones to mobile/buddy practice immediately.
+2. **Prescriptions:** Switch to handwritten scripts (pad stored in safe) if EPS down.
+3. **Appointments:** Triage only. Cancel routine checks.
+
+## 4. Scenario Plans
+
+### 4.1 Loss of IT / Clinical System
+- Switch to "Paper Protocol" (Box A in Manager's Office).
+- Use 4G backup dongle for internet access if broadband only failed.
+- Record all notes on paper proformas; scan back later.
+
+### 4.2 Loss of Utilities (Power/Water)
+- **Power:** Vaccines to be moved to "Cold Box" and transferred to 'Westside Health' (Buddy Practice) within 2 hours.
+- **Water:** Sanitisers to be used for hand hygiene. Bottled water for drinking. If >4 hours, close practice.
+
+### 4.3 loss of Premises (Fire/Flood)
+- relocate critical staff to 'Westside Health'.
+- Divert phone lines.
+- Notify ICB and CQC.
+
+## 5. Staff Call Tree
+(See Appendix A for full phone list of all 15 staff members).
+
+---
+*Testing:*
+This plan was last tested (Tabletop Exercise) on: Nov 15, 2025.
+*Outcome:* Successful. Identified need for spare 4G dongle (now purchased).

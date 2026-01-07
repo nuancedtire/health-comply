@@ -1,0 +1,82 @@
+# Southside Medical Practice (Uptown Surgery): Cold Chain & Medication Management Policy
+
+**Version:** 4.2
+**Date:** January 15, 2026
+**Review Date:** January 15, 2027
+**Author:** Dr. Sarah Smith, Clinical Lead
+**Status:** Active | Ratified
+
+---
+
+## 1. Introduction & Purpose
+This policy outlines the procedures for the safe storage, handling, prescribing, and disposal of medicines at Southside Medical Practice. It specifically addresses "Cold Chain" compliance to ensure vaccine potency and patient safety, aligning with CQC "Safe" and "Effective" domains.
+
+## 2. Cold Chain Management
+
+### 2.1 Storage Equipment
+- **Specialized Refrigerators:** All vaccines must be stored in the designated medical grade refrigerators (Labcold IntelliCold). Domestic fridges are NOT permitted for vaccine storage.
+- **Monitoring:** Fridges are equipped with integral thermometers and secondary data loggers.
+- **Maintenance:** Fridges are serviced and calibrated annually (Next due: May 2026).
+
+### 2.2 Temperature Monitoring Protocol
+- Temperatures must be read and recorded **twice daily** (start and end of the clinical day).
+- **Target Range:** +2°C to +8°C.
+- **Procedure:**
+  1. Check current temperature.
+  2. Check Min/Max temperatures.
+  3. Reset the thermometer after recording.
+  4. Sign the "Daily Temperature Log" (See Appendix A).
+
+### 2.3 Managing Excursions (Breach of Cold Chain)
+If the temperature falls below +2°C or rises above +8°C:
+1. **Quarantine:** Immediately quarantine the stock. Do NOT discard until advised. Mark as "Do Not Use".
+2. **Report:** Notify the Practice Manager and Lead Nurse immediately.
+3. **Investigation:** Identify the cause (e.g., door left open, power failure).
+4. **Advice:** Contact the local Immunisation Coordinator or Vaccine Manufacturer for stability advice.
+5. **Incident Form:** Complete a Significant Event Analysis (SEA) form.
+
+## 3. Controlled Drugs (CDs)
+
+### 3.1 access and Storage
+- CDs are stored in the wall-mounted CD cupboard in the Treatment Room.
+- Access is restricted to authorized clinicians holding the keys.
+- **Double Locking:** The cupboard must remain double-locked when not in use.
+
+### 3.2 Record Keeping
+- All CD movements (receipt, administration, disposal) must be recorded in the CD Register.
+- A running balance must be maintained and checked after every administration.
+- **Audits:** A stock balance check is performed weekly by two staff members.
+
+## 4. Prescribing Protocol
+
+### 4.1 General Principles
+- Prescriptions are generated via the clinical system (EMIS/SystmOne).
+- **Repeat Prescribing:** Patients on long-term meds must have a medication review at least annually (or every 6 months for high-risk meds).
+- **Antibiotic Stewardship:** We adhere to local antimicrobial guidelines. "Delayed prescriptions" are used where appropriate.
+
+### 4.2 High Risk Medicines
+- Patients on DMARDs (e.g., Methotrexate) require blood monitoring every 3 months.
+- The "Shared Care Protocol" must be active and signed before prescribing.
+
+## 5. Waste Management
+- **DOOP Bins:** Expired medicines are placed in "Blue" bins (non-hazardous) or "Purple" (cytotoxic/cytostatic).
+- **Sharps:** Used needles go immediately into yellow sharps bins. Bins are sealed when 2/3 full.
+- **Collection:** Waste is collected monthly by *MediWaste Services Ltd*.
+
+---
+
+## 6. Staff Training Requirements
+All clinical staff must complete:
+- Initial Immunisation Training (2 days)
+- Annual Cold Chain e-learning update
+- Basic Life Support & Anaphylaxis (Annual)
+
+## 7. Audit Schedule
+- **Weekly:** CD Balance Check
+- **Monthly:** Fridge Temperature Audit (PM Review)
+- **Quarterly:** Antimicrobial Prescribing Audit
+- **Annually:** Full Infection Control & Meds Management Audit
+
+---
+*Signed:* Alice Manager (Practice Manager)
+*Date:* January 16, 2026

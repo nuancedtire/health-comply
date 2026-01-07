@@ -1,0 +1,8 @@
+Ref ID,Date,Type,Description,Severity,Lead Investigator,Status,Review Date
+SEA-2025-001,2025-02-14,Clinical,Missed diagnosis of diabetes in screening.,Moderate,Dr. Sarah Smith,Closed,2025-03-01
+SEA-2025-002,2025-04-10,Admin,Referral letter sent to wrong patient address.,Low,Alice Manager,Closed,2025-04-20
+SEA-2025-003,2025-06-22,Staffing,Late opening of surgery due to keyholder illness.,Low,Alice Manager,Closed,2025-06-23
+SEA-2025-004,2025-07-15,H&S,Needle stick injury in Treatment Room 2.,Moderate,Charlie Nurse,Closed,2025-07-16
+SEA-2025-005,2025-09-05,Medication,Dispensing error (wrong strength given) by local pharmacy reported to us.,Moderate,Dr. Sarah Smith,Closed,2025-09-10
+SEA-2025-006,2025-11-30,IT,Server downtime lasting 4 hours.,High,Alice Manager,Closed,2025-12-01
+SEA-2026-001,2026-01-04,Clinical,Delayed cancer referral (2 week wait not ticked).,High,Dr. Sarah Smith,Open,2026-01-20
