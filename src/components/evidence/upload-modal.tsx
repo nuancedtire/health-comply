@@ -80,6 +80,7 @@ export function UploadModal({ siteId, initialQsId, initialControlId, trigger, on
             setOpen(false);
             setFile(null);
             queryClient.invalidateQueries({ queryKey: ["evidence"] });
+            queryClient.invalidateQueries({ queryKey: ["checklist-data"] });
             onSuccess?.(result);
         } catch (error: any) {
             toast.error(error.message || "Upload failed");

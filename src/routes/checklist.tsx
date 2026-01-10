@@ -188,7 +188,7 @@ function QualityStatementRow({ qs, siteId }: { qs: any, siteId: string }) {
                                             <td className="py-2 px-4 md:py-3">
                                                 <div className="flex items-start gap-2">
                                                     <div className={cn("w-1.5 h-1.5 rounded-full mt-1.5 shrink-0",
-                                                        hasEvidence ? "bg-emerald-500" : "bg-slate-300"
+                                                        hasEvidence ? "bg-emerald-500" : (control.hasPendingEvidence ? "bg-orange-400" : "bg-slate-300")
                                                     )} />
                                                     <span className="text-slate-700 font-medium">{control.title}</span>
                                                 </div>

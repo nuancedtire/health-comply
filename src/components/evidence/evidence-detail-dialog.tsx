@@ -67,6 +67,7 @@ export function EvidenceDetailDialog({ evidence, open, onOpenChange }: EvidenceD
         mutationFn: updateEvidenceFn,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["evidence"] });
+            queryClient.invalidateQueries({ queryKey: ["checklist-data"] });
             toast.success("Evidence updated");
             onOpenChange(false);
         },
@@ -79,6 +80,7 @@ export function EvidenceDetailDialog({ evidence, open, onOpenChange }: EvidenceD
         mutationFn: deleteEvidenceFn,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["evidence"] });
+            queryClient.invalidateQueries({ queryKey: ["checklist-data"] });
             toast.success("Evidence deleted");
             onOpenChange(false);
         },

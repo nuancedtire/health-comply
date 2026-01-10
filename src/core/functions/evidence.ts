@@ -198,20 +198,26 @@ export const deleteEvidenceFn = createServerFn({ method: "POST" })
         const tenantId = (user as any).tenantId;
         const { evidenceId } = data;
 
+        // 1. Get the item details before deletion
         const item = await db.query.evidenceItems.findFirst({
             where: and(
                 eq(schema.evidenceItems.id, evidenceId),
                 eq(schema.evidenceItems.tenantId, tenantId)
             ),
-            columns: { r2Key: true }
+            columns: {
+                r2Key: true,
+                localControlId: true,
+                status: true
+            }
         });
 
         if (!item) throw new Error("Item not found");
 
-        if (env.R2) {
+        if (env.R2 && item.r2Key) {
             await env.R2.delete(item.r2Key);
         }
 
+        // 2. Delete the evidence
         await db.delete(schema.evidenceItems)
             .where(
                 and(
@@ -219,6 +225,29 @@ export const deleteEvidenceFn = createServerFn({ method: "POST" })
                     eq(schema.evidenceItems.tenantId, tenantId)
                 )
             );
+
+        // 3. Recalculate lastEvidenceAt for the affected control
+        if (item.localControlId) {
+            const latestEvidence = await db.query.evidenceItems.findFirst({
+                where: and(
+                    eq(schema.evidenceItems.localControlId, item.localControlId),
+                    eq(schema.evidenceItems.status, 'approved')
+                ),
+                orderBy: [desc(schema.evidenceItems.evidenceDate), desc(schema.evidenceItems.uploadedAt)],
+                columns: { evidenceDate: true, uploadedAt: true }
+            });
+
+            // If we found other approved evidence, use its date. Otherwise null.
+            const newLastEvidenceAt = latestEvidence
+                ? (latestEvidence.evidenceDate || latestEvidence.uploadedAt)
+                : null;
+
+            await db.update(schema.localControls)
+                .set({ lastEvidenceAt: newLastEvidenceAt })
+                .where(eq(schema.localControls.id, item.localControlId));
+
+            console.log(`Recalculated lastEvidenceAt for control ${item.localControlId}: ${newLastEvidenceAt}`);
+        }
 
         return { success: true };
     });

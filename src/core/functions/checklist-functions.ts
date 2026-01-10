@@ -129,28 +129,40 @@ export const getChecklistDataFn = createServerFn({ method: "GET" })
                     )
                 });
 
-                // 8. Fetch distinct localControlIds that have APPROVED evidence for this SITE
-                const approvedControlIds = new Set<string>();
-                if (relevantControls.length > 0) {
-                    const approvedEvidence = await db
-                        .select({ localControlId: schema.evidenceItems.localControlId })
-                        .from(schema.evidenceItems as any)
-                        .where(
-                            and(
-                                eq(schema.evidenceItems.tenantId, tenantId),
-                                eq(schema.evidenceItems.siteId, targetSiteId), // SCOPED
-                                eq(schema.evidenceItems.qsId, qs.id),
-                                eq(schema.evidenceItems.status, 'approved')
-                            ) as any
-                        );
+                // 7b. Determine which controls have PENDING (non-approved) evidence
+                // We fetch all evidence for this QS/Site to check coverage
+                const allQsEvidence = await db
+                    .select({
+                        localControlId: schema.evidenceItems.localControlId,
+                        status: schema.evidenceItems.status
+                    })
+                    .from(schema.evidenceItems as any)
+                    .where(
+                        and(
+                            eq(schema.evidenceItems.tenantId, tenantId),
+                            eq(schema.evidenceItems.siteId, targetSiteId),
+                            eq(schema.evidenceItems.qsId, qs.id)
+                        ) as any
+                    );
 
-                    approvedEvidence.forEach(e => {
-                        if (e.localControlId) approvedControlIds.add(e.localControlId);
-                    });
-                }
+                const pendingControlIds = new Set<string>();
+                allQsEvidence.forEach(e => {
+                    // If evidence exists for a control but is NOT approved, mark it as having pending evidence
+                    if (e.localControlId && e.status !== 'approved') {
+                        pendingControlIds.add(e.localControlId);
+                    }
+                });
 
-                // REVISED SCORING LOGIC
-                const controlsWithEvidence = relevantControls.filter(c => approvedControlIds.has(c.id)).length;
+                const enhancedControls = relevantControls.map(c => ({
+                    ...c,
+                    // True if it has at least one piece of evidence that is NOT approved
+                    // (Approved evidence is handled by c.lastEvidenceAt being set)
+                    hasPendingEvidence: pendingControlIds.has(c.id)
+                }));
+
+                // REVISED SCORING LOGIC - Now strictly based on lastEvidenceAt
+                // This ensures that when evidence is deleted and lastEvidenceAt is cleared, the status updates correctly via invalidation
+                const controlsWithEvidence = relevantControls.filter(c => c.lastEvidenceAt !== null).length;
                 const totalControls = relevantControls.length;
 
                 let completionPercentage = 0;
@@ -189,7 +201,7 @@ export const getChecklistDataFn = createServerFn({ method: "GET" })
                     actionsCount,
                     completionPercentage,
                     status,
-                    localControls: relevantControls,
+                    localControls: enhancedControls,
                     controlsMet: controlsWithEvidence,
                     totalControls: totalControls
                 });
