@@ -220,6 +220,9 @@ function QualityStatementRow({ qs, siteId }: { qs: any, siteId: string }) {
                                                                 <Upload className="w-3.5 h-3.5" />
                                                             </Button>
                                                         }
+                                                        onSuccess={() => {
+                                                            // Optional: invalidate queries if needed, but react-query should handle invalidation
+                                                        }}
                                                     />
                                                 </div>
                                             </td>

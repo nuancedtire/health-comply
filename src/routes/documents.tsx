@@ -5,6 +5,8 @@ import { UploadModal } from '@/components/evidence/upload-modal'
 import { getEvidenceForSiteFn } from '@/core/functions/evidence'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useSite } from '@/components/site-context'
+import { useState } from 'react'
+import { EvidenceDetailDialog } from '@/components/evidence/evidence-detail-dialog'
 
 export const Route = createFileRoute('/documents')({
     beforeLoad: ({ context }) => {
@@ -24,6 +26,7 @@ export const Route = createFileRoute('/documents')({
 function DocumentsPage() {
     // 1. Use the global site context (powered by TeamSwitcher)
     const { activeSite, isLoading: isSiteLoading } = useSite();
+    const [selectedEvidence, setSelectedEvidence] = useState<any>(null);
 
     // 2. Fetch evidence for the active site
     // We only fetch if activeSite is present.
@@ -41,6 +44,9 @@ function DocumentsPage() {
             return false;
         }
     });
+
+    // Auto-open newly uploaded evidence
+
 
 
 
@@ -78,9 +84,18 @@ function DocumentsPage() {
                     {isEvidenceLoading ? (
                         <div className="p-8 text-center text-muted-foreground">Loading evidence...</div>
                     ) : (
-                        <EvidenceList evidence={evidence || []} />
+                        <EvidenceList
+                            evidence={evidence || []}
+                            onSelect={setSelectedEvidence}
+                        />
                     )}
                 </div>
+
+                <EvidenceDetailDialog
+                    open={!!selectedEvidence}
+                    onOpenChange={(open) => !open && setSelectedEvidence(null)}
+                    evidence={selectedEvidence}
+                />
             </div>
         </MainLayout>
     )

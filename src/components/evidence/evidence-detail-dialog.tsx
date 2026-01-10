@@ -24,7 +24,7 @@ import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateEvidenceFn, deleteEvidenceFn, getEvidenceReferenceDataFn } from "@/core/functions/evidence";
 import { getLocalControlsFn } from "@/core/functions/local-control-functions";
-import { Loader2, Trash2, Download, FileText, Calendar, Database, Eye, FileImage, Table as TableIcon } from "lucide-react";
+import { Loader2, Trash2, Download, FileText, Calendar, Database, Eye, FileImage, Table as TableIcon, AlertTriangle as AlertIcon } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { toast } from "sonner";
@@ -111,13 +111,23 @@ export function EvidenceDetailDialog({ evidence, open, onOpenChange }: EvidenceD
         }
     }, [qsId, refData]);
 
-    const handleSave = () => {
+    const handleSave = (shouldSubmit = false) => {
+        let newStatus = status;
+
+        if (shouldSubmit) {
+            if (!localControlId || localControlId === "none") {
+                toast.error("Please select a Local Control before submitting.");
+                return;
+            }
+            newStatus = "pending_review";
+        }
+
         updateMutation.mutate({
             data: {
                 evidenceId: evidence.id,
                 updates: {
                     title,
-                    status,
+                    status: newStatus,
                     summary,
                     qsId,
                     evidenceCategoryId: categoryId,
@@ -239,6 +249,18 @@ export function EvidenceDetailDialog({ evidence, open, onOpenChange }: EvidenceD
 
                         {/* RIGHT: Edit Form */}
                         <div className="w-full md:w-2/3 p-8 overflow-y-auto flex-1">
+                            {status === 'draft' && (
+                                <div className="mb-6 bg-amber-50 border border-amber-200 rounded-md p-4 flex gap-3 text-amber-900">
+                                    <AlertIcon className="w-5 h-5 shrink-0 text-amber-600 mt-0.5" />
+                                    <div className="space-y-1">
+                                        <h4 className="font-semibold text-sm">Action Required: Verify Match</h4>
+                                        <p className="text-sm text-amber-800">
+                                            This evidence is in <strong>Draft</strong>. Please verify it is matched to the correct Local Control below, then click "Submit".
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="grid grid-cols-2 gap-8 max-w-4xl">
                                 <div className="col-span-2 space-y-2">
                                     <Label>Title</Label>
@@ -424,13 +446,24 @@ export function EvidenceDetailDialog({ evidence, open, onOpenChange }: EvidenceD
                     </Button>
                     <div className="flex gap-2">
                         <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-                        <Button
-                            onClick={handleSave}
-                            disabled={updateMutation.isPending}
-                        >
-                            {updateMutation.isPending && <Loader2 className="animate-spin w-4 h-4 mr-2" />}
-                            Save Changes
-                        </Button>
+                        {status === 'draft' ? (
+                            <Button
+                                onClick={() => handleSave(true)}
+                                disabled={updateMutation.isPending}
+                                className="bg-green-600 hover:bg-green-700"
+                            >
+                                {updateMutation.isPending && <Loader2 className="animate-spin w-4 h-4 mr-2" />}
+                                Submit Evidence
+                            </Button>
+                        ) : (
+                            <Button
+                                onClick={() => handleSave(false)}
+                                disabled={updateMutation.isPending}
+                            >
+                                {updateMutation.isPending && <Loader2 className="animate-spin w-4 h-4 mr-2" />}
+                                Save Changes
+                            </Button>
+                        )}
                     </div>
                 </DialogFooter>
             </DialogContent>

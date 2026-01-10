@@ -1,6 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { EvidenceDetailDialog } from "./evidence-detail-dialog";
-import { useState } from "react";
+import { cn } from "@/lib/utils";
 import { FileText, Loader2 } from "lucide-react";
 import {
     Table,
@@ -36,9 +35,7 @@ type EvidenceItem = {
     } | null;
 };
 
-export function EvidenceList({ evidence }: { evidence: EvidenceItem[] }) {
-    const [selectedEvidence, setSelectedEvidence] = useState<EvidenceItem | null>(null);
-
+export function EvidenceList({ evidence, onSelect }: { evidence: EvidenceItem[], onSelect: (item: EvidenceItem) => void }) {
     const formatDate = (date: Date) => {
         return new Intl.DateTimeFormat('en-GB', {
             day: 'numeric', month: 'short', year: 'numeric'
@@ -87,8 +84,13 @@ export function EvidenceList({ evidence }: { evidence: EvidenceItem[] }) {
                         {evidence.map((item) => (
                             <TableRow
                                 key={item.id}
-                                className="cursor-pointer hover:bg-muted/50"
-                                onClick={() => setSelectedEvidence(item)}
+                                className={cn("transition-colors hover:bg-muted/50",
+                                    item.status === 'processing' ? "cursor-not-allowed opacity-70" : "cursor-pointer"
+                                )}
+                                onClick={() => {
+                                    if (item.status === 'processing') return;
+                                    onSelect(item);
+                                }}
                             >
                                 <TableCell className="align-top">
                                     <div className="flex flex-col gap-1">
@@ -153,11 +155,6 @@ export function EvidenceList({ evidence }: { evidence: EvidenceItem[] }) {
                 </Table>
             </div>
 
-            <EvidenceDetailDialog
-                open={!!selectedEvidence}
-                onOpenChange={(open) => !open && setSelectedEvidence(null)}
-                evidence={selectedEvidence}
-            />
         </>
     );
 }

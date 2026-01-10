@@ -20,7 +20,7 @@ interface EvidenceUploadModalProps {
     initialQsId?: string;
     initialControlId?: string;
     trigger?: React.ReactNode; // Allow custom trigger button
-    onSuccess?: () => void;
+    onSuccess?: (data?: any) => void;
 }
 
 export function UploadModal({ siteId, initialQsId, initialControlId, trigger, onSuccess }: EvidenceUploadModalProps) {
@@ -75,12 +75,12 @@ export function UploadModal({ siteId, initialQsId, initialControlId, trigger, on
         if (initialControlId) formData.append("localControlId", initialControlId);
 
         try {
-            await uploadEvidenceFn({ data: formData });
+            const result = await uploadEvidenceFn({ data: formData });
             toast.success("File uploaded successfully");
             setOpen(false);
             setFile(null);
             queryClient.invalidateQueries({ queryKey: ["evidence"] });
-            onSuccess?.();
+            onSuccess?.(result);
         } catch (error: any) {
             toast.error(error.message || "Upload failed");
         } finally {

@@ -263,3 +263,28 @@ export const downloadEvidenceFileFn = createServerFn({ method: "GET" })
             headers
         });
     });
+
+export const getEvidenceFn = createServerFn({ method: "GET" })
+    .middleware([authMiddleware])
+    .inputValidator((data: unknown) => z.object({ evidenceId: z.string() }).parse(data))
+    .handler(async ({ context, data }) => {
+        const { db, user } = context;
+        const tenantId = (user as any).tenantId;
+        const evidenceId = data.evidenceId;
+
+        const item = await db.query.evidenceItems.findFirst({
+            where: and(
+                eq(schema.evidenceItems.id, evidenceId),
+                eq(schema.evidenceItems.tenantId, tenantId)
+            ),
+            with: {
+                localControl: { columns: { title: true } },
+                qs: {
+                    columns: { title: true },
+                    with: { keyQuestion: { columns: { title: true } } }
+                }
+            }
+        });
+
+        return item;
+    });

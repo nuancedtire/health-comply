@@ -226,7 +226,7 @@ export class EvidenceIngestWorkflow extends WorkflowEntrypoint<Env, EvidenceInge
 
             await db.update(schema.evidenceItems)
                 .set({
-                    status: 'pending_review',
+                    status: 'draft',
                     qsId: safeQsId,
                     evidenceCategoryId: safeCategoryId,
                     localControlId: finalControlId,

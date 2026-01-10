@@ -378,6 +378,7 @@ export const evidenceItemRelations = relations(evidenceItems, ({ one, many }) =>
     site: one(sites, { fields: [evidenceItems.siteId], references: [sites.id] }),
     category: one(evidenceCategories, { fields: [evidenceItems.evidenceCategoryId], references: [evidenceCategories.id] }),
     qs: one(cqcQualityStatements, { fields: [evidenceItems.qsId], references: [cqcQualityStatements.id] }),
+    localControl: one(localControls, { fields: [evidenceItems.localControlId], references: [localControls.id] }),
     uploadedByUser: one(users, { fields: [evidenceItems.uploadedBy], references: [users.id] }),
     links: many(evidenceLinks),
 }));
