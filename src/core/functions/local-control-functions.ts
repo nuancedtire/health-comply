@@ -192,17 +192,19 @@ const QS_MAP: Record<string, string> = {
 
 export const seedLocalControlsFn = createServerFn({ method: "POST" })
     .middleware([authMiddleware])
+    .inputValidator((data: unknown) => {
+        return z.object({
+            siteId: z.string().optional()
+        }).optional().parse(data);
+    })
     .handler(async (ctx) => {
         const { db, user } = ctx.context;
         const tenantId = (user as any).tenantId as string;
 
         if (!tenantId) throw new Error("Tenant ID required");
 
-        // We need a siteId. For now, pick the first site of the tenant or require it passed.
-        // The user usually operates in context of a site. Let's try to get siteId from context or fetch first.
-        // Since authMiddleware might not guarantee siteId in all cases (if user has no site), let's fetch.
-        let siteId = (user as any).siteId; // Assuming we might add this to user context later or it exists? 
-        // Actually auth middleware returns user which has basic fields.
+        // We need a siteId. Use the passed one, or fallback to user context, or fetch first.
+        let siteId = ctx.data?.siteId || (user as any).siteId;
 
         if (!siteId) {
             const firstSite = await db.query.sites.findFirst({

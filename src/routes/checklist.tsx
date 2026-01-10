@@ -36,6 +36,8 @@ function ChecklistPage() {
     const { data, isLoading, error } = useQuery({
         queryKey: ['checklist-data', activeSite?.id],
         queryFn: () => getChecklistDataFn({ data: { siteId: activeSite?.id } }),
+        refetchInterval: 5000,
+        refetchOnWindowFocus: true
     })
 
     if (isLoading) {

@@ -35,14 +35,18 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
+import { useSite } from "@/components/site-context";
+
 export function LocalControlsManager() {
+    const { activeSite } = useSite();
     const queryClient = useQueryClient();
     const [editControl, setEditControl] = useState<any>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
     const { data, isLoading } = useQuery({
-        queryKey: ["local-controls"],
-        queryFn: () => getLocalControlsFn(),
+        queryKey: ["local-controls", activeSite?.id],
+        queryFn: () => getLocalControlsFn({ data: { siteId: activeSite?.id } }),
+        enabled: !!activeSite?.id
     });
 
     const seedMutation = useMutation({
@@ -68,7 +72,7 @@ export function LocalControlsManager() {
     if (isLoading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>;
 
     if (!hasControls) {
-        return <EmptyState onSeed={() => seedMutation.mutate(undefined)} isSeeding={seedMutation.isPending} />;
+        return <EmptyState onSeed={() => seedMutation.mutate({ data: { siteId: activeSite?.id } })} isSeeding={seedMutation.isPending} />;
     }
 
     return (
@@ -139,13 +143,14 @@ export function LocalControlsManager() {
                 open={isDialogOpen}
                 onOpenChange={setIsDialogOpen}
                 control={editControl}
+                siteId={activeSite?.id}
                 onClose={() => { setIsDialogOpen(false); setEditControl(null); }}
             />
         </div>
     );
 }
 
-function ControlDialog({ open, onOpenChange, control, onClose }: any) {
+function ControlDialog({ open, onOpenChange, control, siteId, onClose }: any) {
     const queryClient = useQueryClient();
     const isEdit = !!control;
     const [formData, setFormData] = useState({
@@ -229,7 +234,8 @@ function ControlDialog({ open, onOpenChange, control, onClose }: any) {
                     frequencyType: formData.frequencyType as any,
                     frequencyDays: formData.frequencyDays,
                     evidenceHint: formData.evidenceHint,
-                    defaultReviewerRole: formData.defaultReviewerRole
+                    defaultReviewerRole: formData.defaultReviewerRole,
+                    siteId // Explicitly pass siteId based on parent activeSite
                 }
             });
         }
