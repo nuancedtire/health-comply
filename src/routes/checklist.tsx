@@ -31,12 +31,12 @@ export const Route = createFileRoute('/checklist')({
 })
 
 function ChecklistPage() {
-    const { data, isLoading, error } = useQuery({
-        queryKey: ['checklist-data'],
-        queryFn: () => getChecklistDataFn(),
-    })
-
     const { activeSite } = useSite()
+
+    const { data, isLoading, error } = useQuery({
+        queryKey: ['checklist-data', activeSite?.id],
+        queryFn: () => getChecklistDataFn({ data: { siteId: activeSite?.id } }),
+    })
 
     if (isLoading) {
         return (

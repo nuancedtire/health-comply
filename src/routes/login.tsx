@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { createFileRoute, useRouter, Link } from '@tanstack/react-router'
+import { createFileRoute, useRouter, Link, redirect } from '@tanstack/react-router'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
@@ -19,6 +19,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
 export const Route = createFileRoute('/login')({
+    beforeLoad: ({ context }) => {
+        if (context.user) {
+            throw redirect({
+                to: '/dashboard',
+            })
+        }
+    },
     component: LoginComponent,
 })
 

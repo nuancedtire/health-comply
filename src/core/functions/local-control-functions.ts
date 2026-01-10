@@ -517,14 +517,20 @@ export const updateLocalControlFn = createServerFn({ method: "POST" })
         active: z.boolean().optional()
     }).parse(data))
     .handler(async (ctx) => {
-        const { db } = ctx.context;
+        const { db, user } = ctx.context;
+        const tenantId = (user as any).tenantId;
 
         await db.update(schema.localControls)
             .set({
                 ...ctx.data,
                 // Make sure we don't update ID or tenant/site
             })
-            .where(eq(schema.localControls.id, ctx.data.id));
+            .where(
+                and(
+                    eq(schema.localControls.id, ctx.data.id),
+                    eq(schema.localControls.tenantId, tenantId)
+                )
+            );
 
         return { success: true };
     });
@@ -533,10 +539,16 @@ export const deleteLocalControlFn = createServerFn({ method: "POST" })
     .middleware([authMiddleware])
     .inputValidator((data: { id: string }) => data)
     .handler(async (ctx) => {
-        const { db } = ctx.context;
+        const { db, user } = ctx.context;
+        const tenantId = (user as any).tenantId;
 
         await db.delete(schema.localControls)
-            .where(eq(schema.localControls.id, ctx.data.id));
+            .where(
+                and(
+                    eq(schema.localControls.id, ctx.data.id),
+                    eq(schema.localControls.tenantId, tenantId)
+                )
+            );
 
         return { success: true };
     });

@@ -132,12 +132,16 @@ export const updateEvidenceFn = createServerFn({ method: "POST" })
         })
     }).parse(data))
     .handler(async ({ context, data }) => {
-        const { db } = context;
+        const { db, user } = context;
+        const tenantId = (user as any).tenantId;
         const { evidenceId, updates } = data;
 
-        // 1. Fetch existing item to compare state
+        // 1. Fetch existing item to compare state (+ check tenant)
         const existingItem = await db.query.evidenceItems.findFirst({
-            where: eq(schema.evidenceItems.id, evidenceId)
+            where: and(
+                eq(schema.evidenceItems.id, evidenceId),
+                eq(schema.evidenceItems.tenantId, tenantId)
+            )
         });
 
         if (!existingItem) {
@@ -151,7 +155,12 @@ export const updateEvidenceFn = createServerFn({ method: "POST" })
         // 2. Perform Update
         await db.update(schema.evidenceItems)
             .set(cleanUpdates)
-            .where(eq(schema.evidenceItems.id, evidenceId));
+            .where(
+                and(
+                    eq(schema.evidenceItems.id, evidenceId),
+                    eq(schema.evidenceItems.tenantId, tenantId)
+                )
+            );
 
         // 3. Post-Process: Update Local Control Timestamp if needed
         // Condition: Evidence IS approved (either newly or already) AND it has a local control
@@ -185,11 +194,15 @@ export const deleteEvidenceFn = createServerFn({ method: "POST" })
     .middleware([authMiddleware])
     .inputValidator((data: unknown) => z.object({ evidenceId: z.string() }).parse(data))
     .handler(async ({ context, data }) => {
-        const { db, env } = context;
+        const { db, env, user } = context;
+        const tenantId = (user as any).tenantId;
         const { evidenceId } = data;
 
         const item = await db.query.evidenceItems.findFirst({
-            where: eq(schema.evidenceItems.id, evidenceId),
+            where: and(
+                eq(schema.evidenceItems.id, evidenceId),
+                eq(schema.evidenceItems.tenantId, tenantId)
+            ),
             columns: { r2Key: true }
         });
 
@@ -199,7 +212,13 @@ export const deleteEvidenceFn = createServerFn({ method: "POST" })
             await env.R2.delete(item.r2Key);
         }
 
-        await db.delete(schema.evidenceItems).where(eq(schema.evidenceItems.id, evidenceId));
+        await db.delete(schema.evidenceItems)
+            .where(
+                and(
+                    eq(schema.evidenceItems.id, evidenceId),
+                    eq(schema.evidenceItems.tenantId, tenantId)
+                )
+            );
 
         return { success: true };
     });
@@ -208,11 +227,15 @@ export const downloadEvidenceFileFn = createServerFn({ method: "GET" })
     .middleware([authMiddleware])
     .inputValidator((data: unknown) => z.object({ evidenceId: z.string() }).parse(data))
     .handler(async ({ context, data }) => {
-        const { db, env } = context;
+        const { db, env, user } = context;
+        const tenantId = (user as any).tenantId;
         const { evidenceId } = data;
 
         const item = await db.query.evidenceItems.findFirst({
-            where: eq(schema.evidenceItems.id, evidenceId),
+            where: and(
+                eq(schema.evidenceItems.id, evidenceId),
+                eq(schema.evidenceItems.tenantId, tenantId)
+            ),
             columns: { r2Key: true, mimeType: true, title: true }
         });
 

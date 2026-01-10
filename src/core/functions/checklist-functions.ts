@@ -2,11 +2,18 @@ import { createServerFn } from "@tanstack/react-start";
 import * as schema from "@/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { authMiddleware } from "@/core/middleware/auth-middleware";
+import { z } from "zod";
 
 export const getChecklistDataFn = createServerFn({ method: "GET" })
     .middleware([authMiddleware])
+    .inputValidator((data: unknown) => {
+        return z.object({
+            siteId: z.string().optional()
+        }).optional().parse(data);
+    })
     .handler(async (ctx) => {
         const { db, user } = ctx.context;
+        const inputSiteId = ctx.data?.siteId;
 
         if (!user) {
             throw new Error("Unauthorized: User must be logged in.");
@@ -17,8 +24,34 @@ export const getChecklistDataFn = createServerFn({ method: "GET" })
             throw new Error("User must belong to a tenant.");
         }
 
-        // For now, we'll get data for all sites the user has access to
-        // In the future, we can add site filtering
+        // Determine effective Site ID
+        // 1. If user is site-scoped, FORCE their site ID.
+        // 2. If user is tenant-scoped (PM/Admin), use inputSiteId or fallback to first site.
+
+        let targetSiteId = inputSiteId;
+        const userSiteId = (user as any).siteId; // From auth context if available
+
+        if (userSiteId) {
+            // If user is strictly site-scoped (e.g. GP Partner), they can only see their site
+            // We assume auth middleware populates this for site-scoped roles
+            targetSiteId = userSiteId;
+        }
+
+        // Fallback: If no site selected/enforced, grab the first one to show SOMETHING
+        if (!targetSiteId) {
+            const firstSite = await db.query.sites.findFirst({
+                where: eq(schema.sites.tenantId, tenantId)
+            });
+            targetSiteId = firstSite?.id;
+        }
+
+        if (!targetSiteId) {
+            // Edge case: Tenant has no sites? Return empty.
+            return {
+                keyQuestions: [],
+                overallProgress: 0,
+            };
+        }
 
         // 1. Fetch all key questions with their quality statements
         const keyQuestions = await db
@@ -39,13 +72,14 @@ export const getChecklistDataFn = createServerFn({ method: "GET" })
             const qsWithCounts = [];
 
             for (const qs of qualityStatements) {
-                // 3. Count evidence items for this quality statement
+                // 3. Count evidence items for this QS and SITE
                 const evidenceCountResult = await db
                     .select({ count: sql<number>`count(*)` })
                     .from(schema.evidenceItems as any)
                     .where(
                         and(
                             eq(schema.evidenceItems.tenantId, tenantId),
+                            eq(schema.evidenceItems.siteId, targetSiteId), // SCOPED
                             eq(schema.evidenceItems.qsId, qs.id)
                         ) as any
                     )
@@ -53,13 +87,14 @@ export const getChecklistDataFn = createServerFn({ method: "GET" })
 
                 const evidenceCount = evidenceCountResult?.count || 0;
 
-                // 4. Count approved evidence items
+                // 4. Count approved evidence items for this QS and SITE
                 const approvedEvidenceResult = await db
                     .select({ count: sql<number>`count(*)` })
                     .from(schema.evidenceItems as any)
                     .where(
                         and(
                             eq(schema.evidenceItems.tenantId, tenantId),
+                            eq(schema.evidenceItems.siteId, targetSiteId), // SCOPED
                             eq(schema.evidenceItems.qsId, qs.id),
                             eq(schema.evidenceItems.status, 'approved')
                         ) as any
@@ -68,13 +103,14 @@ export const getChecklistDataFn = createServerFn({ method: "GET" })
 
                 const approvedEvidenceCount = approvedEvidenceResult?.count || 0;
 
-                // 5. Count open actions for this quality statement
+                // 5. Count open actions for this QS and SITE
                 const actionsCountResult = await db
                     .select({ count: sql<number>`count(*)` })
                     .from(schema.actions as any)
                     .where(
                         and(
                             eq(schema.actions.tenantId, tenantId),
+                            eq(schema.actions.siteId, targetSiteId), // SCOPED
                             eq(schema.actions.qsId, qs.id),
                             eq(schema.actions.status, 'open')
                         ) as any
@@ -83,41 +119,26 @@ export const getChecklistDataFn = createServerFn({ method: "GET" })
 
                 const actionsCount = actionsCountResult?.count || 0;
 
-                // 7. Fetch Local Controls for this QS
-                const siteId = (user as any).siteId;
-                // NOTE: Similar to seed, we might need to find the siteId if not in user context.
-                // fetch first site if needed.
-                let targetSiteId = siteId;
-                if (!targetSiteId) {
-                    const firstSite = await db.query.sites.findFirst({
-                        where: eq(schema.sites.tenantId, tenantId)
-                    });
-                    targetSiteId = firstSite?.id;
-                }
+                // 7. Fetch Local Controls for this QS and SITE
+                const relevantControls = await db.query.localControls.findMany({
+                    where: and(
+                        eq(schema.localControls.tenantId, tenantId),
+                        eq(schema.localControls.siteId, targetSiteId), // SCOPED
+                        eq(schema.localControls.qsId, qs.id),
+                        eq(schema.localControls.active, true)
+                    )
+                });
 
-                let relevantControls: any[] = [];
-                if (targetSiteId) {
-                    relevantControls = await db.query.localControls.findMany({
-                        where: and(
-                            eq(schema.localControls.tenantId, tenantId),
-                            eq(schema.localControls.siteId, targetSiteId),
-                            eq(schema.localControls.qsId, qs.id),
-                            eq(schema.localControls.active, true)
-                        )
-                    });
-                }
-
-                // 8. Fetch distinct localControlIds that have APPROVED evidence
-                // This is the source of truth for "Met" controls
+                // 8. Fetch distinct localControlIds that have APPROVED evidence for this SITE
                 const approvedControlIds = new Set<string>();
-                if (targetSiteId) {
+                if (relevantControls.length > 0) {
                     const approvedEvidence = await db
                         .select({ localControlId: schema.evidenceItems.localControlId })
                         .from(schema.evidenceItems as any)
                         .where(
                             and(
                                 eq(schema.evidenceItems.tenantId, tenantId),
-                                eq(schema.evidenceItems.siteId, targetSiteId),
+                                eq(schema.evidenceItems.siteId, targetSiteId), // SCOPED
                                 eq(schema.evidenceItems.qsId, qs.id),
                                 eq(schema.evidenceItems.status, 'approved')
                             ) as any
@@ -128,12 +149,7 @@ export const getChecklistDataFn = createServerFn({ method: "GET" })
                     });
                 }
 
-                // REVISED SCORING LOGIC (STRICT APPROVAL):
-                // If Local Controls exist, they form the denominator.
-                // Progress = (Controls with APPROVED evidence / Total Controls) * 100
-                // If NO Controls exist, fall back to "Approved Evidence > 0" logic (Legacy/Simple mode)
-
-                // Count controls that have at least one approved evidence item linked
+                // REVISED SCORING LOGIC
                 const controlsWithEvidence = relevantControls.filter(c => approvedControlIds.has(c.id)).length;
                 const totalControls = relevantControls.length;
 
@@ -145,20 +161,18 @@ export const getChecklistDataFn = createServerFn({ method: "GET" })
                     if (completionPercentage === 100) status = 'complete';
                     else if (completionPercentage > 0) status = 'in-progress';
                     else {
-                        // If we have evidence but it's not approved or not attached to controls properly
                         if (evidenceCount > 0) {
-                            status = 'in-progress'; // Evidence exists but pending approval/sorting
+                            status = 'in-progress';
                         } else {
                             status = 'needs-attention';
                         }
                     }
                 } else {
-                    // Fallback if no controls defined yet (Simple Mode)
                     if (approvedEvidenceCount > 0 && actionsCount === 0) {
                         completionPercentage = 100;
                         status = 'complete';
                     } else if (evidenceCount > 0 || actionsCount > 0) {
-                        completionPercentage = 50; // "In Progress" if ANY evidence exists (even processing/pending)
+                        completionPercentage = 50;
                         status = 'in-progress';
                     } else {
                         completionPercentage = 0;
@@ -176,7 +190,7 @@ export const getChecklistDataFn = createServerFn({ method: "GET" })
                     completionPercentage,
                     status,
                     localControls: relevantControls,
-                    controlsMet: controlsWithEvidence, // Now strictly based on approved evidence
+                    controlsMet: controlsWithEvidence,
                     totalControls: totalControls
                 });
             }
