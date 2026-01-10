@@ -112,7 +112,9 @@ export function EvidenceList({ evidence, onSelect }: { evidence: EvidenceItem[],
                                             {item.localControl.title}
                                         </Badge>
                                     ) : (
-                                        <span className="text-muted-foreground text-xs italic">-</span>
+                                        <Badge variant="secondary" className="bg-orange-100 text-orange-700 hover:bg-orange-100 border-orange-200 text-[10px]">
+                                            AI Match Incomplete
+                                        </Badge>
                                     )}
                                 </TableCell>
                                 <TableCell className="align-top">

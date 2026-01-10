@@ -36,6 +36,11 @@ export class EvidenceIngestWorkflow extends WorkflowEntrypoint<Env, EvidenceInge
 
             if (!evidenceRecord) throw new Error(`Evidence ${evidenceId} not found`);
 
+            // Fetch all Quality Statements (ID + Title)
+            const allQs = await db.query.cqcQualityStatements.findMany({
+                columns: { id: true, title: true }
+            });
+
             // Fetch Local Controls for this site
             const siteControls = await db.query.localControls.findMany({
                 where: (t, { and, eq }) => and(
@@ -43,20 +48,29 @@ export class EvidenceIngestWorkflow extends WorkflowEntrypoint<Env, EvidenceInge
                     eq(t.siteId, evidenceRecord.siteId),
                     eq(t.active, true)
                 ),
-                columns: { id: true, title: true, qsId: true, defaultReviewerRole: true }
+                columns: { id: true, title: true, qsId: true }
             });
-
-            // Fetch QS Taxonomy (Titles only to save tokens)
 
             const allCategories = await db.query.evidenceCategories.findMany();
             const categoriesList = allCategories.map(c => `- ${c.id}: ${c.title}`).join('\n');
 
-            // Fetch all Quality Statements (ID + Title)
-            const allQs = await db.query.cqcQualityStatements.findMany({
-                columns: { id: true, title: true }
-            });
-            const qsContext = allQs.map(qs => `- ${qs.id}: ${qs.title}`).join('\n');
-            const controlsContext = siteControls.map(c => `- "${c.title}" (ID: ${c.id})`).join('\n');
+            // Group controls by QS for better context mapping
+            const controlsByQs = siteControls.reduce((acc, control) => {
+                if (!acc[control.qsId]) acc[control.qsId] = [];
+                acc[control.qsId].push(control);
+                return acc;
+            }, {} as Record<string, typeof siteControls>);
+
+            // Build unified context grouping QS and their related controls
+            // Filter out QS that have no controls to keep the prompt concise
+            const qsAndControlsContext = allQs
+                .filter(qs => controlsByQs[qs.id] && controlsByQs[qs.id].length > 0)
+                .map(qs => {
+                    const controls = controlsByQs[qs.id];
+                    let text = `- QS [${qs.id}]: "${qs.title}"`;
+                    text += `\n  Related Site Controls:\n` + controls.map(c => `    * "${c.title}" (ID: ${c.id})`).join('\n');
+                    return text;
+                }).join('\n');
 
             // 2. Fetch File Content & Convert to Markdown
             let fileContentMarkdown = "";
@@ -112,22 +126,22 @@ export class EvidenceIngestWorkflow extends WorkflowEntrypoint<Env, EvidenceInge
             }
 
             const systemPrompt = `
-                You are an expert CQC compliance assistant.
+                You are an expert CQC compliance assistant for a healthcare provider.
                 
-                CONTEXT:
-                Key Quality Statements: ${qsContext}
-                
-                EXISTING LOCAL CONTROLS (The practice's operational buckets):
-                ${controlsContext}
+                CONTEXT (Quality Statements & Their Active Site Controls):
+                ${qsAndControlsContext}
 
                 AVAILABLE EVIDENCE CATEGORIES:
                 ${categoriesList}
                 
                 YOUR TASKS:
-                1. ANALYZE CONTENT: Read the provided document content (if any) to understand its context.
-                2. EXTRACT DATE: Look for a date in the filename or DOCUMENT CONTENT (e.g., '2023-08-14'). Format: YYYY-MM-DD. Priority to content date.
-                3. MATCH CONTROL: Does this file belong to one of the EXISTING LOCAL CONTROLS above? If yes, provide the ID. If no, suggest a new name.
-                4. CATEGORIZE: Map to one of the AVAILABLE EVIDENCE CATEGORIES IDs (e.g. 'processes', 'outcomes').
+                1. ANALYZE CONTENT: Read the provided document content to understand its context and purpose.
+                2. EXTRACT DATE: Look for a date representing when the activity occurred. Format: YYYY-MM-DD.
+                3. MATCH QS & CONTROL:
+                   - Identify the most relevant Quality Statement (QS ID) this evidence supports.
+                   - Check if it fits into any of the EXISTING SITE CONTROLS listed under that QS. If it does, provide the 'matchedControlId'.
+                   - If it belongs to a QS but none of the specific controls under it match well, provide 'null' for 'matchedControlId' and suggest a clear 'suggestedControlName'.
+                4. CATEGORIZE: Map to one of the AVAILABLE EVIDENCE CATEGORIES IDs.
              `;
 
             const userMessage = `
@@ -220,6 +234,7 @@ export class EvidenceIngestWorkflow extends WorkflowEntrypoint<Env, EvidenceInge
 
             // Use matched control ID if AI found one
             let finalControlId = aiResult.matchedControlId;
+            if (finalControlId === 'null' || finalControlId === 'undefined') finalControlId = null;
 
             // If AI didn't find one, but suggested a name, we COULD try to fuzzy match again, 
             // but for now let's trust the AI's "matchedControlId" if it picked from the list.
