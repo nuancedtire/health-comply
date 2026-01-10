@@ -1,0 +1,352 @@
+"use client";
+
+import {
+    MessageBranch,
+    MessageBranchContent,
+} from "@/components/ai/message";
+import {
+    Conversation,
+    ConversationContent,
+    ConversationScrollButton,
+} from "@/components/ai/conversation";
+import { Message, MessageContent } from "@/components/ai/message";
+import {
+    PromptInput,
+    PromptInputBody,
+    PromptInputButton,
+    PromptInputFooter,
+    PromptInputSubmit,
+    PromptInputTextarea,
+    PromptInputTools,
+    type PromptInputMessage,
+} from "@/components/ai/prompt-input";
+import { MessageResponse } from "@/components/ai/message";
+import {
+    Source,
+    Sources,
+    SourcesContent,
+    SourcesTrigger,
+} from "@/components/ai/sources";
+import {
+    Task,
+    TaskContent,
+    TaskItem,
+    TaskTrigger,
+} from "@/components/ai/task";
+import type { ToolUIPart } from "ai";
+import { GlobeIcon, MessageSquare, X, Loader2 } from "lucide-react";
+import { nanoid } from "nanoid";
+import { useCallback, useEffect, useState } from "react";
+import { useLocation } from "@tanstack/react-router";
+import { initChatFn, sendMessageFn } from "@/core/functions/chat-functions";
+import { Button } from "@/components/ui/button";
+import { useSite } from "@/components/site-context";
+
+type MessageType = {
+    key: string;
+    from: "user" | "assistant";
+    sources?: { href: string; title: string }[];
+    versions: {
+        id: string;
+        content: string;
+    }[];
+    reasoning?: {
+        content: string;
+        duration: number;
+    };
+    tools?: {
+        name: string;
+        description: string;
+        status: ToolUIPart["state"];
+        parameters: Record<string, unknown>;
+        result: string | undefined;
+        error: string | undefined;
+    }[];
+};
+
+const initialMessages: MessageType[] = [
+    {
+        key: "init",
+        from: "assistant",
+        versions: [
+            {
+                id: "init-v1",
+                content: "Hello! I'm Compass, your compliance assistant. How can I help you today?",
+            },
+        ],
+    },
+];
+
+export function ChatSidebar() {
+    const location = useLocation();
+    const { activeSite } = useSite();
+    const [isOpen, setIsOpen] = useState(false);
+
+    const [text, setText] = useState<string>("");
+    const [useWebSearch, setUseWebSearch] = useState<boolean>(false);
+    const [status, setStatus] = useState<
+        "submitted" | "streaming" | "ready" | "error"
+    >("ready");
+    const [messages, setMessages] = useState<MessageType[]>(initialMessages);
+    const [lastInitializedPath, setLastInitializedPath] = useState<string>("");
+
+    // Initialize/Update Chat Context on Sidebar Open OR Navigation
+    useEffect(() => {
+        // Only run if sidebar is open
+        if (!isOpen) return;
+
+        // Run if we haven't initialized for this specific path yet
+        if (location.pathname !== lastInitializedPath) {
+            const qsIdMatch = location.pathname.match(/(safe|effective|caring|responsive|well_led)\.[a-z_]+/);
+            const qsId = qsIdMatch ? qsIdMatch[0] : undefined;
+
+            initChatFn({
+                data: {
+                    pageUrl: location.pathname,
+                    pageTitle: document.title,
+                    siteId: activeSite?.id,
+                    qsId
+                }
+            }).then(() => {
+                setLastInitializedPath(location.pathname);
+            }).catch((err: any) => {
+                console.error("Chat init failed", err);
+            });
+        }
+    }, [isOpen, location.pathname, activeSite?.id, lastInitializedPath]);
+
+    const addUserMessage = useCallback(
+        async (content: string) => {
+            // 1. Add User Message to UI
+            const userMsgKey = `user-${nanoid()}`;
+            const userMessage: MessageType = {
+                key: userMsgKey,
+                from: "user",
+                versions: [{ id: userMsgKey, content }],
+            };
+
+            setMessages((prev) => [...prev, userMessage]);
+            setStatus("streaming");
+
+            // 2. Add Placeholder Assistant Message
+            const assistantMsgKey = `assistant-${nanoid()}`;
+            const assistantMessage: MessageType = {
+                key: assistantMsgKey,
+                from: "assistant",
+                versions: [{ id: assistantMsgKey, content: "Thinking..." }],
+            };
+            setMessages((prev) => [...prev, assistantMessage]);
+
+            try {
+                // 3. Backend Call
+                const response = await sendMessageFn({ data: { message: content } });
+
+                // Response shape: { content: string, steps: Array }
+                const finalContent = response.content;
+                const steps = response.steps || [];
+
+                // Extract sources from steps
+                // Each step has sources: [{ title, href, type }]
+                const allSources: any[] = [];
+                const toolSteps: any[] = [];
+
+                steps.forEach((step: any) => {
+                    // Map step to tool
+                    toolSteps.push({
+                        name: step.tool,
+                        description: "",
+                        status: "result", // Completed
+                        parameters: step.input,
+                        result: step.output,
+                        error: step.output.startsWith("Error:") ? step.output : undefined
+                    });
+
+                    if (step.sources && Array.isArray(step.sources)) {
+                        allSources.push(...step.sources);
+                    }
+                });
+
+                // 4. Update Assistant Message
+                setMessages((prev) =>
+                    prev.map((msg) => {
+                        if (msg.key === assistantMsgKey) {
+                            return {
+                                ...msg,
+                                tools: toolSteps.length > 0 ? toolSteps : undefined,
+                                sources: allSources.length > 0 ? allSources : undefined,
+                                versions: [{ id: assistantMsgKey, content: finalContent }]
+                            };
+                        }
+                        return msg;
+                    })
+                );
+            } catch (error) {
+                console.error("Chat error", error);
+                setMessages((prev) =>
+                    prev.map((msg) => {
+                        if (msg.key === assistantMsgKey) {
+                            return {
+                                ...msg,
+                                versions: [{ id: assistantMsgKey, content: `Error: ${error instanceof Error ? error.message : "Unknown error"}` }]
+                            };
+                        }
+                        return msg;
+                    })
+                );
+            } finally {
+                setStatus("ready");
+            }
+        },
+        []
+    );
+
+    const handleSubmit = (message: PromptInputMessage) => {
+        if (!message.text && !message.files?.length) return;
+        setStatus("submitted");
+        addUserMessage(message.text || "Sent with attachments");
+        setText("");
+    };
+
+    return (
+        <>
+            {!isOpen && (
+                <Button
+                    onClick={() => setIsOpen(true)}
+                    size="icon"
+                    className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-xl bg-indigo-600 hover:bg-indigo-700 text-white z-50 animate-in fade-in zoom-in"
+                >
+                    <MessageSquare className="h-7 w-7" />
+                </Button>
+            )}
+
+            {isOpen && (
+                <div className="fixed inset-y-0 right-0 w-full sm:w-[450px] bg-background shadow-2xl z-50 flex flex-col border-l animate-in slide-in-from-right duration-300">
+                    {/* Header */}
+                    <div className="flex items-center justify-between p-4 border-b">
+                        <h2 className="font-semibold text-lg flex items-center gap-2">
+                            <span className="p-1.5 bg-indigo-100 text-indigo-700 rounded-md">
+                                <MessageSquare className="w-4 h-4" />
+                            </span>
+                            Compass AI
+                        </h2>
+                        <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
+                            <X className="w-5 h-5" />
+                        </Button>
+                    </div>
+
+                    {/* Chat Area */}
+                    <div className="flex-1 overflow-hidden relative flex flex-col">
+                        <Conversation className="h-full">
+                            <ConversationContent>
+                                {messages.map(({ versions, ...message }) => (
+                                    <MessageBranch defaultBranch={0} key={message.key}>
+                                        <MessageBranchContent>
+                                            {versions.map((version) => (
+                                                <Message
+                                                    from={message.from}
+                                                    key={`${message.key}-${version.id}`}
+                                                >
+                                                    <div>
+                                                        {/* Task / Tools Display */}
+                                                        {message.tools && message.tools.length > 0 && (
+                                                            <div className="mb-2">
+                                                                <Task className="bg-transparent border-0">
+                                                                    <TaskTrigger
+                                                                        title={
+                                                                            <span className="flex items-center gap-2 text-xs font-medium">
+                                                                                <Loader2 className="w-3 h-3 text-indigo-500" />
+                                                                                Processed {message.tools.length} Step{message.tools.length !== 1 ? 's' : ''}
+                                                                            </span>
+                                                                        }
+                                                                        className="py-1 px-2 hover:bg-muted/50 rounded cursor-pointer"
+                                                                    />
+                                                                    <TaskContent>
+                                                                        {message.tools.map((tool, idx) => (
+                                                                            <TaskItem key={idx} className="text-xs py-1 border-l-2 border-muted pl-4 ml-1">
+                                                                                <div className="flex flex-col gap-1">
+                                                                                    {/* Tool Name */}
+                                                                                    <span className="font-semibold text-foreground/80 lowercase bg-muted px-1.5 py-0.5 rounded w-fit">
+                                                                                        {tool.name === 'web_search' ? 'Web Search' :
+                                                                                            tool.name === 'search_evidence' ? 'Evidence Check' : tool.name}
+                                                                                    </span>
+
+                                                                                    {/* Tool Input / Query */}
+                                                                                    <span className="text-muted-foreground break-words italic">
+                                                                                        {tool.name === 'web_search' || tool.name === 'search_evidence' ?
+                                                                                            `"${(tool.parameters as any).query}"` : ''}
+                                                                                    </span>
+                                                                                </div>
+                                                                                {tool.error && <div className="text-red-500 text-[10px] mt-1">{tool.error}</div>}
+                                                                            </TaskItem>
+                                                                        ))}
+                                                                    </TaskContent>
+                                                                </Task>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Sources Display */}
+                                                        {message.sources?.length && (
+                                                            <div className="mb-2">
+                                                                <Sources>
+                                                                    <SourcesTrigger count={message.sources.length} />
+                                                                    <SourcesContent>
+                                                                        {message.sources.map((source, idx) => (
+                                                                            <Source
+                                                                                href={source.href}
+                                                                                key={idx}
+                                                                                title={source.title}
+                                                                            />
+                                                                        ))}
+                                                                    </SourcesContent>
+                                                                </Sources>
+                                                            </div>
+                                                        )}
+
+                                                        <MessageContent>
+                                                            <MessageResponse>{version.content}</MessageResponse>
+                                                        </MessageContent>
+                                                    </div>
+                                                </Message>
+                                            ))}
+                                        </MessageBranchContent>
+                                    </MessageBranch>
+                                ))}
+                            </ConversationContent>
+                            <ConversationScrollButton />
+                        </Conversation>
+                    </div>
+
+                    {/* Input Area */}
+                    <div className="p-4 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                        <PromptInput globalDrop multiple onSubmit={handleSubmit} className="border-none shadow-none p-0">
+                            <PromptInputBody className="border rounded-lg shadow-sm focus-within:ring-1 focus-within:ring-ring">
+                                <PromptInputTextarea
+                                    onChange={(event: any) => setText(event.target.value)}
+                                    value={text}
+                                    placeholder="Ask Compass anything..."
+                                    className="min-h-[50px] max-h-[200px]"
+                                />
+                            </PromptInputBody>
+                            <PromptInputFooter>
+                                <PromptInputTools>
+                                    <PromptInputButton
+                                        onClick={() => setUseWebSearch(!useWebSearch)}
+                                        variant={useWebSearch ? "default" : "ghost"}
+                                        size="sm"
+                                    >
+                                        <GlobeIcon size={16} />
+                                        <span className="ml-1 text-xs">Web Search</span>
+                                    </PromptInputButton>
+                                </PromptInputTools>
+                                <PromptInputSubmit
+                                    disabled={!(text.trim() || status) || status === "streaming"}
+                                    status={status}
+                                />
+                            </PromptInputFooter>
+                        </PromptInput>
+                    </div>
+                </div>
+            )}
+        </>
+    );
+}

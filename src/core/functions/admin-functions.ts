@@ -602,9 +602,7 @@ const GetRolesSchema = z.object({
 export const getRolesFn = createServerFn({ method: "GET" })
     .middleware([authMiddleware])
     .inputValidator((data: z.infer<typeof GetRolesSchema>) => GetRolesSchema.parse(data))
-    .handler(async (ctx) => {
-        const { tenantId } = ctx.data;
-        const { db } = ctx.context;
+    .handler(async () => {
 
         const roles = ROLES; // Return static list
         // Could filter by context if we wanted to only show roles applicable to user context?

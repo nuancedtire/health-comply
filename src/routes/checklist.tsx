@@ -27,6 +27,9 @@ export const Route = createFileRoute('/checklist')({
             })
         }
     },
+    head: () => ({
+        meta: [{ title: 'Checklist' }],
+    }),
     component: ChecklistPage,
 })
 

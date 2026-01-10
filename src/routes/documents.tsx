@@ -20,6 +20,9 @@ export const Route = createFileRoute('/documents')({
         // Prefetch or just rely on component suspense
         // context.queryClient.ensureQueryData(...)
     },
+    head: () => ({
+        meta: [{ title: 'Documents' }],
+    }),
     component: DocumentsPage,
 })
 

@@ -37,6 +37,9 @@ export const Route = createFileRoute('/team')({
             })
         }
     },
+    head: () => ({
+        meta: [{ title: 'Team Management' }],
+    }),
     component: TeamPage,
 })
 

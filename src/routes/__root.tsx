@@ -19,6 +19,7 @@ import type { InferSelectModel } from "drizzle-orm";
 import { getUser } from "@/lib/auth-server";
 import { SiteProvider } from "@/components/site-context";
 import { Toaster } from "@/components/ui/sonner";
+import { ChatSidebar } from "@/components/ai/chat-sidebar";
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
@@ -79,6 +80,7 @@ export const Route = createRootRouteWithContext<{
 });
 
 function RootComponent() {
+  const { user } = Route.useRouteContext();
   return (
     <RootDocument>
       <ThemeProvider
@@ -90,6 +92,7 @@ function RootComponent() {
         <SiteProvider>
           <Outlet />
           <Toaster />
+          {user && <ChatSidebar />}
         </SiteProvider>
       </ThemeProvider>
     </RootDocument>

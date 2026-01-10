@@ -23,6 +23,22 @@
       "binding": "R2"
     }
   ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "CHAT_AGENT",
+        "class_name": "ChatAgent"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_classes": [
+        "ChatAgent"
+      ]
+    }
+  ],
   "ai": {
     "binding": "AI",
     "remote": true
