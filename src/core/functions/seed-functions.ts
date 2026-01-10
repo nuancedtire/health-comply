@@ -219,28 +219,9 @@ export const seedDatabaseFn = createServerFn({ method: "POST" })
                 createdAt: new Date(),
             });
 
-            // 2. Create Roles
-            const roleNames = [
-                "Practice Manager",
-                "GP Partner",
-                "Nurse Lead",
-                "Safeguarding Lead",
-                "Clinician",
-                "Receptionist",
-                "Compliance Officer"
-            ];
-            const rolesMap = new Map<string, string>(); // Name -> ID
-
-            for (const rName of roleNames) {
-                const rId = `r_${crypto.randomUUID()}`;
-                await db.insert(schema.roles as any).values({
-                    id: rId,
-                    tenantId,
-                    name: rName,
-                    type: (rName === 'Practice Manager' || rName === 'Compliance Officer') ? 'tenant' : 'site'
-                });
-                rolesMap.set(rName, rId);
-            }
+            // 2. Create Roles - SKIPPED (Static Config)
+            // const rolesMap = new Map<string, string>(); // Name -> ID
+            // for (const rName of roleNames) { ... }
 
             // 3. Create Sites
             const sitesMap = new Map<number, string>(); // Index -> ID
@@ -258,8 +239,9 @@ export const seedDatabaseFn = createServerFn({ method: "POST" })
 
             // 4. Create Users
             for (const u of tenantData.users) {
-                const roleId = rolesMap.get(u.role);
-                if (!roleId) continue;
+                // const roleId = rolesMap.get(u.role);
+                // if (!roleId) continue;
+                const role = u.role;
 
                 const siteId = u.siteIndex !== undefined ? sitesMap.get(u.siteIndex) : undefined;
 
@@ -291,7 +273,7 @@ export const seedDatabaseFn = createServerFn({ method: "POST" })
                     email: u.email,
                     tenantId,
                     siteId,
-                    roleId,
+                    role,
                     token: inviteToken,
                     expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
                     status: 'pending',
@@ -388,8 +370,8 @@ export const resetDatabaseFn = createServerFn({ method: "POST" })
                 // 11. Delete Users
                 await db.delete(schema.users as any).where(eq(schema.users.tenantId, tenantId) as any);
 
-                // 12. Delete Roles
-                await db.delete(schema.roles as any).where(eq(schema.roles.tenantId, tenantId) as any);
+                // 12. Delete Roles - SKIP
+
 
                 // 13. Delete Sites
                 await db.delete(schema.sites as any).where(eq(schema.sites.tenantId, tenantId) as any);

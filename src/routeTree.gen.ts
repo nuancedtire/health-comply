@@ -12,8 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TeamRouteImport } from './routes/team'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SignOffRouteImport } from './routes/sign-off'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as PresentationRouteImport } from './routes/presentation'
+import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as DocumentsRouteImport } from './routes/documents'
@@ -46,6 +48,11 @@ const SignOffRoute = SignOffRouteImport.update({
   path: '/sign-off',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -54,6 +61,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const PresentationRoute = PresentationRouteImport.update({
   id: '/presentation',
   path: '/presentation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -147,8 +159,10 @@ export interface FileRoutesByFullPath {
   '/documents': typeof DocumentsRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/notifications': typeof NotificationsRoute
   '/presentation': typeof PresentationRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/settings': typeof SettingsRoute
   '/sign-off': typeof SignOffRoute
   '/signup': typeof SignupRoute
   '/team': typeof TeamRoute
@@ -170,8 +184,10 @@ export interface FileRoutesByTo {
   '/documents': typeof DocumentsRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/notifications': typeof NotificationsRoute
   '/presentation': typeof PresentationRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/settings': typeof SettingsRoute
   '/sign-off': typeof SignOffRoute
   '/signup': typeof SignupRoute
   '/team': typeof TeamRoute
@@ -194,8 +210,10 @@ export interface FileRoutesById {
   '/documents': typeof DocumentsRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/notifications': typeof NotificationsRoute
   '/presentation': typeof PresentationRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/settings': typeof SettingsRoute
   '/sign-off': typeof SignOffRoute
   '/signup': typeof SignupRoute
   '/team': typeof TeamRoute
@@ -219,8 +237,10 @@ export interface FileRouteTypes {
     | '/documents'
     | '/forgot-password'
     | '/login'
+    | '/notifications'
     | '/presentation'
     | '/reset-password'
+    | '/settings'
     | '/sign-off'
     | '/signup'
     | '/team'
@@ -242,8 +262,10 @@ export interface FileRouteTypes {
     | '/documents'
     | '/forgot-password'
     | '/login'
+    | '/notifications'
     | '/presentation'
     | '/reset-password'
+    | '/settings'
     | '/sign-off'
     | '/signup'
     | '/team'
@@ -265,8 +287,10 @@ export interface FileRouteTypes {
     | '/documents'
     | '/forgot-password'
     | '/login'
+    | '/notifications'
     | '/presentation'
     | '/reset-password'
+    | '/settings'
     | '/sign-off'
     | '/signup'
     | '/team'
@@ -289,8 +313,10 @@ export interface RootRouteChildren {
   DocumentsRoute: typeof DocumentsRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
+  NotificationsRoute: typeof NotificationsRoute
   PresentationRoute: typeof PresentationRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  SettingsRoute: typeof SettingsRoute
   SignOffRoute: typeof SignOffRoute
   SignupRoute: typeof SignupRoute
   TeamRoute: typeof TeamRoute
@@ -323,6 +349,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignOffRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -335,6 +368,13 @@ declare module '@tanstack/react-router' {
       path: '/presentation'
       fullPath: '/presentation'
       preLoaderRoute: typeof PresentationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -476,8 +516,10 @@ const rootRouteChildren: RootRouteChildren = {
   DocumentsRoute: DocumentsRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
+  NotificationsRoute: NotificationsRoute,
   PresentationRoute: PresentationRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  SettingsRoute: SettingsRoute,
   SignOffRoute: SignOffRoute,
   SignupRoute: SignupRoute,
   TeamRoute: TeamRoute,

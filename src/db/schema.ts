@@ -62,15 +62,9 @@ export const users = sqliteTable('user', {
     isSystemAdmin: integer('is_system_admin', { mode: 'boolean' }).notNull().default(false),
 });
 
-// Custom roles table for our RBAC (Better Auth doesn't strictly dictate roles schema unless using plugin, but we have existing one)
-export const roles = sqliteTable('roles', {
-    id: text('id').primaryKey(),           // 'r_pm', 'r_gp', etc.
-    tenantId: text('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
-    name: text('name').notNull(),          // 'Practice Manager', 'GP Partner', etc.
-    type: text('type').notNull().default('site'), // 'tenant' | 'site'
-}, (table) => [
-    index('idx_roles_tenant_id').on(table.tenantId),
-]);
+// Roles are now static config in src/lib/config/roles.ts
+// Deleted roles table
+
 
 export const sessions = sqliteTable('session', {
     id: text('id').primaryKey(),
@@ -110,13 +104,12 @@ export const verifications = sqliteTable('verification', {
 
 export const userRoles = sqliteTable('user_roles', {
     userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-    roleId: text('role_id').notNull().references(() => roles.id, { onDelete: 'cascade' }),
+    role: text('role').notNull(), // Static role ID from ROLES config
     siteId: text('site_id').references(() => sites.id, { onDelete: 'cascade' }),  // optional: site-scoped role
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 }, (table) => [
-    primaryKey({ columns: [table.userId, table.roleId, table.siteId || 'userId'] }), // Fallback for siteId being null in PK if needed, but strict SQL requires non-null PK parts usually. Drizzle handles composite PKs well.
+    primaryKey({ columns: [table.userId, table.role, table.siteId || 'userId'] }), // Composite PK
     index('idx_user_roles_user_id').on(table.userId),
-    index('idx_user_roles_role_id').on(table.roleId),
 ]);
 
 export const invitations = sqliteTable('invitations', {
@@ -124,7 +117,7 @@ export const invitations = sqliteTable('invitations', {
     email: text('email').notNull(),
     tenantId: text('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
     siteId: text('site_id').references(() => sites.id, { onDelete: 'cascade' }),
-    roleId: text('role_id').notNull().references(() => roles.id, { onDelete: 'cascade' }),
+    role: text('role').notNull(),
     token: text('token').notNull().unique(),
     expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
     status: text('status').notNull().default('pending'), // 'pending', 'accepted'
@@ -397,14 +390,12 @@ export const actionRelations = relations(actions, ({ one, many }) => ({
     approvals: many(actionApprovals),
 }));
 
-export const roleRelations = relations(roles, ({ one }) => ({
-    tenant: one(tenants, { fields: [roles.tenantId], references: [tenants.id] }),
-}));
+// Role relations deleted
+
 
 export const invitationRelations = relations(invitations, ({ one }) => ({
     tenant: one(tenants, { fields: [invitations.tenantId], references: [tenants.id] }),
     site: one(sites, { fields: [invitations.siteId], references: [sites.id] }),
-    role: one(roles, { fields: [invitations.roleId], references: [roles.id] }),
     invitedByUser: one(users, { fields: [invitations.invitedBy], references: [users.id] }),
 }));
 

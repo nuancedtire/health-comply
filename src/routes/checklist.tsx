@@ -72,7 +72,7 @@ function ChecklistPage() {
 
                 <TabsContent value="overview" className="space-y-6">
                     {/* Header Stats */}
-                    <div className="flex items-center justify-between bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+                    <div className="flex items-center justify-between bg-card p-4 rounded-lg shadow-sm border border-border">
                         <div className="space-y-1">
                             <h2 className="text-lg font-semibold tracking-tight">Compliance Status</h2>
                             <p className="text-sm text-muted-foreground">Tracking against CQC Quality Statements</p>
@@ -93,10 +93,10 @@ function ChecklistPage() {
                         {keyQuestions.map((kq: any) => (
                             <div key={kq.id} className="space-y-3">
                                 <div className="flex items-center gap-2 mb-2">
-                                    <h3 className="font-bold tracking-tight text-xl text-slate-800 uppercase">
+                                    <h3 className="font-bold tracking-tight text-xl text-foreground uppercase">
                                         {kq.title.replace(/_/g, ' ')}
                                     </h3>
-                                    <div className="h-px bg-slate-200 flex-1 ml-4" />
+                                    <div className="h-px bg-border flex-1 ml-4" />
                                 </div>
 
                                 <div className="grid gap-2">
@@ -121,37 +121,37 @@ function QualityStatementRow({ qs, siteId }: { qs: any, siteId: string }) {
     const [isOpen, setIsOpen] = useState(false)
 
     const statusColors = {
-        'complete': 'border-l-emerald-500 bg-white hover:bg-slate-50',
-        'in-progress': 'border-l-amber-500 bg-white hover:bg-slate-50',
-        'needs-attention': 'border-l-rose-500 bg-white hover:bg-slate-50'
+        'complete': 'border-l-emerald-500 bg-card hover:bg-muted/50',
+        'in-progress': 'border-l-amber-500 bg-card hover:bg-muted/50',
+        'needs-attention': 'border-l-rose-500 bg-card hover:bg-muted/50'
     }
 
     const statusBadge = {
-        'complete': <Badge variant="default" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-emerald-200 shadow-none">Met</Badge>,
-        'in-progress': <Badge variant="secondary" className="bg-amber-100 text-amber-700 border-amber-200">Partial</Badge>,
-        'needs-attention': <Badge variant="destructive" className="bg-rose-100 text-rose-700 hover:bg-rose-100 border-rose-200 shadow-none">Not Met</Badge>
+        'complete': <Badge variant="default" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 border-emerald-500/20 shadow-none capitalize">Met</Badge>,
+        'in-progress': <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 capitalize">Partial</Badge>,
+        'needs-attention': <Badge variant="destructive" className="bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 border-rose-500/20 shadow-none capitalize">Not Met</Badge>
     }
 
     return (
-        <Collapsible open={isOpen} onOpenChange={setIsOpen} className={cn("border border-slate-200 rounded-md overflow-hidden transition-all duration-200 border-l-4", statusColors[qs.status as keyof typeof statusColors])}>
+        <Collapsible open={isOpen} onOpenChange={setIsOpen} className={cn("border border-border rounded-md overflow-hidden transition-all duration-200 border-l-4", statusColors[qs.status as keyof typeof statusColors])}>
             <CollapsibleTrigger className="w-full">
                 <div className="flex items-center p-3 gap-4">
-                    <ChevronRight className={cn("w-5 h-5 text-slate-400 transition-transform", isOpen && "rotate-90")} />
+                    <ChevronRight className={cn("w-5 h-5 text-muted-foreground transition-transform", isOpen && "rotate-90")} />
 
                     <div className="flex-1 text-left">
                         <div className="flex items-center gap-2">
-                            <span className="font-semibold text-slate-700">{qs.title}</span>
+                            <span className="font-semibold text-foreground">{qs.title}</span>
                         </div>
                     </div>
 
                     {/* Compact Metrics */}
-                    <div className="hidden sm:flex items-center gap-6 mr-6 text-sm text-slate-600">
+                    <div className="hidden sm:flex items-center gap-6 mr-6 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1.5" title="Controls Met">
-                            <CheckCircle2 className="w-4 h-4 text-slate-400" />
+                            <CheckCircle2 className="w-4 h-4 text-muted-foreground" />
                             <span>{qs.controlsMet}/{qs.totalControls} Controls</span>
                         </div>
                         {qs.actionsCount > 0 && (
-                            <div className="flex items-center gap-1.5 text-amber-600" title="Open Actions">
+                            <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-500" title="Open Actions">
                                 <AlertTriangle className="w-4 h-4" />
                                 <span>{qs.actionsCount} Actions</span>
                             </div>
@@ -166,40 +166,40 @@ function QualityStatementRow({ qs, siteId }: { qs: any, siteId: string }) {
             </CollapsibleTrigger>
 
             <CollapsibleContent>
-                <div className="border-t border-slate-100 bg-slate-50/50 p-4">
+                <div className="border-t border-border bg-muted/20 p-4">
                     {/* Controls Table */}
-                    <div className="rounded-md border border-slate-200 bg-white overflow-hidden">
+                    <div className="rounded-md border border-border bg-card overflow-hidden">
                         <table className="w-full text-sm">
-                            <thead className="bg-slate-50 border-b border-slate-200">
+                            <thead className="bg-muted/50 border-b border-border">
                                 <tr>
-                                    <th className="py-2 px-4 text-left font-medium text-slate-500 w-[40%]">Control Requirement</th>
-                                    <th className="py-2 px-4 text-left font-medium text-slate-500">Frequency</th>
-                                    <th className="py-2 px-4 text-left font-medium text-slate-500">Last Evidence</th>
-                                    <th className="py-2 px-4 text-right font-medium text-slate-500">Action</th>
+                                    <th className="py-2 px-4 text-left font-medium text-muted-foreground w-[40%]">Control Requirement</th>
+                                    <th className="py-2 px-4 text-left font-medium text-muted-foreground">Frequency</th>
+                                    <th className="py-2 px-4 text-left font-medium text-muted-foreground">Last Evidence</th>
+                                    <th className="py-2 px-4 text-right font-medium text-muted-foreground">Action</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="divide-y divide-border">
                                 {qs.localControls?.map((control: any) => {
                                     const hasEvidence = control.lastEvidenceAt !== null;
                                     const isOverdue = control.nextDueAt && new Date(control.nextDueAt) < new Date();
 
                                     return (
-                                        <tr key={control.id} className="hover:bg-slate-50/80 transition-colors">
+                                        <tr key={control.id} className="hover:bg-muted/50 transition-colors">
                                             <td className="py-2 px-4 md:py-3">
                                                 <div className="flex items-start gap-2">
                                                     <div className={cn("w-1.5 h-1.5 rounded-full mt-1.5 shrink-0",
-                                                        hasEvidence ? "bg-emerald-500" : (control.hasPendingEvidence ? "bg-orange-400" : "bg-slate-300")
+                                                        hasEvidence ? "bg-emerald-500" : (control.hasPendingEvidence ? "bg-orange-400" : "bg-muted")
                                                     )} />
-                                                    <span className="text-slate-700 font-medium">{control.title}</span>
+                                                    <span className="text-foreground font-medium">{control.title}</span>
                                                 </div>
                                             </td>
-                                            <td className="py-2 px-4 text-slate-500">
-                                                <Badge variant="outline" className="text-[10px] font-normal h-5 border-slate-200 bg-slate-50 text-slate-600">
+                                            <td className="py-2 px-4 text-muted-foreground">
+                                                <Badge variant="outline" className="text-[10px] font-normal h-5 border-border bg-muted/50 text-muted-foreground">
                                                     {formatFrequency(control.frequencyType, control.frequencyDays)}
                                                 </Badge>
                                             </td>
                                             <td className="py-2 px-4">
-                                                <div className="flex items-center gap-1.5 text-slate-500">
+                                                <div className="flex items-center gap-1.5 text-muted-foreground">
                                                     <Clock className="w-3.5 h-3.5" />
                                                     <span className="text-xs">
                                                         {control.lastEvidenceAt
@@ -216,7 +216,7 @@ function QualityStatementRow({ qs, siteId }: { qs: any, siteId: string }) {
                                                         initialQsId={qs.id}
                                                         initialControlId={control.id}
                                                         trigger={
-                                                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 rounded-full hover:bg-slate-100 text-slate-400 hover:text-indigo-600">
+                                                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 rounded-full hover:bg-muted text-muted-foreground hover:text-primary">
                                                                 <Upload className="w-3.5 h-3.5" />
                                                             </Button>
                                                         }

@@ -29,35 +29,19 @@ export const createTenantFn = createServerFn({ method: "POST" })
             createdAt: new Date(),
         });
 
-        // 3. Seed Roles
-        const roleNames = [
-            "Practice Manager",
-            "GP Partner",
-            "Nurse Lead",
-            "Safeguarding Lead",
-            "Safeguarding Lead",
-            "Admin", // Tenant Admin
-            "Compliance Officer"
-        ];
+        // No need to seed roles anymore!
 
-        const rolesToInsert = roleNames.map((name: string) => ({
-            id: `r_${crypto.randomUUID()}`,
-            tenantId,
-            name,
-            type: (name === 'Practice Manager' || name === 'Admin' || name === 'Compliance Officer') ? 'tenant' : 'site'
-        }));
-
-        await db.insert(schema.roles as any).values(rolesToInsert);
-
-        return { tenantId, roles: rolesToInsert };
+        return { tenantId };
     });
 
 const InviteUserSchema = z.object({
     email: z.string().email(),
     tenantId: z.string(),
     siteId: z.string().optional(),
-    roleId: z.string()
+    role: z.string()
 });
+
+import { ROLES, getRole } from "@/lib/config/roles";
 
 export const inviteUserFn = createServerFn({ method: "POST" })
     .middleware([authMiddleware])
@@ -66,20 +50,28 @@ export const inviteUserFn = createServerFn({ method: "POST" })
         const data = ctx.data;
         const { db, user } = ctx.context;
 
+        // Validate Role exists in config
+        const targetRoleConfig = getRole(data.role);
+        if (!targetRoleConfig) {
+            throw new Error("Invalid role specified.");
+        }
+
         // 1. Authorization Check
         if (!(user as any).isSystemAdmin) {
             const userRoles = await db.select({
-                roleName: schema.roles.name,
-                roleType: schema.roles.type,
-                tenantId: schema.roles.tenantId,
+                roleName: schema.userRoles.role,
+                // roleType come from config now, but let's just get the role name
+                tenantId: schema.users.tenantId, // schema.roles.tenantId is gone. User has tenantId.
                 siteId: schema.userRoles.siteId
             })
                 .from(schema.userRoles)
-                .innerJoin(schema.roles, eq(schema.userRoles.roleId, schema.roles.id))
+                .innerJoin(schema.users, eq(schema.userRoles.userId, schema.users.id))
                 .where(eq(schema.userRoles.userId, user.id));
 
             const myRole = userRoles[0];
             if (!myRole) throw new Error("Unauthorized");
+
+            const myRoleConfig = getRole(myRole.roleName);
 
             // Enforce Role-Based Permission (Who can invite?)
             const allowedRoles = ["Practice Manager", "Admin", "Compliance Officer", "GP Partner"];
@@ -93,8 +85,7 @@ export const inviteUserFn = createServerFn({ method: "POST" })
             }
 
             // Enforce Site (if site-scoped role)
-            // Note: GP Partner is site scoped, so they will be restricted to their site here.
-            if (myRole.roleType === 'site') {
+            if (myRoleConfig?.type === 'site') {
                 if (!myRole.siteId) throw new Error("Unauthorized: Site-scoped role without site assignment.");
                 if (data.siteId !== myRole.siteId) {
                     throw new Error("Unauthorized: Can only invite to your assigned site.");
@@ -125,7 +116,7 @@ export const inviteUserFn = createServerFn({ method: "POST" })
             email: data.email,
             tenantId: data.tenantId,
             siteId: data.siteId,
-            roleId: data.roleId,
+            role: data.role,
             token,
             expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), // 7 days
             status: 'pending',
@@ -154,24 +145,27 @@ export const getUsersAndInvitesFn = createServerFn({ method: "GET" })
         // AUTH & SCOPING
         if (!(user as any).isSystemAdmin) {
             const userRoles = await db.select({
-                roleType: schema.roles.type,
-                tenantId: schema.roles.tenantId,
+                roleName: schema.userRoles.role,
+                tenantId: schema.users.tenantId,
                 siteId: schema.userRoles.siteId
             })
                 .from(schema.userRoles)
-                .innerJoin(schema.roles, eq(schema.userRoles.roleId, schema.roles.id))
+                .innerJoin(schema.users, eq(schema.userRoles.userId, schema.users.id))
                 .where(eq(schema.userRoles.userId, user.id));
+
 
             const myRole = userRoles[0];
             if (!myRole) throw new Error("Unauthorized");
 
+            const myRoleConfig = getRole(myRole.roleName);
+
             // Force tenantId to own tenant
-            tenantId = myRole.tenantId;
+            tenantId = myRole.tenantId || undefined;
 
             // If site-scoped, validation below will handle, but for this specific query we need to inject site filtering
             // IMPORTANT: The function returns { users, invitations }. We must filter both.
 
-            if (myRole.roleType === 'site') {
+            if (myRoleConfig?.type === 'site') {
                 siteScopedId = myRole.siteId;
             }
         }
@@ -199,8 +193,7 @@ export const getUsersAndInvitesFn = createServerFn({ method: "GET" })
             image: schema.users.image,
             tenantId: schema.users.tenantId,
             tenantName: schema.tenants.name,
-            roleId: schema.userRoles.roleId,
-            roleName: schema.roles.name,
+            roleName: schema.userRoles.role, // Direct column now
             siteId: schema.userRoles.siteId,
             siteName: schema.sites.name,
             createdAt: schema.users.createdAt,
@@ -209,7 +202,6 @@ export const getUsersAndInvitesFn = createServerFn({ method: "GET" })
             .from(schema.users)
             .leftJoin(schema.tenants, eq(schema.users.tenantId, schema.tenants.id))
             .leftJoin(schema.userRoles, eq(schema.users.id, schema.userRoles.userId))
-            .leftJoin(schema.roles, eq(schema.userRoles.roleId, schema.roles.id))
             .leftJoin(schema.sites, eq(schema.userRoles.siteId, schema.sites.id))
             .where(userConditions.length > 0 ? and(...userConditions) : undefined);
 
@@ -229,8 +221,7 @@ export const getUsersAndInvitesFn = createServerFn({ method: "GET" })
             token: schema.invitations.token,
             tenantId: schema.invitations.tenantId,
             tenantName: schema.tenants.name,
-            roleId: schema.invitations.roleId,
-            roleName: schema.roles.name,
+            roleName: schema.invitations.role, // Direct column now
             siteId: schema.invitations.siteId,
             siteName: schema.sites.name,
             status: schema.invitations.status,
@@ -239,7 +230,6 @@ export const getUsersAndInvitesFn = createServerFn({ method: "GET" })
         })
             .from(schema.invitations)
             .leftJoin(schema.tenants, eq(schema.invitations.tenantId, schema.tenants.id))
-            .leftJoin(schema.roles, eq(schema.invitations.roleId, schema.roles.id))
             .leftJoin(schema.sites, eq(schema.invitations.siteId, schema.sites.id))
             .where(and(...inviteConditions));
 
@@ -263,17 +253,17 @@ export const revokeInviteFn = createServerFn({ method: "POST" })
         // 1. Authorization Check
         if (!(user as any).isSystemAdmin) {
             const userRoles = await db.select({
-                roleName: schema.roles.name,
-                roleType: schema.roles.type,
-                tenantId: schema.roles.tenantId,
+                roleName: schema.userRoles.role,
+                tenantId: schema.users.tenantId,
                 siteId: schema.userRoles.siteId
             })
                 .from(schema.userRoles)
-                .innerJoin(schema.roles, eq(schema.userRoles.roleId, schema.roles.id))
+                .innerJoin(schema.users, eq(schema.userRoles.userId, schema.users.id))
                 .where(eq(schema.userRoles.userId, user.id));
 
             const myRole = userRoles[0];
             if (!myRole) throw new Error("Unauthorized");
+            const myRoleConfig = getRole(myRole.roleName);
 
             const allowedRoles = ["Practice Manager", "Admin", "Compliance Officer", "GP Partner"];
             if (!allowedRoles.includes(myRole.roleName)) {
@@ -288,7 +278,7 @@ export const revokeInviteFn = createServerFn({ method: "POST" })
                 throw new Error("Unauthorized: Cannot manage invites for other tenants.");
             }
             // If site scoped, check site
-            if (myRole.roleType === 'site') {
+            if (myRoleConfig?.type === 'site') {
                 if (invite.siteId !== myRole.siteId) {
                     throw new Error("Unauthorized: Cannot manage invites for other sites.");
                 }
@@ -353,7 +343,7 @@ export const updateUserFn = createServerFn({ method: "POST" })
 
 const UpdateUserRoleSchema = z.object({
     userId: z.string(),
-    roleId: z.string(),
+    role: z.string(),
     siteId: z.string().optional() // Optional, for site-scoped roles if we want to change site too? Or just role. 
     // The requirement is "change roles". Usually role and site go together. 
     // Let's allow changing roleId. If role is site-scoped, we might need siteId validation or we keep existing siteId.
@@ -366,23 +356,23 @@ export const updateUserRoleFn = createServerFn({ method: "POST" })
     .middleware([authMiddleware])
     .inputValidator((data: z.infer<typeof UpdateUserRoleSchema>) => UpdateUserRoleSchema.parse(data))
     .handler(async (ctx) => {
-        const { userId, roleId } = ctx.data;
+        const { userId, role } = ctx.data;
         const { db, user } = ctx.context;
 
         // 1. Authorization Check
         if (!(user as any).isSystemAdmin) {
             const userRoles = await db.select({
-                roleName: schema.roles.name,
-                roleType: schema.roles.type,
-                tenantId: schema.roles.tenantId,
+                roleName: schema.userRoles.role,
+                tenantId: schema.users.tenantId,
                 siteId: schema.userRoles.siteId
             })
                 .from(schema.userRoles)
-                .innerJoin(schema.roles, eq(schema.userRoles.roleId, schema.roles.id))
+                .innerJoin(schema.users, eq(schema.userRoles.userId, schema.users.id))
                 .where(eq(schema.userRoles.userId, user.id));
 
             const myRole = userRoles[0];
             if (!myRole) throw new Error("Unauthorized");
+            const myRoleConfig = getRole(myRole.roleName);
 
             const allowedRoles = ["Practice Manager", "Admin", "Compliance Officer", "GP Partner"];
             if (!allowedRoles.includes(myRole.roleName)) {
@@ -391,28 +381,25 @@ export const updateUserRoleFn = createServerFn({ method: "POST" })
 
             // Verify target user belongs to same tenant
             const targetUserRoles = await db.select({
-                tenantId: schema.roles.tenantId,
+                // tenantId in schema.users is reliable
                 siteId: schema.userRoles.siteId
             })
                 .from(schema.userRoles)
-                .innerJoin(schema.roles, eq(schema.userRoles.roleId, schema.roles.id))
                 .where(eq(schema.userRoles.userId, userId));
 
             const targetUserRole = targetUserRoles[0];
 
             // If user has no role (rare), check user table for tenant
-            let targetTenantId: string | null | undefined = targetUserRole?.tenantId;
-            if (!targetTenantId) {
-                const u = await db.select({ tenantId: schema.users.tenantId }).from(schema.users).where(eq(schema.users.id, userId)).get();
-                targetTenantId = u?.tenantId;
-            }
+            let targetTenantId: string | null | undefined = null;
+            const u = await db.select({ tenantId: schema.users.tenantId }).from(schema.users).where(eq(schema.users.id, userId)).get();
+            targetTenantId = u?.tenantId;
 
             if (targetTenantId !== myRole.tenantId) {
                 throw new Error("Unauthorized: Cannot update users from other tenants.");
             }
 
             // If site scoped, check site
-            if (myRole.roleType === 'site') {
+            if (myRoleConfig?.type === 'site') {
                 const targetSiteId = targetUserRole?.siteId;
                 // Note: if target is tenant-scoped (e.g. Admin), a site-scoped user (GP) probably shouldn't be able to edit them?
                 // Usually hierarchy matters. But per requirement "those that can invite... can change roles".
@@ -424,17 +411,14 @@ export const updateUserRoleFn = createServerFn({ method: "POST" })
         }
 
         // 2. Validate New Role
-        // Is it a valid role for this tenant?
-        // We need tenantId.
-        const role = await db.select().from(schema.roles as any).where(eq(schema.roles.id, roleId)).get();
-        if (!role) throw new Error("Role not found");
+        // Is it a valid role?
+        const roleConfig = getRole(role);
+        if (!roleConfig) throw new Error("Invalid role");
 
-        // We should check if role.tenantId matches user's tenant but we can skip if we trust the UI or if previous checks passed enough.
-        // Better to check.
 
         // 3. Update
         await db.update(schema.userRoles)
-            .set({ roleId })
+            .set({ role })
             .where(eq(schema.userRoles.userId, userId));
 
         // Note: If the new role is site-scoped but the user was tenant-scoped, they might need a siteId update.
@@ -502,7 +486,6 @@ export const getTenantsFn = createServerFn({ method: "GET" })
         const sites = await db.select().from(schema.sites as any);
 
         // 3. Get all Practice Managers (users with PM role)
-        // We need to join users -> userRoles -> roles
         const practiceManagers = await db.select({
             userId: schema.users.id,
             userName: schema.users.name,
@@ -511,30 +494,22 @@ export const getTenantsFn = createServerFn({ method: "GET" })
         })
             .from(schema.users as any)
             .innerJoin(schema.userRoles as any, eq(schema.users.id, schema.userRoles.userId) as any)
-            .innerJoin(schema.roles as any, eq(schema.userRoles.roleId, schema.roles.id) as any)
-            .where(eq(schema.roles.name, 'Practice Manager') as any);
+            .where(eq(schema.userRoles.role, 'Practice Manager') as any); // Use string directly
 
-        // 4. Get 'Practice Manager' role IDs for each tenant to facilitate invites
-        const pmRoles = await db.select({
-            id: schema.roles.id,
-            tenantId: schema.roles.tenantId
-        })
-            .from(schema.roles as any)
-            .where(eq(schema.roles.name, 'Practice Manager') as any);
+        // 4. (No longer need to fetch role IDs for PMs, they are static)
 
         // 5. Get Pending Invitations for PMs
         const pendingInvitations = await db.select({
             id: schema.invitations.id,
             email: schema.invitations.email,
             tenantId: schema.invitations.tenantId,
-            roleId: schema.invitations.roleId
+            roleName: schema.invitations.role
         })
             .from(schema.invitations as any)
-            .innerJoin(schema.roles as any, eq(schema.invitations.roleId, schema.roles.id) as any)
             .where(
                 and(
                     eq(schema.invitations.status, 'pending') as any,
-                    eq(schema.roles.name, 'Practice Manager') as any
+                    eq(schema.invitations.role, 'Practice Manager') as any
                 )
             );
 
@@ -543,7 +518,7 @@ export const getTenantsFn = createServerFn({ method: "GET" })
             ...tenant,
             sites: sites.filter((s: any) => s.tenantId === tenant.id),
             practiceManagers: practiceManagers.filter((pm: any) => pm.tenantId === tenant.id),
-            practiceManagerRoleId: pmRoles.find((r: any) => r.tenantId === tenant.id)?.id,
+            practiceManagerRole: 'Practice Manager', // roleId concept replaced
             pendingInvitations: pendingInvitations.filter((inv: any) => inv.tenantId === tenant.id)
         }));
     });
@@ -608,8 +583,8 @@ export const deleteTenantFn = createServerFn({ method: "POST" })
         // 11. Delete Users
         await db.delete(schema.users as any).where(eq(schema.users.tenantId, tenantId) as any);
 
-        // 12. Delete Roles
-        await db.delete(schema.roles as any).where(eq(schema.roles.tenantId, tenantId) as any);
+        // 12. Delete Roles - SKIP (Roles table deleted)
+
 
         // 13. Delete Sites
         await db.delete(schema.sites as any).where(eq(schema.sites.tenantId, tenantId) as any);
@@ -631,12 +606,10 @@ export const getRolesFn = createServerFn({ method: "GET" })
         const { tenantId } = ctx.data;
         const { db } = ctx.context;
 
-        let query: any = db.select().from(schema.roles as any);
-        if (tenantId) {
-            query = query.where(eq(schema.roles.tenantId, tenantId) as any);
-        }
-
-        const roles = await query;
+        const roles = ROLES; // Return static list
+        // Could filter by context if we wanted to only show roles applicable to user context?
+        // But the dialog usually handles logic or we can trust the FE/BE validation.
+        // Let's just return all constants.
         return roles;
     });
 
@@ -656,10 +629,9 @@ export const createSiteFn = createServerFn({ method: "POST" })
         // AUTH CHECK
         if (!(user as any).isSystemAdmin) {
             const userRoles = await db.select({
-                name: schema.roles.name
+                name: schema.userRoles.role
             })
                 .from(schema.userRoles as any)
-                .innerJoin(schema.roles as any, eq(schema.userRoles.roleId, schema.roles.id) as any)
                 .where(eq(schema.userRoles.userId, user.id) as any);
 
             const hasManagerRole = userRoles.some((r: any) => r.name === 'Practice Manager');
@@ -692,24 +664,26 @@ export const getSitesFn = createServerFn({ method: "GET" })
         const { tenantId } = ctx.data;
         const { db, user } = ctx.context;
 
-        // AUTH & SCOPING checks
-        // If site scoped, only return my site.
-
         let siteScopedId: string | null = null;
 
+        // AUTH & SCOPING checks
         if (!(user as any).isSystemAdmin) {
             const userRoles = await db.select({
-                roleType: schema.roles.type,
+                roleName: schema.userRoles.role,
                 siteId: schema.userRoles.siteId
             })
                 .from(schema.userRoles)
-                .innerJoin(schema.roles, eq(schema.userRoles.roleId, schema.roles.id))
+                .innerJoin(schema.users, eq(schema.userRoles.userId, schema.users.id))
                 .where(eq(schema.userRoles.userId, user.id));
 
             const myRole = userRoles[0];
             // If I am site scoped, I can only see my own site
-            if (myRole && myRole.roleType === 'site') {
-                siteScopedId = myRole.siteId;
+
+            if (myRole) {
+                const config = getRole(myRole.roleName);
+                if (config?.type === 'site') {
+                    siteScopedId = myRole.siteId;
+                }
             }
         }
 

@@ -86,7 +86,7 @@ export function LocalControlsManager() {
                 </div>
             </div>
 
-            <div className="rounded-md border bg-white">
+            <div className="rounded-md border bg-card">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -101,7 +101,7 @@ export function LocalControlsManager() {
                     <TableBody>
                         {data?.controls.map((control) => (
                             <TableRow key={control.id}>
-                                <TableCell className="font-medium text-slate-600">
+                                <TableCell className="font-medium text-muted-foreground">
                                     {control.qs?.title || control.qsId}
                                 </TableCell>
                                 <TableCell className="font-semibold">{control.title}</TableCell>
@@ -388,7 +388,7 @@ function SuggestControlsDialog() {
                                         <div className="space-y-1">
                                             <div className="font-semibold">{s.title}</div>
                                             <div className="text-muted-foreground">{s.description}</div>
-                                            <div className="text-xs bg-slate-100 p-1 rounded inline-block">
+                                            <div className="text-xs bg-muted p-1 rounded inline-block">
                                                 Hint: {s.evidenceHint}
                                             </div>
                                         </div>

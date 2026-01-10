@@ -32,7 +32,7 @@ import { useEffect } from "react"
 import { Loader2 } from "lucide-react"
 
 const formSchema = z.object({
-    roleId: z.string().min(1, "Role is required"),
+    role: z.string().min(1, "Role is required"),
 })
 
 interface ChangeRoleDialogProps {
@@ -46,7 +46,7 @@ export function ChangeRoleDialog({ open, onOpenChange, user, onSuccess }: Change
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            roleId: "",
+            role: "",
         },
     })
 
@@ -55,15 +55,15 @@ export function ChangeRoleDialog({ open, onOpenChange, user, onSuccess }: Change
     // Ideally we pass tenantId from user props or context.
     // If user prop has tenantId, great. 
     const { data: roles } = useQuery({
-        queryKey: ['roles', user?.tenantId],
-        queryFn: () => getRolesFn({ data: { tenantId: user?.tenantId } }),
-        enabled: !!user?.tenantId
+        queryKey: ['roles'],
+        queryFn: () => getRolesFn({ data: {} }), // Static roles
+        enabled: true
     });
 
     useEffect(() => {
         if (open && user) {
             form.reset({
-                roleId: user.roleId || "",
+                role: user.roleName || "", // Use roleName from user object (mapped from getUsersAndInvitesFn)
             })
         }
     }, [open, user, form])
@@ -84,8 +84,8 @@ export function ChangeRoleDialog({ open, onOpenChange, user, onSuccess }: Change
         if (!user) return;
         mutation.mutate({
             data: {
-                userId: user.id || user.userId, // handle potential user object shape diffs
-                roleId: values.roleId
+                userId: user.id || user.userId,
+                role: values.role
             }
         });
     }
@@ -103,7 +103,7 @@ export function ChangeRoleDialog({ open, onOpenChange, user, onSuccess }: Change
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                         <FormField
                             control={form.control}
-                            name="roleId"
+                            name="role"
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Role</FormLabel>
@@ -115,7 +115,7 @@ export function ChangeRoleDialog({ open, onOpenChange, user, onSuccess }: Change
                                         </FormControl>
                                         <SelectContent>
                                             {roles?.map((role: any) => (
-                                                <SelectItem key={role.id} value={role.id}>
+                                                <SelectItem key={role.id} value={role.name}>
                                                     {role.name}
                                                 </SelectItem>
                                             ))}

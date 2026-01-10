@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "71f2aaa5-17b3-4a5a-ab45-1897197608df",
+  "id": "4c6ece34-2295-4855-8a78-da7e7bceecc7",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "account": {
@@ -856,7 +856,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "set null",
           "onUpdate": "no action"
         },
         "evidence_items_evidence_category_id_evidence_categories_id_fk": {
@@ -1222,8 +1222,8 @@
           "notNull": false,
           "autoincrement": false
         },
-        "role_id": {
-          "name": "role_id",
+        "role": {
+          "name": "role",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -1316,19 +1316,6 @@
           "tableTo": "sites",
           "columnsFrom": [
             "site_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "invitations_role_id_roles_id_fk": {
-          "name": "invitations_role_id_roles_id_fk",
-          "tableFrom": "invitations",
-          "tableTo": "roles",
-          "columnsFrom": [
-            "role_id"
           ],
           "columnsTo": [
             "id"
@@ -2119,67 +2106,6 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "roles": {
-      "name": "roles",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "tenant_id": {
-          "name": "tenant_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "type": {
-          "name": "type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'site'"
-        }
-      },
-      "indexes": {
-        "idx_roles_tenant_id": {
-          "name": "idx_roles_tenant_id",
-          "columns": [
-            "tenant_id"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "roles_tenant_id_tenants_id_fk": {
-          "name": "roles_tenant_id_tenants_id_fk",
-          "tableFrom": "roles",
-          "tableTo": "tenants",
-          "columnsFrom": [
-            "tenant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
     "session": {
       "name": "session",
       "columns": {
@@ -2376,8 +2302,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "role_id": {
-          "name": "role_id",
+        "role": {
+          "name": "role",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -2405,13 +2331,6 @@
             "user_id"
           ],
           "isUnique": false
-        },
-        "idx_user_roles_role_id": {
-          "name": "idx_user_roles_role_id",
-          "columns": [
-            "role_id"
-          ],
-          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -2421,19 +2340,6 @@
           "tableTo": "user",
           "columnsFrom": [
             "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "user_roles_role_id_roles_id_fk": {
-          "name": "user_roles_role_id_roles_id_fk",
-          "tableFrom": "user_roles",
-          "tableTo": "roles",
-          "columnsFrom": [
-            "role_id"
           ],
           "columnsTo": [
             "id"
@@ -2456,13 +2362,13 @@
         }
       },
       "compositePrimaryKeys": {
-        "user_roles_user_id_role_id_site_id_pk": {
+        "user_roles_user_id_role_site_id_pk": {
           "columns": [
             "user_id",
-            "role_id",
+            "role",
             "site_id"
           ],
-          "name": "user_roles_user_id_role_id_site_id_pk"
+          "name": "user_roles_user_id_role_site_id_pk"
         }
       },
       "uniqueConstraints": {},

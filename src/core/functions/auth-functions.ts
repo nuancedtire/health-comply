@@ -17,14 +17,21 @@ export const checkInviteFn = createServerFn({ method: "POST" })
         const { token } = ctx.data;
         const db = getDb((ctx.context as any).env) as any;
 
-        const invite = await db.query.invitations.findFirst({
-            where: eq(schema.invitations.token, token),
-            with: {
-                tenant: true,
-                site: true,
-                role: true,
-            }
-        });
+        // Since we removed relations, we can't use db.query with 'with' freely if relations are gone.
+        // But invitations still has tenant and site?
+        // Let's use db.select for safety and clarity as schemas changed.
+        const invite = await db.select({
+            email: schema.invitations.email,
+            tenantName: schema.tenants.name,
+            siteName: schema.sites.name,
+            roleName: schema.invitations.role,
+            valid: schema.invitations.status
+        })
+            .from(schema.invitations)
+            .leftJoin(schema.tenants, eq(schema.invitations.tenantId, schema.tenants.id))
+            .leftJoin(schema.sites, eq(schema.invitations.siteId, schema.sites.id))
+            .where(eq(schema.invitations.token, token))
+            .get();
 
         if (!invite) {
             throw new Error("Invalid or expired invitation.");
@@ -33,9 +40,9 @@ export const checkInviteFn = createServerFn({ method: "POST" })
         // Return public info
         return {
             email: invite.email,
-            tenantName: invite.tenant.name,
-            siteName: invite.site?.name,
-            roleName: invite.role.name,
+            tenantName: invite.tenantName,
+            siteName: invite.siteName,
+            roleName: invite.roleName,
             valid: true
         };
     });
@@ -131,6 +138,8 @@ export const createSystemAdminFn = createServerFn({ method: "POST" })
         return { success: true, user: user.user };
     });
 
+import { getRole } from "@/lib/config/roles";
+
 export const getCurrentUserRoleFn = createServerFn({ method: "GET" })
     .middleware([authMiddleware])
     .handler(async (ctx) => {
@@ -143,18 +152,19 @@ export const getCurrentUserRoleFn = createServerFn({ method: "GET" })
 
         // Using db.select to avoid type issues with db.query in middleware context
         const userRoles = await db.select({
-            roleName: schema.roles.name,
-            roleType: schema.roles.type,
+            roleName: schema.userRoles.role,
             siteId: schema.userRoles.siteId
         })
             .from(schema.userRoles)
-            .innerJoin(schema.roles, eq(schema.userRoles.roleId, schema.roles.id))
             .where(eq(schema.userRoles.userId, user.id))
             .limit(1);
 
+        const roleName = userRoles[0]?.roleName || "User";
+        const roleConfig = getRole(roleName);
+
         return {
-            role: userRoles[0]?.roleName || "User",
-            type: userRoles[0]?.roleType || "site", // Default to site/restricted
+            role: roleName,
+            type: roleConfig?.type || "site", // Default to site/restricted
             siteId: userRoles[0]?.siteId
         };
     });

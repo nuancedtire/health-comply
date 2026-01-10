@@ -101,9 +101,11 @@ export function NavUser({
                   Account
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Bell className="mr-2 h-4 w-4" />
-                Notifications
+              <DropdownMenuItem asChild>
+                <Link to="/notifications" className="flex items-center cursor-pointer">
+                  <Bell className="mr-2 h-4 w-4" />
+                  Notifications
+                </Link>
               </DropdownMenuItem>
 
               <DropdownMenuSub>

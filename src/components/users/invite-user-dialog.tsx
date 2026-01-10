@@ -25,7 +25,7 @@ import { z } from "zod"
 const inviteUserSchema = z.object({
     email: z.string().email("Invalid email address"),
     tenantId: z.string().min(1, "Tenant is required"),
-    roleId: z.string().min(1, "Role is required"),
+    role: z.string().min(1, "Role is required"),
     siteId: z.string().optional(),
 });
 
@@ -46,13 +46,13 @@ export function InviteUserDialog({ onSuccess }: { onSuccess: () => void }) {
         defaultValues: {
             email: '',
             tenantId: '',
-            roleId: '',
+            role: '',
             siteId: 'default',
         }
     })
 
     const selectedTenantId = form.watch('tenantId');
-    const selectedRoleId = form.watch('roleId');
+    const selectedRole = form.watch('role');
 
     // Effect: Set initial Tenant/Site if scoped
     // We utilize useEffect or just derived logic? 
@@ -84,9 +84,9 @@ export function InviteUserDialog({ onSuccess }: { onSuccess: () => void }) {
 
     // Fetch Roles
     const { data: roles } = useQuery({
-        queryKey: ['roles', selectedTenantId],
-        queryFn: () => getRolesFn({ data: { tenantId: selectedTenantId } }),
-        enabled: !!selectedTenantId
+        queryKey: ['roles'], // Static, no dependency
+        queryFn: () => getRolesFn({ data: {} }), // No params needed
+        enabled: true
     });
 
     // Fetch Sites
@@ -107,11 +107,11 @@ export function InviteUserDialog({ onSuccess }: { onSuccess: () => void }) {
         ? sites?.filter((s: any) => s.id === myRoleData.siteId)
         : sites;
 
-    const selectedRoleName = roles?.find((r: any) => r.id === selectedRoleId)?.name;
-    const isPracticeManager = selectedRoleName === 'Practice Manager';
-    const isTenantAdmin = selectedRoleName === 'Admin';
+    const selectedRoleName = selectedRole;
+    const isPracticeManager = selectedRole === 'Practice Manager';
+    const isTenantAdmin = selectedRole === 'Admin';
 
-    const isSiteRequired = !isPracticeManager && !isTenantAdmin && !!selectedRoleId;
+    const isSiteRequired = !isPracticeManager && !isTenantAdmin && !!selectedRole;
 
     const mutation = useMutation({
         mutationFn: inviteUserFn,
@@ -186,7 +186,7 @@ export function InviteUserDialog({ onSuccess }: { onSuccess: () => void }) {
                                 render={({ field }) => (
                                     <Select onValueChange={(val) => {
                                         field.onChange(val);
-                                        form.setValue('roleId', '');
+                                        form.setValue('role', '');
                                         form.setValue('siteId', 'default');
                                     }} value={field.value}>
                                         <SelectTrigger>
@@ -212,7 +212,7 @@ export function InviteUserDialog({ onSuccess }: { onSuccess: () => void }) {
                         <Label>Role</Label>
                         <Controller
                             control={form.control}
-                            name="roleId"
+                            name="role"
                             render={({ field }) => (
                                 <Select onValueChange={field.onChange} value={field.value} disabled={!selectedTenantId}>
                                     <SelectTrigger>
@@ -220,7 +220,7 @@ export function InviteUserDialog({ onSuccess }: { onSuccess: () => void }) {
                                     </SelectTrigger>
                                     <SelectContent>
                                         {roles?.map((r: any) => (
-                                            <SelectItem key={r.id} value={r.id}>
+                                            <SelectItem key={r.id} value={r.name}>
                                                 {r.name}
                                             </SelectItem>
                                         ))}
@@ -228,8 +228,8 @@ export function InviteUserDialog({ onSuccess }: { onSuccess: () => void }) {
                                 </Select>
                             )}
                         />
-                        {form.formState.errors.roleId && (
-                            <p className="text-sm text-red-500">{form.formState.errors.roleId.message}</p>
+                        {form.formState.errors.role && (
+                            <p className="text-sm text-red-500">{form.formState.errors.role.message}</p>
                         )}
                     </div>
 

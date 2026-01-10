@@ -105,7 +105,7 @@ export const createAuth = (db: any, options?: {
 
                         const userRoleVal = {
                             userId: user.id,
-                            roleId: invite.roleId,
+                            role: invite.role, // Use role string
                             siteId: invite.siteId,
                             createdAt: new Date(),
                         };

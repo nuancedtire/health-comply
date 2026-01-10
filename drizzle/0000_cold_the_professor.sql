@@ -112,7 +112,7 @@ CREATE TABLE `evidence_items` (
 	FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`site_id`) REFERENCES `sites`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`qs_id`) REFERENCES `cqc_quality_statements`(`id`) ON UPDATE no action ON DELETE no action,
-	FOREIGN KEY (`local_control_id`) REFERENCES `local_controls`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`local_control_id`) REFERENCES `local_controls`(`id`) ON UPDATE no action ON DELETE set null,
 	FOREIGN KEY (`evidence_category_id`) REFERENCES `evidence_categories`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`uploaded_by`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE no action
 );
@@ -164,7 +164,7 @@ CREATE TABLE `invitations` (
 	`email` text NOT NULL,
 	`tenant_id` text NOT NULL,
 	`site_id` text,
-	`role_id` text NOT NULL,
+	`role` text NOT NULL,
 	`token` text NOT NULL,
 	`expires_at` integer NOT NULL,
 	`status` text DEFAULT 'pending' NOT NULL,
@@ -172,7 +172,6 @@ CREATE TABLE `invitations` (
 	`created_at` integer NOT NULL,
 	FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`site_id`) REFERENCES `sites`(`id`) ON UPDATE no action ON DELETE cascade,
-	FOREIGN KEY (`role_id`) REFERENCES `roles`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`invited_by`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
@@ -278,15 +277,6 @@ CREATE TABLE `qs_owners` (
 --> statement-breakpoint
 CREATE INDEX `idx_qs_owners_site` ON `qs_owners` (`tenant_id`,`site_id`);--> statement-breakpoint
 CREATE UNIQUE INDEX `uq_qs_owners` ON `qs_owners` (`tenant_id`,`site_id`,`qs_id`);--> statement-breakpoint
-CREATE TABLE `roles` (
-	`id` text PRIMARY KEY NOT NULL,
-	`tenant_id` text NOT NULL,
-	`name` text NOT NULL,
-	`type` text DEFAULT 'site' NOT NULL,
-	FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON UPDATE no action ON DELETE cascade
-);
---> statement-breakpoint
-CREATE INDEX `idx_roles_tenant_id` ON `roles` (`tenant_id`);--> statement-breakpoint
 CREATE TABLE `session` (
 	`id` text PRIMARY KEY NOT NULL,
 	`expires_at` integer NOT NULL,
@@ -318,17 +308,15 @@ CREATE TABLE `tenants` (
 --> statement-breakpoint
 CREATE TABLE `user_roles` (
 	`user_id` text NOT NULL,
-	`role_id` text NOT NULL,
+	`role` text NOT NULL,
 	`site_id` text,
 	`created_at` integer NOT NULL,
-	PRIMARY KEY(`user_id`, `role_id`, `site_id`),
+	PRIMARY KEY(`user_id`, `role`, `site_id`),
 	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade,
-	FOREIGN KEY (`role_id`) REFERENCES `roles`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`site_id`) REFERENCES `sites`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
 CREATE INDEX `idx_user_roles_user_id` ON `user_roles` (`user_id`);--> statement-breakpoint
-CREATE INDEX `idx_user_roles_role_id` ON `user_roles` (`role_id`);--> statement-breakpoint
 CREATE TABLE `user` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
