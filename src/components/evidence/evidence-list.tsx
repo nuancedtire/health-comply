@@ -113,7 +113,7 @@ export function EvidenceList({ evidence, onSelect }: { evidence: EvidenceItem[],
                                         </Badge>
                                     ) : (
                                         <Badge variant="secondary" className="bg-orange-100 text-orange-700 hover:bg-orange-100 border-orange-200 text-[10px]">
-                                            AI Match Incomplete
+                                            AI Matching
                                         </Badge>
                                     )}
                                 </TableCell>

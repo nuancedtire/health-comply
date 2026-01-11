@@ -36,7 +36,7 @@ export const uploadEvidenceFn = createServerFn({ method: "POST" })
         const evidenceId = `ev_${crypto.randomUUID()}`;
         const date = new Date().toISOString().slice(0, 7);
         const ext = file.name.split('.').pop() || 'bin';
-        const r2Key = `t/${tenantId}/s/${siteId}/qs/${qsId}/evidence/${categoryId}/${date}/${evidenceId}.${ext}`;
+        const r2Key = `t/${tenantId}/s/${siteId}/evidence/${date}/${evidenceId}.${ext}`;
 
         try {
             if (!env || !env.R2) {
@@ -48,7 +48,10 @@ export const uploadEvidenceFn = createServerFn({ method: "POST" })
                 await env.R2.put(r2Key, file.stream(), {
                     httpMetadata: { contentType: file.type },
                     customMetadata: {
-                        context: `Evidence for Quality Statement: ${qsId}. Category: ${categoryId}.`
+                        qsId,
+                        categoryId,
+                        siteId,
+                        uploadedBy: user.id
                     }
                 });
             }

@@ -14,9 +14,13 @@ interface MainLayoutProps {
     title?: string
 }
 
+import { Route as RootRoute } from '@/routes/__root'
+
 export function MainLayout({ children, title = "Compass" }: MainLayoutProps) {
+    const { uiSettings } = RootRoute.useRouteContext()
+
     return (
-        <SidebarProvider>
+        <SidebarProvider defaultOpen={uiSettings.sidebarOpen}>
             <AppSidebar />
             <main className="flex-1 overflow-hidden h-screen flex flex-col">
                 <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">

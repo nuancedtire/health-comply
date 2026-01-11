@@ -145,9 +145,43 @@ export function ChatSidebar() {
                                 });
                             }
                             else if (h.role === 'assistant') {
-                                const tools: any[] = [];
+                                const lastMsg = mappedMessages[mappedMessages.length - 1];
+                                // Check if we should merge into previous assistant message
+                                // We merge if:
+                                // 1. Previous msg is assistant
+                                // 2. Previous msg has tools (it was a tool caller)
+                                // 3. We assume this is the continuation (Answer or Next Tool Step)
+
+                                const shouldMerge = lastMsg &&
+                                    lastMsg.from === 'assistant' &&
+                                    (lastMsg.tools?.length ?? 0) > 0;
+
+                                let targetMsg: MessageType; // Use partial type for manipulation
+                                let msgKey: string;
+
+                                if (shouldMerge) {
+                                    targetMsg = lastMsg!;
+                                    msgKey = targetMsg.key;
+                                    // If current has content, update target (Overwrite previous "thinking" text)
+                                    if (h.content) {
+                                        targetMsg.versions[0].content = h.content;
+                                    }
+                                } else {
+                                    // Create new
+                                    msgKey = nanoid();
+                                    targetMsg = {
+                                        key: msgKey,
+                                        from: 'assistant',
+                                        versions: [{ id: msgKey, content: h.content || "" }],
+                                        tools: undefined, // Will be init below
+                                        sources: undefined
+                                    };
+                                    mappedMessages.push(targetMsg);
+                                }
 
                                 if (h.tool_calls && Array.isArray(h.tool_calls)) {
+                                    if (!targetMsg.tools) targetMsg.tools = [];
+
                                     h.tool_calls.forEach((tc: any) => {
                                         const toolObj = {
                                             name: tc.name,
@@ -157,18 +191,11 @@ export function ChatSidebar() {
                                             result: "Processed",
                                             call_id: tc.id
                                         };
-                                        tools.push(toolObj);
-                                        toolMap.set(tc.id, { toolObj, msgKey: key });
+                                        // @ts-ignore
+                                        targetMsg.tools.push(toolObj);
+                                        toolMap.set(tc.id, { toolObj, msgKey });
                                     });
                                 }
-
-                                mappedMessages.push({
-                                    key,
-                                    from: 'assistant',
-                                    versions: [{ id: key, content: h.content || "" }],
-                                    tools: tools.length > 0 ? tools : undefined,
-                                    sources: undefined // Will be updated if tools have sources
-                                });
                             }
                             else if (h.role === 'tool') {
                                 const mapEntry = toolMap.get(h.tool_call_id);

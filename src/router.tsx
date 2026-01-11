@@ -8,10 +8,14 @@ import { routeTree } from './routeTree.gen'
 // Create a new router instance
 export const getRouter = () => {
   const rqContext = TanstackQuery.getContext()
+  const { queryClient } = rqContext
 
   const router = createRouter({
     routeTree,
-    context: { ...rqContext },
+    context: {
+      queryClient,
+      uiSettings: { sidebarOpen: true } // Default for client-side valid until hydration
+    },
     defaultPreload: 'intent',
     Wrap: (props: { children: React.ReactNode }) => {
       return (

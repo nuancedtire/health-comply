@@ -20,15 +20,18 @@ import { getUser } from "@/lib/auth-server";
 import { SiteProvider } from "@/components/site-context";
 import { Toaster } from "@/components/ui/sonner";
 import { ChatSidebar } from "@/components/ai/chat-sidebar";
+import { getUiSettingsFn } from "@/core/functions/ui-functions";
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
   user?: InferSelectModel<typeof users> | null;
   session?: InferSelectModel<typeof sessions> | null;
+  uiSettings: { sidebarOpen: boolean };
 }>()({
   beforeLoad: async () => {
     const { user, session } = await getUser();
-    return { user, session };
+    const uiSettings = await getUiSettingsFn();
+    return { user, session, uiSettings };
   },
   head: () => ({
     meta: [

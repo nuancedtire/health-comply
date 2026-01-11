@@ -204,12 +204,9 @@ export class EvidenceIngestWorkflow extends WorkflowEntrypoint<Env, EvidenceInge
             } catch (e) {
                 console.error("AI Workflow Error", e);
                 return {
-                    summary: "AI analysis failed.",
-                    suggestedQsId: "safe.safeguarding",
-                    suggestedCategoryId: "processes",
-                    confidence: 0,
-                    extractedText: fileContentMarkdown || null
-                };
+                    __failed: true,
+                    error: String(e)
+                } as any;
             }
         });
 
@@ -222,6 +219,15 @@ export class EvidenceIngestWorkflow extends WorkflowEntrypoint<Env, EvidenceInge
                 where: eq(schema.evidenceItems.id, evidenceId)
             });
             if (!evidence) return; // Should not happen
+
+            // Check for failure signal
+            // @ts-ignore
+            if (aiResult.__failed) {
+                console.warn(`AI Analysis failed for ${evidenceId}. Deleting record.`);
+                await db.delete(schema.evidenceItems)
+                    .where(eq(schema.evidenceItems.id, evidenceId));
+                return;
+            }
 
             // Logic to finalize data
             const safeQsId = aiResult.suggestedQsId?.includes('.') ? aiResult.suggestedQsId : 'safe.safeguarding';

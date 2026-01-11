@@ -10,6 +10,7 @@ import {
 import { useState, useCallback } from "react";
 import * as React from "react";
 import { uploadEvidenceFn } from "@/core/functions/upload";
+import { checkEvidenceExistsFn } from "@/core/functions/evidence-check";
 import { useQueryClient } from "@tanstack/react-query";
 import { FileUp, FileText, X, AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -78,12 +79,24 @@ export function UploadModal({ siteId, initialQsId, initialControlId, trigger, on
         }
 
         setIsUploading(true);
-        let successCount = 0;
-        let failCount = 0;
 
         try {
-            // Process uploads sequentially or concurrently. 
-            // Concurrent is usually better but let's do simple Promise.all
+            // Check for duplicates first
+            const duplicates: string[] = [];
+            for (const file of files) {
+                const exists = await checkEvidenceExistsFn({ data: { siteId, fileName: file.name } });
+                if (exists) duplicates.push(file.name);
+            }
+
+            if (duplicates.length > 0) {
+                toast.error(`Duplicate files found: ${duplicates.join(', ')}. Please rename or remove them.`);
+                setIsUploading(false);
+                return;
+            }
+
+            let successCount = 0;
+            let failCount = 0;
+
             const uploadPromises = files.map(async (file) => {
                 const formData = new FormData();
                 formData.append("file", file);
@@ -121,15 +134,11 @@ export function UploadModal({ siteId, initialQsId, initialControlId, trigger, on
                 setOpen(false);
                 setFiles([]);
             } else {
-                // Keep the modal open and maybe remove successful files? 
-                // For now, let's just keep all files so user can retry or remove failed ones
-                // Actually, better UX: Remove successful ones from list
                 const failedFilesNames = new Set(results.filter(r => !r.success).map(r => r.fileName));
                 setFiles(prev => prev.filter(f => failedFilesNames.has(f.name)));
             }
 
         } catch (error: any) {
-            // Should not happen due to individual try/catch inside map
             toast.error(error.message || "Upload process failed");
         } finally {
             setIsUploading(false);
