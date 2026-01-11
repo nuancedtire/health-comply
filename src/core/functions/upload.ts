@@ -46,7 +46,10 @@ export const uploadEvidenceFn = createServerFn({ method: "POST" })
                 // throw new Error("R2 binding not found in context.");
             } else {
                 await env.R2.put(r2Key, file.stream(), {
-                    httpMetadata: { contentType: file.type }
+                    httpMetadata: { contentType: file.type },
+                    customMetadata: {
+                        context: `Evidence for Quality Statement: ${qsId}. Category: ${categoryId}.`
+                    }
                 });
             }
 

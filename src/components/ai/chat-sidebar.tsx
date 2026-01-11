@@ -13,13 +13,23 @@ import { Message, MessageContent } from "@/components/ai/message";
 import {
     PromptInput,
     PromptInputBody,
-    PromptInputButton,
     PromptInputFooter,
     PromptInputSubmit,
     PromptInputTextarea,
     PromptInputTools,
     type PromptInputMessage,
 } from "@/components/ai/prompt-input";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { MessageResponse } from "@/components/ai/message";
 import {
     Source,
@@ -38,9 +48,10 @@ import { GlobeIcon, MessageSquare, X, Loader2 } from "lucide-react";
 import { nanoid } from "nanoid";
 import { useCallback, useEffect, useState } from "react";
 import { useLocation } from "@tanstack/react-router";
-import { initChatFn, sendMessageFn } from "@/core/functions/chat-functions";
+import { initChatFn, sendMessageFn, getChatHistoryFn, clearChatFn } from "@/core/functions/chat-functions";
 import { Button } from "@/components/ui/button";
 import { useSite } from "@/components/site-context";
+import { Trash } from "lucide-react";
 
 type MessageType = {
     key: string;
@@ -83,7 +94,6 @@ export function ChatSidebar() {
     const [isOpen, setIsOpen] = useState(false);
 
     const [text, setText] = useState<string>("");
-    const [useWebSearch, setUseWebSearch] = useState<boolean>(false);
     const [status, setStatus] = useState<
         "submitted" | "streaming" | "ready" | "error"
     >("ready");
@@ -97,21 +107,112 @@ export function ChatSidebar() {
 
         // Run if we haven't initialized for this specific path yet
         if (location.pathname !== lastInitializedPath) {
-            const qsIdMatch = location.pathname.match(/(safe|effective|caring|responsive|well_led)\.[a-z_]+/);
-            const qsId = qsIdMatch ? qsIdMatch[0] : undefined;
+            // Add a small delay to allow document.title to update after navigation
+            const timer = setTimeout(() => {
+                const qsIdMatch = location.pathname.match(/(safe|effective|caring|responsive|well_led)\.[a-z_]+/);
+                const qsId = qsIdMatch ? qsIdMatch[0] : undefined;
 
-            initChatFn({
-                data: {
-                    pageUrl: location.pathname,
-                    pageTitle: document.title,
-                    siteId: activeSite?.id,
-                    qsId
-                }
-            }).then(() => {
-                setLastInitializedPath(location.pathname);
-            }).catch((err: any) => {
-                console.error("Chat init failed", err);
-            });
+                initChatFn({
+                    data: {
+                        pageUrl: location.pathname,
+                        pageTitle: document.title,
+                        siteId: activeSite?.id,
+                        qsId
+                    }
+                }).then(() => {
+                    setLastInitializedPath(location.pathname);
+                    // Fetch History
+                    return getChatHistoryFn();
+                }).then((res: any) => {
+                    if (res?.history && Array.isArray(res.history)) {
+                        const mappedMessages: MessageType[] = [];
+
+                        if (res.history.length === 0) {
+                            setMessages(initialMessages);
+                            return;
+                        }
+
+                        const toolMap = new Map<string, any>(); // call_id -> { toolObj, msgKey }
+
+                        res.history.forEach((h: any) => {
+                            const key = nanoid();
+
+                            if (h.role === 'user') {
+                                mappedMessages.push({
+                                    key,
+                                    from: 'user',
+                                    versions: [{ id: key, content: h.content }]
+                                });
+                            }
+                            else if (h.role === 'assistant') {
+                                const tools: any[] = [];
+
+                                if (h.tool_calls && Array.isArray(h.tool_calls)) {
+                                    h.tool_calls.forEach((tc: any) => {
+                                        const toolObj = {
+                                            name: tc.name,
+                                            description: "",
+                                            status: "result",
+                                            parameters: tc.arguments,
+                                            result: "Processed",
+                                            call_id: tc.id
+                                        };
+                                        tools.push(toolObj);
+                                        toolMap.set(tc.id, { toolObj, msgKey: key });
+                                    });
+                                }
+
+                                mappedMessages.push({
+                                    key,
+                                    from: 'assistant',
+                                    versions: [{ id: key, content: h.content || "" }],
+                                    tools: tools.length > 0 ? tools : undefined,
+                                    sources: undefined // Will be updated if tools have sources
+                                });
+                            }
+                            else if (h.role === 'tool') {
+                                const mapEntry = toolMap.get(h.tool_call_id);
+                                if (mapEntry) {
+                                    const { toolObj, msgKey } = mapEntry;
+                                    let outputText = h.content;
+                                    let sources: any[] = [];
+
+                                    try {
+                                        const parsed = JSON.parse(h.content);
+                                        if (parsed && typeof parsed === 'object' && 'text' in parsed) {
+                                            outputText = parsed.text;
+                                            if (parsed.sources && Array.isArray(parsed.sources)) {
+                                                sources = parsed.sources;
+                                            }
+                                        } else {
+                                            outputText = parsed;
+                                        }
+                                    } catch (e) { }
+
+                                    toolObj.result = outputText;
+                                    if (typeof outputText === 'string' && outputText.startsWith("Error:")) {
+                                        toolObj.error = outputText;
+                                    }
+
+                                    // Update message sources
+                                    if (sources.length > 0) {
+                                        const msg = mappedMessages.find(m => m.key === msgKey);
+                                        if (msg) {
+                                            msg.sources = [...(msg.sources || []), ...sources];
+                                        }
+                                    }
+                                }
+                            }
+                        });
+
+                        if (mappedMessages.length > 0) setMessages(mappedMessages);
+                    }
+                }).catch((err: any) => {
+                    console.error("Chat init/history failed", err);
+                });
+            }, 300); // 300ms delay to ensure DOM title is updated
+
+            return () => clearTimeout(timer);
         }
     }, [isOpen, location.pathname, activeSite?.id, lastInitializedPath]);
 
@@ -229,9 +330,35 @@ export function ChatSidebar() {
                             </span>
                             Compass AI
                         </h2>
-                        <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
-                            <X className="w-5 h-5" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" title="Clear History">
+                                        <Trash className="w-4 h-4 text-muted-foreground hover:text-red-500" />
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Clear chat history?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This will permanently delete your current conversation history. You cannot undo this action.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={async () => {
+                                            await clearChatFn();
+                                            setMessages(initialMessages);
+                                        }} className="bg-red-600 hover:bg-red-700 text-white">
+                                            Clear History
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                            <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
+                                <X className="w-5 h-5" />
+                            </Button>
+                        </div>
                     </div>
 
                     {/* Chat Area */}
@@ -329,14 +456,10 @@ export function ChatSidebar() {
                             </PromptInputBody>
                             <PromptInputFooter>
                                 <PromptInputTools>
-                                    <PromptInputButton
-                                        onClick={() => setUseWebSearch(!useWebSearch)}
-                                        variant={useWebSearch ? "default" : "ghost"}
-                                        size="sm"
-                                    >
-                                        <GlobeIcon size={16} />
-                                        <span className="ml-1 text-xs">Web Search</span>
-                                    </PromptInputButton>
+                                    <div className="flex items-center gap-1 text-xs text-muted-foreground ml-2">
+                                        <GlobeIcon size={14} className="text-indigo-400" />
+                                        <span>Compass AI</span>
+                                    </div>
                                 </PromptInputTools>
                                 <PromptInputSubmit
                                     disabled={!(text.trim() || status) || status === "streaming"}

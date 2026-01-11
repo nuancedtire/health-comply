@@ -25,7 +25,13 @@ export interface AgentContext {
 export class ChatAgent extends DurableObject<Env> {
     state: DurableObjectState;
     context: AgentContext | null = null;
-    history: { role: string; content: string }[] = [];
+    history: {
+        role: string;
+        content: string;
+        tool_calls?: any[];
+        tool_call_id?: string;
+        name?: string;
+    }[] = [];
 
     constructor(state: DurableObjectState, env: Env) {
         super(state, env);
@@ -43,12 +49,8 @@ export class ChatAgent extends DurableObject<Env> {
         // 1. INITIALIZE CONTEXT
         if (url.pathname === "/init") {
             this.context = await request.json<AgentContext>();
-            this.history.push({
-                role: "system",
-                content: `User navigated to: ${this.context.pageContext.title} (${this.context.pageContext.qsId || "General"}).`
-            });
+            // Update stored context so the system prompt always reflects the current page
             await this.state.storage.put("context", this.context);
-            await this.saveHistory();
             return new Response("OK");
         }
 
@@ -64,21 +66,41 @@ export class ChatAgent extends DurableObject<Env> {
             const steps: any[] = []; // Capture tool execution steps
 
             // Run LLM
-            let response = await this.env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
-                messages: [
-                    { role: "system", content: this.getSystemPrompt() },
-                    ...this.history
-                ],
-                tools: tools.map(t => t.definition),
-            });
+            let response = await this.env.AI.run(
+                "@cf/meta/llama-3.1-8b-instruct",
+                {
+                    messages: [
+                        { role: "system", content: this.getSystemPrompt() },
+                        ...this.history
+                    ],
+                    tools: tools.map(t => t.definition)
+                },
+                {
+                    gateway: {
+                        id: "compass-chat",
+                        skipCache: false,
+                        cacheTtl: 3360,
+                    }
+                }
+            );
+
+            // Save the tool call request to history so it persists
+            // @ts-ignore
+            if (response.tool_calls && response.tool_calls.length > 0) {
+                this.history.push({
+                    role: "assistant",
+                    content: (response as any).response || "",
+                    // @ts-ignore
+                    tool_calls: response.tool_calls
+                });
+                await this.saveHistory();
+            }
 
             // Handle Tool Calls
             let finalContent = "";
 
-            // @ts-ignore
             if (response.tool_calls && response.tool_calls.length > 0) {
                 const toolResults = [];
-                // @ts-ignore
                 for (const call of response.tool_calls) {
                     const tool = tools.find(t => t.definition.name === call.name);
                     if (tool) {
@@ -101,40 +123,56 @@ export class ChatAgent extends DurableObject<Env> {
                             stepInfo.output = textContent;
                             stepInfo.sources = sources;
 
-                            toolResults.push({
+                            const toolResultMsg = {
                                 role: "tool",
                                 name: call.name,
                                 tool_call_id: call.id,
-                                content: JSON.stringify(textContent) // LLM only needs the text
-                            });
+                                content: JSON.stringify({
+                                    text: textContent,
+                                    sources: sources
+                                })
+                            };
+
+                            toolResults.push(toolResultMsg);
+                            // IMPORTANT: Save tool result to history so sources persist on reload
+                            this.history.push(toolResultMsg);
+
                         } catch (err: any) {
                             stepInfo.output = `Error: ${err.message}`;
-                            toolResults.push({
+                            const errorMsg = {
                                 role: "tool",
                                 name: call.name,
                                 tool_call_id: call.id,
                                 content: `Error: ${err.message}`
-                            });
+                            };
+                            toolResults.push(errorMsg);
+                            this.history.push(errorMsg);
                         }
                         steps.push(stepInfo);
                     }
                 }
 
+                // Save history after all tools run
+                await this.saveHistory();
+
                 try {
                     // Feed back to LLM
-                    // @ts-ignore
-                    response = await this.env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
-                        messages: [
-                            { role: "system", content: this.getSystemPrompt() },
-                            ...this.history,
-                            {
-                                role: "assistant",
-                                content: (response as any).response || "",
-                                tool_calls: (response as any).tool_calls
-                            },
-                            ...toolResults
-                        ]
-                    });
+                    response = await this.env.AI.run(
+                        "@cf/meta/llama-3.1-8b-instruct",
+                        {
+                            messages: [
+                                { role: "system", content: this.getSystemPrompt() },
+                                ...this.history
+                            ]
+                        },
+                        {
+                            gateway: {
+                                id: "compass-chat",
+                                skipCache: false,
+                                cacheTtl: 3360,
+                            }
+                        }
+                    );
                 } catch (err: any) {
                     console.error("Error in AI tool loop:", err);
                     // Return a valid JSON error so frontend doesn't break
@@ -146,7 +184,6 @@ export class ChatAgent extends DurableObject<Env> {
             }
 
             // Extract final response
-            // @ts-ignore
             finalContent = response.response || response;
 
             this.history.push({ role: "assistant", content: finalContent });
@@ -157,6 +194,13 @@ export class ChatAgent extends DurableObject<Env> {
                 content: finalContent,
                 steps: steps
             }), { headers: { "Content-Type": "application/json" } });
+        }
+
+        // History Endpoint
+        if (url.pathname === "/history") {
+            return new Response(JSON.stringify(this.history || []), {
+                headers: { "Content-Type": "application/json" }
+            });
         }
 
         // Clear History Endpoint
@@ -178,7 +222,8 @@ export class ChatAgent extends DurableObject<Env> {
 
     // --- TOOLS ---
     getTools() {
-        return [
+        // Always include web search if key happens to be present, but we prioritize internal first in prompt
+        const tools = [
             // Tool 1: AutoRAG (Internal Evidence)
             {
                 definition: {
@@ -201,23 +246,41 @@ export class ChatAgent extends DurableObject<Env> {
                         searchPrefix = `t/${tenantId}/s/${siteId}/`;
                     }
 
+                    // Construct "Starts With" filter using compound rules
+                    // We need to match folder >= searchPrefix AND folder <= searchPrefix + 'z' (roughly)
+                    // The 'folder' metadata in our index corresponds to the path prefix.
+
+                    const filters = {
+                        type: "and",
+                        filters: [
+                            {
+                                type: "gte",
+                                key: "folder",
+                                value: searchPrefix
+                            },
+                            {
+                                type: "lte",
+                                key: "folder",
+                                value: searchPrefix + "\uffff" // High unicode char to cover all suffixes
+                            }
+                        ]
+                    };
+
                     try {
-                        const searchRes = await this.env.AI.autorag("health-comply").search(args.query, { topK: 4 });
+                        // Pass filters to autorag search
+                        const searchRes = await this.env.AI.autorag("health-comply").search({
+                            query: args.query,
+                            topK: 4,
+                            filters: filters
+                        });
 
-                        if (!searchRes || !searchRes.data) return { text: "No matches found.", sources: [] };
+                        if (!searchRes || !searchRes.data || searchRes.data.length === 0) {
+                            return { text: "No matching evidence found in your context.", sources: [] };
+                        }
 
-                        // Filter results by path prefix
-                        const relevantMatches = searchRes.data
-                            // @ts-ignore
-                            .filter((m: any) => {
-                                const filename = m.metadata?.filename || "";
-                                return filename.startsWith(searchPrefix);
-                            });
-
-                        if (relevantMatches.length === 0) return { text: "No matching evidence found in your site context.", sources: [] };
+                        const relevantMatches = searchRes.data;
 
                         // Prepare Sources
-                        // @ts-ignore
                         const sources = relevantMatches.map((m: any) => ({
                             title: m.metadata?.filename?.split('/').pop() || 'Unknown File',
                             href: '#',
@@ -233,8 +296,10 @@ export class ChatAgent extends DurableObject<Env> {
                     }
                 }
             },
-            // Tool 2: Exa (Web Search)
-            {
+        ];
+
+        if (this.env.EXA_API_KEY) {
+            tools.push({
                 definition: {
                     name: "web_search",
                     description: "Search the public internet for CQC regulations, news, or clinical guidelines.",
@@ -265,7 +330,7 @@ export class ChatAgent extends DurableObject<Env> {
 
                         if (data.results) {
                             const text = data.results.map((r: any) =>
-                                `[Title: ${r.title}]\n[URL: ${r.url}]\n${r.text.slice(0, 500)}...`
+                                `[Title: ${r.title}]\n[URL: ${r.url}]\n${r.text.slice(0, 10000)}...`
                             ).join("\n\n");
 
                             const sources = data.results.map((r: any) => ({
@@ -283,8 +348,10 @@ export class ChatAgent extends DurableObject<Env> {
                         return { text: "Web search failed.", sources: [] };
                     }
                 }
-            }
-        ];
+            });
+        }
+
+        return tools;
     }
 
     // --- PROMPT ---
@@ -299,7 +366,9 @@ export class ChatAgent extends DurableObject<Env> {
 
     RULES:
     1. If user asks about "our evidence", "my files", or specific audits, use 'search_evidence'.
-    2. If user asks about "regulations", "CQC rules", or "news", use 'web_search'.
-    3. Be helpful, professional, and concise.`;
+    2. IF web search is enabled (user requested it), use 'web_search' for external regulations/news. Otherwise, decline if unknown.
+    3. Be friendly, helpful, professional, and concise.
+    4. You do not always need to use a tool if you can answer directly.
+    5. Use tools only when necessary.`;
     }
 }

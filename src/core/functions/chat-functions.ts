@@ -106,3 +106,16 @@ export const clearChatFn = createServerFn({ method: "POST" })
         await stub.fetch("http://internal/clear");
         return { success: true };
     });
+// Get Chat History
+export const getChatHistoryFn = createServerFn({ method: "GET" })
+    .middleware([authMiddleware])
+    .handler(async ({ context }) => {
+        const { user, env } = context;
+        const id = env.CHAT_AGENT.idFromName(user.id);
+        const stub = env.CHAT_AGENT.get(id);
+
+        const response = await stub.fetch("http://internal/history");
+        const history: any[] = await response.json();
+
+        return { history };
+    });
