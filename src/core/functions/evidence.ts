@@ -3,6 +3,7 @@ import * as schema from "@/db/schema";
 import { eq, desc, and } from "drizzle-orm";
 import { authMiddleware } from "@/core/middleware/auth-middleware";
 import { z } from "zod";
+import { EVIDENCE_CATEGORIES } from "@/core/data/taxonomy";
 
 // Helper to get sites for the current user's tenant
 export const getUserSitesFn = createServerFn({ method: "GET" })
@@ -106,7 +107,16 @@ export const getEvidenceReferenceDataFn = createServerFn({ method: "GET" })
     .handler(async ({ context }) => {
         const { db } = context;
 
-        const categories = await db.select().from(schema.evidenceCategories);
+        let categories = await db.select().from(schema.evidenceCategories);
+
+        if (categories.length === 0) {
+            console.log("Seeding default evidence categories...");
+            for (const cat of EVIDENCE_CATEGORIES) {
+                await db.insert(schema.evidenceCategories).values(cat);
+            }
+            categories = EVIDENCE_CATEGORIES;
+        }
+
         const keyQuestions = await db.select().from(schema.cqcKeyQuestions).orderBy(schema.cqcKeyQuestions.displayOrder);
         const qualityStatements = await db.select({
             id: schema.cqcQualityStatements.id,

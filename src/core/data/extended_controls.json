@@ -1,0 +1,1874 @@
+[
+    {
+        "packId": "safe_safeguarding",
+        "packName": "Safeguarding",
+        "packIcon": "Shield",
+        "keyQuestion": "safe",
+        "qsId": "safe.safeguarding",
+        "title": "Safeguarding policies reviewed and updated",
+        "description": "Ensure safeguarding policies are regularly reviewed and all staff are aware of current procedures",
+        "evidenceHint": "Upload dated policy document with review signature",
+        "frequencyType": "recurring",
+        "frequencyDays": 365,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "Signed policy with review date",
+                "Staff acknowledgment register",
+                "Training completion certificates"
+            ],
+            "bad": [
+                "Undated documents",
+                "Unsigned policies",
+                "Outdated training records"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "safe_safeguarding",
+        "packName": "Safeguarding",
+        "packIcon": "Shield",
+        "keyQuestion": "safe",
+        "qsId": "safe.safeguarding",
+        "title": "Child safeguarding risk register maintained",
+        "description": "Maintain and regularly review child safeguarding risk register with appropriate follow-up actions",
+        "evidenceHint": "Risk register with dated entries and action log",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "GP Partner",
+        "evidenceExamples": {
+            "good": [
+                "Dated risk register entries",
+                "Documented MDT discussions",
+                "Clear action plans with owners"
+            ],
+            "bad": [
+                "Incomplete entries",
+                "No follow-up documented",
+                "Missing review dates"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "safe_safeguarding",
+        "packName": "Safeguarding",
+        "packIcon": "Shield",
+        "keyQuestion": "safe",
+        "qsId": "safe.safeguarding",
+        "title": "Adult safeguarding procedures documented",
+        "description": "Document adult safeguarding concerns and referrals with clear escalation pathways",
+        "evidenceHint": "Safeguarding referral log and escalation records",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "Completed referral forms",
+                "MDT meeting minutes",
+                "Outcome tracking"
+            ],
+            "bad": [
+                "Incomplete documentation",
+                "No outcome recorded",
+                "Missing consent"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "safe_safeguarding",
+        "packName": "Safeguarding",
+        "packIcon": "Shield",
+        "keyQuestion": "safe",
+        "qsId": "safe.safeguarding",
+        "title": "Safeguarding training compliance monitored",
+        "description": "Track and ensure all staff complete required safeguarding training at appropriate levels",
+        "evidenceHint": "Training matrix showing completion dates and levels",
+        "frequencyType": "recurring",
+        "frequencyDays": 365,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "Complete training matrix",
+                "Certificates with expiry dates",
+                "Role-appropriate levels"
+            ],
+            "bad": [
+                "Expired certificates",
+                "Missing staff",
+                "Wrong training levels"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "safe_infection_control",
+        "packName": "Infection Prevention & Control",
+        "packIcon": "Bug",
+        "keyQuestion": "safe",
+        "qsId": "safe.infection_prevention_and_control",
+        "title": "Hand hygiene audit completed",
+        "description": "Regular hand hygiene audits using WHO 5 moments methodology",
+        "evidenceHint": "Completed hand hygiene audit forms with action plans",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "Nurse Lead",
+        "evidenceExamples": {
+            "good": [
+                "Audit using WHO methodology",
+                "Dated observations",
+                "Improvement actions documented"
+            ],
+            "bad": [
+                "No baseline data",
+                "Missing observation times",
+                "No action plan"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "safe_infection_control",
+        "packName": "Infection Prevention & Control",
+        "packIcon": "Bug",
+        "keyQuestion": "safe",
+        "qsId": "safe.infection_prevention_and_control",
+        "title": "Cleaning schedule and logs maintained",
+        "description": "Maintain cleaning schedules with documented completion and verification",
+        "evidenceHint": "Signed cleaning logs and schedule documents",
+        "frequencyType": "recurring",
+        "frequencyDays": 30,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "Daily signed logs",
+                "Clear schedule by area",
+                "Supervisor verification"
+            ],
+            "bad": [
+                "Unsigned logs",
+                "Gaps in records",
+                "No verification"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "safe_infection_control",
+        "packName": "Infection Prevention & Control",
+        "packIcon": "Bug",
+        "keyQuestion": "safe",
+        "qsId": "safe.infection_prevention_and_control",
+        "title": "IPC policy annual review completed",
+        "description": "Annual review and update of infection prevention and control policy",
+        "evidenceHint": "Dated policy document with review signature and changes log",
+        "frequencyType": "recurring",
+        "frequencyDays": 365,
+        "defaultReviewerRole": "Nurse Lead",
+        "evidenceExamples": {
+            "good": [
+                "Signed review with date",
+                "Changes highlighted",
+                "Staff notified"
+            ],
+            "bad": [
+                "No review date",
+                "Outdated content",
+                "No distribution record"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "safe_infection_control",
+        "packName": "Infection Prevention & Control",
+        "packIcon": "Bug",
+        "keyQuestion": "safe",
+        "qsId": "safe.infection_prevention_and_control",
+        "title": "Sharps management audit completed",
+        "description": "Audit sharps containers usage, disposal and injury reporting",
+        "evidenceHint": "Sharps audit form with container inspection records",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "Nurse Lead",
+        "evidenceExamples": {
+            "good": [
+                "Container fill-level checks",
+                "Disposal records",
+                "Injury log reviewed"
+            ],
+            "bad": [
+                "Overfilled containers",
+                "Missing disposal dates",
+                "No injury reporting"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "safe_infection_control",
+        "packName": "Infection Prevention & Control",
+        "packIcon": "Bug",
+        "keyQuestion": "safe",
+        "qsId": "safe.infection_prevention_and_control",
+        "title": "Staff immunisation status verified",
+        "description": "Verify and document staff immunisation status including Hep B, MMR, and flu",
+        "evidenceHint": "Staff immunisation register with dates and statuses",
+        "frequencyType": "recurring",
+        "frequencyDays": 365,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "Complete register",
+                "Antibody levels documented",
+                "Declinations recorded"
+            ],
+            "bad": [
+                "Incomplete records",
+                "Missing new starters",
+                "No follow-up on non-immune"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "safe_medicines",
+        "packName": "Medicines Management",
+        "packIcon": "Pill",
+        "keyQuestion": "safe",
+        "qsId": "safe.medicines_optimisation",
+        "title": "Controlled drugs register audit",
+        "description": "Regular audit of controlled drugs register for accuracy and compliance",
+        "evidenceHint": "CD register audit form with discrepancy checks",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "GP Partner",
+        "evidenceExamples": {
+            "good": [
+                "Stock reconciliation",
+                "Witness signatures",
+                "Destruction records"
+            ],
+            "bad": [
+                "Unwitnessed entries",
+                "Discrepancies unexplained",
+                "Missing destructions"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "safe_medicines",
+        "packName": "Medicines Management",
+        "packIcon": "Pill",
+        "keyQuestion": "safe",
+        "qsId": "safe.medicines_optimisation",
+        "title": "Fridge temperature monitoring reviewed",
+        "description": "Daily fridge temperature checks with action on excursions",
+        "evidenceHint": "Temperature logs with excursion actions documented",
+        "frequencyType": "recurring",
+        "frequencyDays": 30,
+        "defaultReviewerRole": "Nurse Lead",
+        "evidenceExamples": {
+            "good": [
+                "Daily readings recorded",
+                "Min/max checked",
+                "Excursion actions documented"
+            ],
+            "bad": [
+                "Missing days",
+                "No min/max",
+                "Excursions not actioned"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "safe_medicines",
+        "packName": "Medicines Management",
+        "packIcon": "Pill",
+        "keyQuestion": "safe",
+        "qsId": "safe.medicines_optimisation",
+        "title": "Emergency drugs and equipment check",
+        "description": "Regular checks of emergency drugs and equipment for expiry and function",
+        "evidenceHint": "Emergency equipment checklist with expiry dates",
+        "frequencyType": "recurring",
+        "frequencyDays": 7,
+        "defaultReviewerRole": "Nurse Lead",
+        "evidenceExamples": {
+            "good": [
+                "Weekly checks documented",
+                "Expiries noted",
+                "Replacements actioned"
+            ],
+            "bad": [
+                "Expired items",
+                "Missing checks",
+                "Equipment not tested"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "safe_medicines",
+        "packName": "Medicines Management",
+        "packIcon": "Pill",
+        "keyQuestion": "safe",
+        "qsId": "safe.medicines_optimisation",
+        "title": "High-risk medication review process documented",
+        "description": "Document process for reviewing patients on high-risk medications",
+        "evidenceHint": "High-risk medication protocol and patient review log",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "GP Partner",
+        "evidenceExamples": {
+            "good": [
+                "Patient review list",
+                "Monitoring documented",
+                "Alerts actioned"
+            ],
+            "bad": [
+                "No systematic review",
+                "Missing monitoring",
+                "Overdue reviews"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "safe_medicines",
+        "packName": "Medicines Management",
+        "packIcon": "Pill",
+        "keyQuestion": "safe",
+        "qsId": "safe.medicines_optimisation",
+        "title": "Prescription security audit",
+        "description": "Audit prescription pad security and tracking",
+        "evidenceHint": "Prescription tracking log and security checklist",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "Serial numbers tracked",
+                "Secure storage verified",
+                "Missing pads investigated"
+            ],
+            "bad": [
+                "Gaps in tracking",
+                "Unsecured storage",
+                "No investigation process"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "safe_environments",
+        "packName": "Safe Environments",
+        "packIcon": "Building",
+        "keyQuestion": "safe",
+        "qsId": "safe.safe_environments",
+        "title": "Fire safety equipment checks completed",
+        "description": "Regular fire equipment checks including extinguishers, alarms, and exits",
+        "evidenceHint": "Fire equipment check log with engineer certificates",
+        "frequencyType": "recurring",
+        "frequencyDays": 30,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "Monthly visual checks",
+                "Annual service certificates",
+                "Exit routes clear"
+            ],
+            "bad": [
+                "Missed checks",
+                "Expired servicing",
+                "Blocked exits"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "safe_environments",
+        "packName": "Safe Environments",
+        "packIcon": "Building",
+        "keyQuestion": "safe",
+        "qsId": "safe.safe_environments",
+        "title": "Fire drill completed and documented",
+        "description": "Conduct fire drills with documented evacuation times and learning points",
+        "evidenceHint": "Fire drill record with times and action points",
+        "frequencyType": "recurring",
+        "frequencyDays": 180,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "Evacuation time recorded",
+                "All staff participated",
+                "Learning actioned"
+            ],
+            "bad": [
+                "No drill record",
+                "Missing staff",
+                "No follow-up actions"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "safe_environments",
+        "packName": "Safe Environments",
+        "packIcon": "Building",
+        "keyQuestion": "safe",
+        "qsId": "safe.safe_environments",
+        "title": "Health and safety risk assessment reviewed",
+        "description": "Annual review of workplace health and safety risk assessment",
+        "evidenceHint": "Signed H&S risk assessment with review date",
+        "frequencyType": "recurring",
+        "frequencyDays": 365,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "Comprehensive assessment",
+                "Controls documented",
+                "Review date set"
+            ],
+            "bad": [
+                "Outdated assessment",
+                "Missing hazards",
+                "No control measures"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "safe_environments",
+        "packName": "Safe Environments",
+        "packIcon": "Building",
+        "keyQuestion": "safe",
+        "qsId": "safe.safe_environments",
+        "title": "PAT testing completed for electrical equipment",
+        "description": "Portable appliance testing for all electrical equipment",
+        "evidenceHint": "PAT test certificates and asset register",
+        "frequencyType": "recurring",
+        "frequencyDays": 365,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "All items tested",
+                "Certificates current",
+                "Failed items removed"
+            ],
+            "bad": [
+                "Missing items",
+                "Expired testing",
+                "Failed items in use"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "safe_environments",
+        "packName": "Safe Environments",
+        "packIcon": "Building",
+        "keyQuestion": "safe",
+        "qsId": "safe.safe_environments",
+        "title": "Legionella risk assessment and monitoring",
+        "description": "Water safety management including legionella risk assessment and temperature checks",
+        "evidenceHint": "Legionella risk assessment and temperature logs",
+        "frequencyType": "recurring",
+        "frequencyDays": 30,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "Monthly temperature checks",
+                "Annual assessment",
+                "Flushing records"
+            ],
+            "bad": [
+                "Missing checks",
+                "Outdated assessment",
+                "No flushing regime"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "safe_learning",
+        "packName": "Learning Culture",
+        "packIcon": "BookOpen",
+        "keyQuestion": "safe",
+        "qsId": "safe.learning_culture",
+        "title": "Significant event analysis completed",
+        "description": "Document and learn from significant events using structured analysis",
+        "evidenceHint": "SEA forms with action plans and learning outcomes",
+        "frequencyType": "recurring",
+        "frequencyDays": 30,
+        "defaultReviewerRole": "GP Partner",
+        "evidenceExamples": {
+            "good": [
+                "Structured analysis",
+                "Root cause identified",
+                "Learning shared"
+            ],
+            "bad": [
+                "Blame culture evident",
+                "No actions documented",
+                "Learning not shared"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "safe_learning",
+        "packName": "Learning Culture",
+        "packIcon": "BookOpen",
+        "keyQuestion": "safe",
+        "qsId": "safe.learning_culture",
+        "title": "Complaints reviewed and actioned",
+        "description": "Regular review of complaints with documented learning and actions",
+        "evidenceHint": "Complaints log with responses and action tracking",
+        "frequencyType": "recurring",
+        "frequencyDays": 30,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "Timely responses",
+                "Root cause analysis",
+                "Improvements made"
+            ],
+            "bad": [
+                "Late responses",
+                "Defensive replies",
+                "No learning captured"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "safe_learning",
+        "packName": "Learning Culture",
+        "packIcon": "BookOpen",
+        "keyQuestion": "safe",
+        "qsId": "safe.learning_culture",
+        "title": "Safety alerts reviewed and actioned",
+        "description": "Track review of MHRA, CAS, and other safety alerts with documented actions",
+        "evidenceHint": "Safety alerts log with review dates and actions taken",
+        "frequencyType": "recurring",
+        "frequencyDays": 30,
+        "defaultReviewerRole": "GP Partner",
+        "evidenceExamples": {
+            "good": [
+                "All alerts reviewed",
+                "Actions documented",
+                "Patient recalls completed"
+            ],
+            "bad": [
+                "Alerts not reviewed",
+                "No action documented",
+                "Recalls not done"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "safe_risks",
+        "packName": "Managing Risks",
+        "packIcon": "AlertTriangle",
+        "keyQuestion": "safe",
+        "qsId": "safe.involving_people_to_manage_risks",
+        "title": "Clinical risk register maintained",
+        "description": "Maintain practice clinical risk register with regular review and updates",
+        "evidenceHint": "Risk register with review dates and mitigation actions",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "GP Partner",
+        "evidenceExamples": {
+            "good": [
+                "Regular review documented",
+                "Mitigations in place",
+                "Risks rated consistently"
+            ],
+            "bad": [
+                "Stale entries",
+                "No mitigations",
+                "Inconsistent ratings"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "safe_risks",
+        "packName": "Managing Risks",
+        "packIcon": "AlertTriangle",
+        "keyQuestion": "safe",
+        "qsId": "safe.involving_people_to_manage_risks",
+        "title": "Business continuity plan reviewed",
+        "description": "Annual review and testing of business continuity plan",
+        "evidenceHint": "BCP document with test results and review signature",
+        "frequencyType": "recurring",
+        "frequencyDays": 365,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "Plan tested",
+                "Contact details current",
+                "Scenarios covered"
+            ],
+            "bad": [
+                "Untested plan",
+                "Outdated contacts",
+                "Key scenarios missing"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "effective_evidence_based",
+        "packName": "Evidence-Based Care",
+        "packIcon": "FileSearch",
+        "keyQuestion": "effective",
+        "qsId": "effective.delivering_evidence_based_care",
+        "title": "Clinical audit completed",
+        "description": "Regular clinical audits with documented methodology and outcomes",
+        "evidenceHint": "Audit report with methodology, results, and action plan",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "GP Partner",
+        "evidenceExamples": {
+            "good": [
+                "Clear methodology",
+                "Results analysed",
+                "Re-audit planned"
+            ],
+            "bad": [
+                "No methodology",
+                "Results not interpreted",
+                "No follow-up audit"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "effective_evidence_based",
+        "packName": "Evidence-Based Care",
+        "packIcon": "FileSearch",
+        "keyQuestion": "effective",
+        "qsId": "effective.delivering_evidence_based_care",
+        "title": "NICE guidance reviewed and implemented",
+        "description": "Track review and implementation of relevant NICE guidance",
+        "evidenceHint": "NICE guidance log with implementation status",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "GP Partner",
+        "evidenceExamples": {
+            "good": [
+                "Guidance reviewed systematically",
+                "Changes implemented",
+                "Staff informed"
+            ],
+            "bad": [
+                "No systematic review",
+                "Guidance not implemented",
+                "Staff unaware"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "effective_evidence_based",
+        "packName": "Evidence-Based Care",
+        "packIcon": "FileSearch",
+        "keyQuestion": "effective",
+        "qsId": "effective.delivering_evidence_based_care",
+        "title": "Chronic disease management templates reviewed",
+        "description": "Review clinical templates for chronic disease management against current guidelines",
+        "evidenceHint": "Template review documentation with updates made",
+        "frequencyType": "recurring",
+        "frequencyDays": 365,
+        "defaultReviewerRole": "GP Partner",
+        "evidenceExamples": {
+            "good": [
+                "Templates align with guidance",
+                "Regular updates",
+                "Clinical input documented"
+            ],
+            "bad": [
+                "Outdated templates",
+                "No review process",
+                "Missing conditions"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "effective_monitoring",
+        "packName": "Monitoring Outcomes",
+        "packIcon": "TrendingUp",
+        "keyQuestion": "effective",
+        "qsId": "effective.monitoring_and_improving_outcomes",
+        "title": "QOF performance reviewed",
+        "description": "Regular review of QOF indicators with action plans for improvement",
+        "evidenceHint": "QOF dashboard and improvement action plan",
+        "frequencyType": "recurring",
+        "frequencyDays": 30,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "Performance tracked",
+                "Actions documented",
+                "Improvement shown"
+            ],
+            "bad": [
+                "No tracking",
+                "No actions",
+                "Declining performance ignored"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "effective_monitoring",
+        "packName": "Monitoring Outcomes",
+        "packIcon": "TrendingUp",
+        "keyQuestion": "effective",
+        "qsId": "effective.monitoring_and_improving_outcomes",
+        "title": "Patient outcome measures tracked",
+        "description": "Track patient-reported outcome measures and clinical outcomes",
+        "evidenceHint": "Outcome tracking report with trend analysis",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "GP Partner",
+        "evidenceExamples": {
+            "good": [
+                "PROMs collected",
+                "Trends analysed",
+                "Actions from poor outcomes"
+            ],
+            "bad": [
+                "No outcome data",
+                "No analysis",
+                "Poor outcomes not addressed"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "effective_staff",
+        "packName": "Staff & Team Working",
+        "packIcon": "Users",
+        "keyQuestion": "effective",
+        "qsId": "effective.how_staff_teams_work_together",
+        "title": "Staff appraisals completed",
+        "description": "Annual staff appraisals with documented objectives and development plans",
+        "evidenceHint": "Appraisal completion tracker with dates",
+        "frequencyType": "recurring",
+        "frequencyDays": 365,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "All staff appraised",
+                "Objectives set",
+                "Training needs identified"
+            ],
+            "bad": [
+                "Missing appraisals",
+                "No objectives",
+                "No development plans"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "effective_staff",
+        "packName": "Staff & Team Working",
+        "packIcon": "Users",
+        "keyQuestion": "effective",
+        "qsId": "effective.how_staff_teams_work_together",
+        "title": "MDT meetings documented",
+        "description": "Regular multidisciplinary team meetings with documented discussions and actions",
+        "evidenceHint": "MDT meeting minutes with action log",
+        "frequencyType": "recurring",
+        "frequencyDays": 30,
+        "defaultReviewerRole": "GP Partner",
+        "evidenceExamples": {
+            "good": [
+                "Attendance recorded",
+                "Patients discussed",
+                "Actions assigned"
+            ],
+            "bad": [
+                "No minutes",
+                "Poor attendance",
+                "No action follow-up"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "effective_consent",
+        "packName": "Consent & Capacity",
+        "packIcon": "ClipboardCheck",
+        "keyQuestion": "effective",
+        "qsId": "effective.consent_to_care",
+        "title": "Consent policy reviewed",
+        "description": "Annual review of consent policy covering capacity assessment and documentation",
+        "evidenceHint": "Signed consent policy with review date",
+        "frequencyType": "recurring",
+        "frequencyDays": 365,
+        "defaultReviewerRole": "GP Partner",
+        "evidenceExamples": {
+            "good": [
+                "MCA compliant",
+                "Gillick competence covered",
+                "Staff trained"
+            ],
+            "bad": [
+                "Outdated policy",
+                "Missing key areas",
+                "Staff unaware"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "effective_consent",
+        "packName": "Consent & Capacity",
+        "packIcon": "ClipboardCheck",
+        "keyQuestion": "effective",
+        "qsId": "effective.consent_to_care",
+        "title": "Capacity assessment training completed",
+        "description": "Ensure clinical staff trained in Mental Capacity Act and capacity assessment",
+        "evidenceHint": "Training records for MCA/capacity assessment",
+        "frequencyType": "recurring",
+        "frequencyDays": 365,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "All clinical staff trained",
+                "Refresher completed",
+                "Case discussions held"
+            ],
+            "bad": [
+                "Missing training",
+                "No refreshers",
+                "No practical application"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "caring_dignity",
+        "packName": "Kindness & Dignity",
+        "packIcon": "Heart",
+        "keyQuestion": "caring",
+        "qsId": "caring.kindness_compassion_dignity",
+        "title": "Patient satisfaction survey reviewed",
+        "description": "Review patient satisfaction surveys and implement improvements",
+        "evidenceHint": "Survey results and improvement action plan",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "Survey results analysed",
+                "Actions documented",
+                "You said/we did displayed"
+            ],
+            "bad": [
+                "No analysis",
+                "No actions taken",
+                "Feedback ignored"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "caring_dignity",
+        "packName": "Kindness & Dignity",
+        "packIcon": "Heart",
+        "keyQuestion": "caring",
+        "qsId": "caring.kindness_compassion_dignity",
+        "title": "Friends and Family Test reviewed",
+        "description": "Monthly review of FFT results with trend analysis",
+        "evidenceHint": "FFT report with response rates and comments",
+        "frequencyType": "recurring",
+        "frequencyDays": 30,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "Good response rate",
+                "Comments reviewed",
+                "Trends identified"
+            ],
+            "bad": [
+                "Low response rate",
+                "Comments ignored",
+                "No trend analysis"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "caring_dignity",
+        "packName": "Kindness & Dignity",
+        "packIcon": "Heart",
+        "keyQuestion": "caring",
+        "qsId": "caring.kindness_compassion_dignity",
+        "title": "Privacy audit completed",
+        "description": "Audit of patient privacy including consultation rooms and reception",
+        "evidenceHint": "Privacy audit checklist with observations",
+        "frequencyType": "recurring",
+        "frequencyDays": 180,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "All areas audited",
+                "Issues identified",
+                "Improvements made"
+            ],
+            "bad": [
+                "Incomplete audit",
+                "No actions",
+                "Privacy breaches noted"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "caring_individuals",
+        "packName": "Treating as Individuals",
+        "packIcon": "UserCheck",
+        "keyQuestion": "caring",
+        "qsId": "caring.treating_people_as_individuals",
+        "title": "Equality and diversity training completed",
+        "description": "Ensure all staff complete equality and diversity training",
+        "evidenceHint": "Training matrix showing E&D completion",
+        "frequencyType": "recurring",
+        "frequencyDays": 365,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "All staff trained",
+                "Refreshers scheduled",
+                "Practical examples used"
+            ],
+            "bad": [
+                "Missing staff",
+                "No refreshers",
+                "Generic training only"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "caring_individuals",
+        "packName": "Treating as Individuals",
+        "packIcon": "UserCheck",
+        "keyQuestion": "caring",
+        "qsId": "caring.treating_people_as_individuals",
+        "title": "Accessible information standard compliance",
+        "description": "Review compliance with Accessible Information Standard",
+        "evidenceHint": "AIS compliance checklist and patient communication records",
+        "frequencyType": "recurring",
+        "frequencyDays": 180,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "Needs recorded on system",
+                "Alerts visible",
+                "Communications adapted"
+            ],
+            "bad": [
+                "No recording process",
+                "Staff unaware",
+                "No adaptations made"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "responsive_access",
+        "packName": "Access & Appointments",
+        "packIcon": "Calendar",
+        "keyQuestion": "responsive",
+        "qsId": "responsive.person_centred_care",
+        "title": "Appointment availability reviewed",
+        "description": "Regular review of appointment availability and waiting times",
+        "evidenceHint": "Access report showing availability and utilisation",
+        "frequencyType": "recurring",
+        "frequencyDays": 30,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "Demand/capacity analysis",
+                "Actions from bottlenecks",
+                "Improvement shown"
+            ],
+            "bad": [
+                "No analysis",
+                "Long waits ignored",
+                "No improvement actions"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "responsive_access",
+        "packName": "Access & Appointments",
+        "packIcon": "Calendar",
+        "keyQuestion": "responsive",
+        "qsId": "responsive.person_centred_care",
+        "title": "Home visit requests reviewed",
+        "description": "Monitor home visit requests and response times",
+        "evidenceHint": "Home visit log with response times",
+        "frequencyType": "recurring",
+        "frequencyDays": 30,
+        "defaultReviewerRole": "GP Partner",
+        "evidenceExamples": {
+            "good": [
+                "Requests triaged appropriately",
+                "Response times documented",
+                "Patterns analysed"
+            ],
+            "bad": [
+                "No triage process",
+                "Response times unknown",
+                "No analysis"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "responsive_information",
+        "packName": "Providing Information",
+        "packIcon": "Info",
+        "keyQuestion": "responsive",
+        "qsId": "responsive.providing_information",
+        "title": "Practice website reviewed and updated",
+        "description": "Regular review of practice website for accuracy and accessibility",
+        "evidenceHint": "Website review checklist with updates made",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "All info current",
+                "Accessible format",
+                "Easy navigation"
+            ],
+            "bad": [
+                "Outdated information",
+                "Poor accessibility",
+                "Broken links"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "responsive_information",
+        "packName": "Providing Information",
+        "packIcon": "Info",
+        "keyQuestion": "responsive",
+        "qsId": "responsive.providing_information",
+        "title": "Patient information leaflets reviewed",
+        "description": "Review patient information leaflets for accuracy and readability",
+        "evidenceHint": "Leaflet review log with updates",
+        "frequencyType": "recurring",
+        "frequencyDays": 365,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "Reading age appropriate",
+                "Accurate content",
+                "Multiple formats"
+            ],
+            "bad": [
+                "Complex language",
+                "Outdated info",
+                "Single format only"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "responsive_listening",
+        "packName": "Listening & Involving",
+        "packIcon": "MessageCircle",
+        "keyQuestion": "responsive",
+        "qsId": "responsive.listening_involving_people",
+        "title": "Patient participation group meeting held",
+        "description": "Regular PPG meetings with documented discussions and actions",
+        "evidenceHint": "PPG meeting minutes and action log",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "Regular meetings",
+                "Representative membership",
+                "Actions implemented"
+            ],
+            "bad": [
+                "Irregular meetings",
+                "Low attendance",
+                "No actions from feedback"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "responsive_listening",
+        "packName": "Listening & Involving",
+        "packIcon": "MessageCircle",
+        "keyQuestion": "responsive",
+        "qsId": "responsive.listening_involving_people",
+        "title": "Compliments logged and shared",
+        "description": "Log patient compliments and share with team",
+        "evidenceHint": "Compliments log and team sharing evidence",
+        "frequencyType": "recurring",
+        "frequencyDays": 30,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "Systematic logging",
+                "Team meetings",
+                "Recognition given"
+            ],
+            "bad": [
+                "No logging",
+                "Not shared",
+                "Staff unaware of positives"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "well_led_governance",
+        "packName": "Governance & Management",
+        "packIcon": "Building2",
+        "keyQuestion": "well_led",
+        "qsId": "well_led.governance_management_sustainability",
+        "title": "Partners meeting held with minutes",
+        "description": "Regular partners meetings with documented decisions and actions",
+        "evidenceHint": "Partners meeting minutes with action tracker",
+        "frequencyType": "recurring",
+        "frequencyDays": 30,
+        "defaultReviewerRole": "GP Partner",
+        "evidenceExamples": {
+            "good": [
+                "Regular meetings",
+                "Clear decisions",
+                "Actions tracked"
+            ],
+            "bad": [
+                "Irregular meetings",
+                "No minutes",
+                "Actions not followed up"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "well_led_governance",
+        "packName": "Governance & Management",
+        "packIcon": "Building2",
+        "keyQuestion": "well_led",
+        "qsId": "well_led.governance_management_sustainability",
+        "title": "Staff meeting held with minutes",
+        "description": "Regular all-staff meetings with documented items and actions",
+        "evidenceHint": "Staff meeting minutes and attendance",
+        "frequencyType": "recurring",
+        "frequencyDays": 30,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "Good attendance",
+                "Agenda shared",
+                "Actions documented"
+            ],
+            "bad": [
+                "Poor attendance",
+                "No agenda",
+                "No follow-up"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "well_led_governance",
+        "packName": "Governance & Management",
+        "packIcon": "Building2",
+        "keyQuestion": "well_led",
+        "qsId": "well_led.governance_management_sustainability",
+        "title": "Policy review schedule maintained",
+        "description": "Maintain schedule for policy reviews with tracking",
+        "evidenceHint": "Policy review schedule with completion status",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "All policies scheduled",
+                "Reviews on time",
+                "Owners assigned"
+            ],
+            "bad": [
+                "Missing policies",
+                "Overdue reviews",
+                "No ownership"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "well_led_culture",
+        "packName": "Culture & Leadership",
+        "packIcon": "Compass",
+        "keyQuestion": "well_led",
+        "qsId": "well_led.shared_direction_and_culture",
+        "title": "Practice vision and values communicated",
+        "description": "Ensure practice vision and values are communicated to all staff",
+        "evidenceHint": "Vision/values document and communication evidence",
+        "frequencyType": "recurring",
+        "frequencyDays": 365,
+        "defaultReviewerRole": "GP Partner",
+        "evidenceExamples": {
+            "good": [
+                "Displayed prominently",
+                "Discussed in induction",
+                "Staff aware"
+            ],
+            "bad": [
+                "Not visible",
+                "Staff unaware",
+                "No induction coverage"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "well_led_culture",
+        "packName": "Culture & Leadership",
+        "packIcon": "Compass",
+        "keyQuestion": "well_led",
+        "qsId": "well_led.shared_direction_and_culture",
+        "title": "Staff satisfaction survey completed",
+        "description": "Regular staff satisfaction surveys with documented actions",
+        "evidenceHint": "Survey results and improvement action plan",
+        "frequencyType": "recurring",
+        "frequencyDays": 365,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "Anonymous survey",
+                "Results shared",
+                "Actions taken"
+            ],
+            "bad": [
+                "No survey",
+                "Results hidden",
+                "No improvements made"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "well_led_speaking_up",
+        "packName": "Freedom to Speak Up",
+        "packIcon": "Megaphone",
+        "keyQuestion": "well_led",
+        "qsId": "well_led.freedom_to_speak_up",
+        "title": "Freedom to Speak Up Guardian in place",
+        "description": "Ensure FTSU guardian is appointed and promoted to staff",
+        "evidenceHint": "FTSU guardian appointment and promotion evidence",
+        "frequencyType": "recurring",
+        "frequencyDays": 365,
+        "defaultReviewerRole": "GP Partner",
+        "evidenceExamples": {
+            "good": [
+                "Guardian appointed",
+                "Contact details visible",
+                "Staff aware"
+            ],
+            "bad": [
+                "No guardian",
+                "Unknown to staff",
+                "No promotion"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "well_led_speaking_up",
+        "packName": "Freedom to Speak Up",
+        "packIcon": "Megaphone",
+        "keyQuestion": "well_led",
+        "qsId": "well_led.freedom_to_speak_up",
+        "title": "Whistleblowing policy reviewed",
+        "description": "Annual review of whistleblowing policy and staff awareness",
+        "evidenceHint": "Signed policy and staff acknowledgment",
+        "frequencyType": "recurring",
+        "frequencyDays": 365,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "Policy current",
+                "Staff trained",
+                "Process clear"
+            ],
+            "bad": [
+                "Outdated policy",
+                "Staff unaware",
+                "Complex process"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "well_led_learning",
+        "packName": "Learning & Innovation",
+        "packIcon": "Lightbulb",
+        "keyQuestion": "well_led",
+        "qsId": "well_led.learning_improvement_innovation",
+        "title": "Quality improvement project documented",
+        "description": "Document active QI projects with methodology and outcomes",
+        "evidenceHint": "QI project documentation with PDSA cycles",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "GP Partner",
+        "evidenceExamples": {
+            "good": [
+                "PDSA methodology",
+                "Measures tracked",
+                "Learning shared"
+            ],
+            "bad": [
+                "No methodology",
+                "No measures",
+                "Learning not shared"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "well_led_learning",
+        "packName": "Learning & Innovation",
+        "packIcon": "Lightbulb",
+        "keyQuestion": "well_led",
+        "qsId": "well_led.learning_improvement_innovation",
+        "title": "Training needs analysis completed",
+        "description": "Annual training needs analysis with development plan",
+        "evidenceHint": "TNA document and training plan",
+        "frequencyType": "recurring",
+        "frequencyDays": 365,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "All roles covered",
+                "Budget allocated",
+                "Plan implemented"
+            ],
+            "bad": [
+                "Incomplete analysis",
+                "No budget",
+                "Training not delivered"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "safe_data",
+        "packName": "Data Security",
+        "packIcon": "Lock",
+        "keyQuestion": "safe",
+        "qsId": "safe.safe_environments",
+        "title": "Data security awareness training completed",
+        "description": "Annual data security and GDPR training for all staff",
+        "evidenceHint": "Training completion records and certificates",
+        "frequencyType": "recurring",
+        "frequencyDays": 365,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "All staff completed",
+                "Test passed",
+                "Refresher scheduled"
+            ],
+            "bad": [
+                "Missing staff",
+                "No assessment",
+                "No refreshers"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "safe_data",
+        "packName": "Data Security",
+        "packIcon": "Lock",
+        "keyQuestion": "safe",
+        "qsId": "safe.safe_environments",
+        "title": "Data Protection Impact Assessment completed",
+        "description": "DPIA for new systems and processes handling personal data",
+        "evidenceHint": "DPIA documentation for relevant systems",
+        "frequencyType": "recurring",
+        "frequencyDays": 365,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "DPIAs completed",
+                "Risks mitigated",
+                "DPO consulted"
+            ],
+            "bad": [
+                "No DPIAs",
+                "Risks unaddressed",
+                "No DPO involvement"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "safe_data",
+        "packName": "Data Security",
+        "packIcon": "Lock",
+        "keyQuestion": "safe",
+        "qsId": "safe.safe_environments",
+        "title": "Subject access requests processed",
+        "description": "Track and process subject access requests within statutory timeframe",
+        "evidenceHint": "SAR log with response times",
+        "frequencyType": "recurring",
+        "frequencyDays": 30,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "Requests logged",
+                "30-day compliance",
+                "Proper redaction"
+            ],
+            "bad": [
+                "Unlogged requests",
+                "Late responses",
+                "Inadequate redaction"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "effective_healthier",
+        "packName": "Healthier Lives",
+        "packIcon": "Activity",
+        "keyQuestion": "effective",
+        "qsId": "effective.supporting_healthier_lives",
+        "title": "Immunisation uptake reviewed",
+        "description": "Monitor childhood and adult immunisation uptake rates",
+        "evidenceHint": "Immunisation uptake report with actions for improvement",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "Nurse Lead",
+        "evidenceExamples": {
+            "good": [
+                "Uptake tracked by cohort",
+                "DNA follow-up",
+                "Improvement actions"
+            ],
+            "bad": [
+                "No tracking",
+                "No follow-up",
+                "Declining rates ignored"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "effective_healthier",
+        "packName": "Healthier Lives",
+        "packIcon": "Activity",
+        "keyQuestion": "effective",
+        "qsId": "effective.supporting_healthier_lives",
+        "title": "Cancer screening uptake monitored",
+        "description": "Monitor cervical, breast, and bowel screening uptake",
+        "evidenceHint": "Screening uptake report with recall effectiveness",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "Nurse Lead",
+        "evidenceExamples": {
+            "good": [
+                "Uptake by screening type",
+                "Non-responders contacted",
+                "Barriers addressed"
+            ],
+            "bad": [
+                "No monitoring",
+                "No follow-up",
+                "Low uptake ignored"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "effective_healthier",
+        "packName": "Healthier Lives",
+        "packIcon": "Activity",
+        "keyQuestion": "effective",
+        "qsId": "effective.supporting_healthier_lives",
+        "title": "NHS Health Check delivery reviewed",
+        "description": "Monitor NHS Health Check invitation and completion rates",
+        "evidenceHint": "Health check report with delivery statistics",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "Invitations sent systematically",
+                "Completion rates tracked",
+                "Follow-up documented"
+            ],
+            "bad": [
+                "No systematic invitations",
+                "Low completion",
+                "No follow-up"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "responsive_carers",
+        "packName": "Carers Support",
+        "packIcon": "HandHeart",
+        "keyQuestion": "responsive",
+        "qsId": "responsive.planning_for_the_future",
+        "title": "Carers register maintained",
+        "description": "Maintain register of carers with regular review and support offers",
+        "evidenceHint": "Carers register and support documentation",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "Active register",
+                "Support offered",
+                "Annual review"
+            ],
+            "bad": [
+                "Outdated register",
+                "No support",
+                "No reviews"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "responsive_carers",
+        "packName": "Carers Support",
+        "packIcon": "HandHeart",
+        "keyQuestion": "responsive",
+        "qsId": "responsive.planning_for_the_future",
+        "title": "End of life care planning reviewed",
+        "description": "Review advance care planning and DNACPR documentation",
+        "evidenceHint": "EOLC register and planning audit",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "GP Partner",
+        "evidenceExamples": {
+            "good": [
+                "Register maintained",
+                "Plans documented",
+                "Preferences respected"
+            ],
+            "bad": [
+                "No register",
+                "Plans not updated",
+                "Preferences unknown"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "effective_needs",
+        "packName": "Assessing Needs",
+        "packIcon": "ClipboardList",
+        "keyQuestion": "effective",
+        "qsId": "effective.assessing_needs",
+        "title": "New patient registration health checks",
+        "description": "Ensure new patients receive appropriate health assessments",
+        "evidenceHint": "New patient health check completion report",
+        "frequencyType": "recurring",
+        "frequencyDays": 30,
+        "defaultReviewerRole": "Nurse Lead",
+        "evidenceExamples": {
+            "good": [
+                "All new patients offered",
+                "Completion tracked",
+                "Follow-up documented"
+            ],
+            "bad": [
+                "No systematic offer",
+                "Low completion",
+                "No tracking"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "effective_needs",
+        "packName": "Assessing Needs",
+        "packIcon": "ClipboardList",
+        "keyQuestion": "effective",
+        "qsId": "effective.assessing_needs",
+        "title": "Frailty assessment and coding reviewed",
+        "description": "Review identification and coding of frail patients",
+        "evidenceHint": "Frailty register and assessment audit",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "GP Partner",
+        "evidenceExamples": {
+            "good": [
+                "eFI used systematically",
+                "Care plans in place",
+                "MDT review"
+            ],
+            "bad": [
+                "No systematic assessment",
+                "No care plans",
+                "No MDT input"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "well_led_sustainability",
+        "packName": "Environmental Sustainability",
+        "packIcon": "Leaf",
+        "keyQuestion": "well_led",
+        "qsId": "well_led.environmental_sustainability",
+        "title": "Green plan progress reviewed",
+        "description": "Review progress against practice green plan targets",
+        "evidenceHint": "Green plan progress report",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "Targets set",
+                "Progress tracked",
+                "Actions implemented"
+            ],
+            "bad": [
+                "No green plan",
+                "No tracking",
+                "No actions"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "well_led_sustainability",
+        "packName": "Environmental Sustainability",
+        "packIcon": "Leaf",
+        "keyQuestion": "well_led",
+        "qsId": "well_led.environmental_sustainability",
+        "title": "Waste management audit completed",
+        "description": "Audit clinical and general waste management practices",
+        "evidenceHint": "Waste audit with segregation compliance",
+        "frequencyType": "recurring",
+        "frequencyDays": 180,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "Proper segregation",
+                "Contracts current",
+                "Staff trained"
+            ],
+            "bad": [
+                "Poor segregation",
+                "Expired contracts",
+                "Staff unaware"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "caring_workforce",
+        "packName": "Workforce Wellbeing",
+        "packIcon": "HeartHandshake",
+        "keyQuestion": "caring",
+        "qsId": "caring.workforce_wellbeing_enablement",
+        "title": "Staff wellbeing initiatives reviewed",
+        "description": "Review effectiveness of staff wellbeing support",
+        "evidenceHint": "Wellbeing survey and initiative documentation",
+        "frequencyType": "recurring",
+        "frequencyDays": 180,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "Initiatives in place",
+                "Staff aware",
+                "Uptake tracked"
+            ],
+            "bad": [
+                "No initiatives",
+                "Staff unaware",
+                "No evaluation"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "caring_workforce",
+        "packName": "Workforce Wellbeing",
+        "packIcon": "HeartHandshake",
+        "keyQuestion": "caring",
+        "qsId": "caring.workforce_wellbeing_enablement",
+        "title": "Sickness absence monitored",
+        "description": "Monitor sickness absence patterns and provide support",
+        "evidenceHint": "Absence report with support interventions",
+        "frequencyType": "recurring",
+        "frequencyDays": 30,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "Trends analysed",
+                "Return to work interviews",
+                "Support offered"
+            ],
+            "bad": [
+                "No monitoring",
+                "No RTW process",
+                "No support"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "well_led_leaders",
+        "packName": "Leadership",
+        "packIcon": "Crown",
+        "keyQuestion": "well_led",
+        "qsId": "well_led.capable_compassionate_inclusive_leaders",
+        "title": "Leadership development documented",
+        "description": "Document leadership development activities and succession planning",
+        "evidenceHint": "Leadership development plan and succession planning",
+        "frequencyType": "recurring",
+        "frequencyDays": 365,
+        "defaultReviewerRole": "GP Partner",
+        "evidenceExamples": {
+            "good": [
+                "Development plans in place",
+                "Succession considered",
+                "Training undertaken"
+            ],
+            "bad": [
+                "No development",
+                "No succession planning",
+                "No investment"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "well_led_leaders",
+        "packName": "Leadership",
+        "packIcon": "Crown",
+        "keyQuestion": "well_led",
+        "qsId": "well_led.capable_compassionate_inclusive_leaders",
+        "title": "CQC registration details current",
+        "description": "Ensure CQC registration details are current and accurate",
+        "evidenceHint": "CQC portal screenshot showing current details",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "Details current",
+                "Changes notified",
+                "Statement of purpose updated"
+            ],
+            "bad": [
+                "Outdated details",
+                "Changes not notified",
+                "SOP outdated"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "safe_recruitment",
+        "packName": "Safe Recruitment",
+        "packIcon": "UserPlus",
+        "keyQuestion": "safe",
+        "qsId": "safe.safeguarding",
+        "title": "DBS checks current for all staff",
+        "description": "Ensure DBS checks are current and appropriate for roles",
+        "evidenceHint": "DBS register showing check dates and levels",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "All staff checked",
+                "Appropriate levels",
+                "Renewal tracked"
+            ],
+            "bad": [
+                "Missing checks",
+                "Wrong levels",
+                "Expired checks"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "safe_recruitment",
+        "packName": "Safe Recruitment",
+        "packIcon": "UserPlus",
+        "keyQuestion": "safe",
+        "qsId": "safe.safeguarding",
+        "title": "Professional registration verified",
+        "description": "Verify professional registrations are current for clinical staff",
+        "evidenceHint": "Registration verification log with dates",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "All registrations verified",
+                "Expiry tracked",
+                "Conditions noted"
+            ],
+            "bad": [
+                "Missing verifications",
+                "Expired registrations",
+                "Conditions unknown"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    },
+    {
+        "packId": "safe_recruitment",
+        "packName": "Safe Recruitment",
+        "packIcon": "UserPlus",
+        "keyQuestion": "safe",
+        "qsId": "safe.safeguarding",
+        "title": "Induction completion verified",
+        "description": "Verify all new starters complete comprehensive induction",
+        "evidenceHint": "Induction checklist completion records",
+        "frequencyType": "recurring",
+        "frequencyDays": 30,
+        "defaultReviewerRole": "Practice Manager",
+        "evidenceExamples": {
+            "good": [
+                "All areas covered",
+                "Signed off by manager",
+                "Follow-up scheduled"
+            ],
+            "bad": [
+                "Incomplete induction",
+                "No sign-off",
+                "No follow-up"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+    }
+]

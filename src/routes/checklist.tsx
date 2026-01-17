@@ -18,6 +18,7 @@ import { useSite } from '@/components/site-context'
 import { UploadModal } from '@/components/evidence/upload-modal'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { LocalControlsManager } from '@/components/checklist/local-controls-manager'
+import { EvidenceExamplesTooltip } from '@/components/checklist/evidence-examples-tooltip'
 
 export const Route = createFileRoute('/checklist')({
     beforeLoad: ({ context }) => {
@@ -71,7 +72,7 @@ function ChecklistPage() {
                 <div className="flex items-center justify-between">
                     <TabsList>
                         <TabsTrigger value="overview">Overview</TabsTrigger>
-                        <TabsTrigger value="manage">Manage Controls</TabsTrigger>
+                        <TabsTrigger value="controls">Controls</TabsTrigger>
                     </TabsList>
                 </div>
 
@@ -114,7 +115,7 @@ function ChecklistPage() {
                     </div>
                 </TabsContent>
 
-                <TabsContent value="manage">
+                <TabsContent value="controls">
                     <LocalControlsManager />
                 </TabsContent>
             </Tabs>
@@ -187,15 +188,31 @@ function QualityStatementRow({ qs, siteId }: { qs: any, siteId: string }) {
                                 {qs.localControls?.map((control: any) => {
                                     const hasEvidence = control.lastEvidenceAt !== null;
                                     const isOverdue = control.nextDueAt && new Date(control.nextDueAt) < new Date();
+                                    const isDueSoon = control.nextDueAt && !isOverdue && 
+                                        new Date(control.nextDueAt) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+                                    const getTimelineStatus = () => {
+                                        if (hasEvidence && !isOverdue) return { color: 'bg-emerald-500', label: 'On Track' };
+                                        if (isDueSoon) return { color: 'bg-amber-500', label: 'Due Soon' };
+                                        if (isOverdue) return { color: 'bg-rose-500', label: 'Overdue' };
+                                        if (control.hasPendingEvidence) return { color: 'bg-orange-400', label: 'Pending' };
+                                        return { color: 'bg-muted', label: 'Not Started' };
+                                    };
+                                    const timeline = getTimelineStatus();
 
                                     return (
                                         <tr key={control.id} className="hover:bg-muted/50 transition-colors">
                                             <td className="py-2 px-4 md:py-3">
                                                 <div className="flex items-start gap-2">
-                                                    <div className={cn("w-1.5 h-1.5 rounded-full mt-1.5 shrink-0",
-                                                        hasEvidence ? "bg-emerald-500" : (control.hasPendingEvidence ? "bg-orange-400" : "bg-muted")
-                                                    )} />
+                                                    <div className={cn("w-1.5 h-1.5 rounded-full mt-1.5 shrink-0", timeline.color)} 
+                                                         title={timeline.label} />
                                                     <span className="text-foreground font-medium">{control.title}</span>
+                                                    {(control.evidenceExamples || control.cqcMythbusterUrl) && (
+                                                        <EvidenceExamplesTooltip 
+                                                            evidenceExamples={control.evidenceExamples}
+                                                            cqcMythbusterUrl={control.cqcMythbusterUrl}
+                                                        />
+                                                    )}
                                                 </div>
                                             </td>
                                             <td className="py-2 px-4 text-muted-foreground">

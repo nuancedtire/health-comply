@@ -169,6 +169,11 @@ export const localControls = sqliteTable('local_controls', {
 
     active: integer('active', { mode: 'boolean' }).notNull().default(true),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+
+    // Control Pack & Enhanced Evidence (added for Control Packs feature)
+    sourcePackId: text('source_pack_id'), // e.g., "safe_safeguarding" - tracks which pack this came from
+    evidenceExamples: text('evidence_examples'), // JSON: { good: string[], bad: string[] }
+    cqcMythbusterUrl: text('cqc_mythbuster_url'), // External URL to CQC guidance
 }, (table) => [
     index('idx_local_controls_qs').on(table.tenantId, table.siteId, table.qsId),
 ]);
@@ -402,4 +407,15 @@ export const invitationRelations = relations(invitations, ({ one }) => ({
 export const localControlRelations = relations(localControls, ({ one }) => ({
     qs: one(cqcQualityStatements, { fields: [localControls.qsId], references: [cqcQualityStatements.id] }),
     site: one(sites, { fields: [localControls.siteId], references: [sites.id] }),
+}));
+
+export const cqcQualityStatementRelations = relations(cqcQualityStatements, ({ one }) => ({
+    keyQuestion: one(cqcKeyQuestions, {
+        fields: [cqcQualityStatements.keyQuestionId],
+        references: [cqcKeyQuestions.id],
+    }),
+}));
+
+export const cqcKeyQuestionRelations = relations(cqcKeyQuestions, ({ many }) => ({
+    qualityStatements: many(cqcQualityStatements),
 }));

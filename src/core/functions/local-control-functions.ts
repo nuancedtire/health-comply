@@ -2,186 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 import * as schema from "@/db/schema";
 import { authMiddleware } from "@/core/middleware/auth-middleware";
 import { z } from "zod";
+import { EVIDENCE_CATEGORIES } from "@/core/data/taxonomy";
+import EXTENDED_CONTROLS from "@/core/data/extended_controls.json";
 
 import { eq, and } from "drizzle-orm";
 
-// Define the Starter Pack Data
-const STARTER_PACK = [
-    // === SAFE ===
-    {
-        qsId: 'safe.infection_control',
-        title: 'IPC Annual Statement',
-        frequencyType: 'recurring',
-        frequencyDays: 365,
-        defaultReviewerRole: 'Nurse Lead',
-        evidenceHint: 'A formal report summarising IPC audits, outbreaks, and training compliance, signed by the IPC Lead.'
-    },
-    {
-        qsId: 'safe.infection_control',
-        title: 'Hand Hygiene Audit',
-        frequencyType: 'recurring',
-        frequencyDays: 90,
-        defaultReviewerRole: 'Nurse Lead',
-        evidenceHint: 'Completed audit sheets observing clinical and non-clinical staff hand-washing techniques.'
-    },
-    {
-        qsId: 'safe.infection_control',
-        title: 'Cleaning Schedule & Logs',
-        frequencyType: 'recurring',
-        frequencyDays: 30,
-        defaultReviewerRole: 'Nurse Lead',
-        evidenceHint: 'Scanned sign-off sheets from the cleaning team confirming daily cleaning.'
-    },
-    {
-        qsId: 'safe.infection_control',
-        title: 'Deep Clean Certificate',
-        frequencyType: 'recurring',
-        frequencyDays: 365,
-        defaultReviewerRole: 'Practice Manager',
-        evidenceHint: 'Certificate/Invoice from external cleaning company confirming deep clean.'
-    },
-    {
-        qsId: 'safe.infection_control',
-        title: 'Legionella Risk Assessment',
-        frequencyType: 'recurring',
-        frequencyDays: 730, // 2 years
-        defaultReviewerRole: 'Practice Manager',
-        evidenceHint: 'Professional risk assessment report of the water system.'
-    },
-    {
-        qsId: 'safe.infection_control',
-        title: 'Water Temperature Checks',
-        frequencyType: 'recurring',
-        frequencyDays: 30,
-        defaultReviewerRole: 'Practice Manager',
-        evidenceHint: 'Log sheet showing sentinel tap temperatures (Hot >50°C, Cold <20°C).'
-    },
-    {
-        qsId: 'safe.infection_control',
-        title: 'Sharps Bin Audit',
-        frequencyType: 'recurring',
-        frequencyDays: 90,
-        defaultReviewerRole: 'Nurse Lead',
-        evidenceHint: 'Audit checking that sharps bins are not overfilled and labeled correctly.'
-    },
-    // Safeguarding
-    {
-        qsId: 'safe.safeguarding',
-        title: 'Safeguarding Training Matrix',
-        frequencyType: 'recurring',
-        frequencyDays: 30,
-        defaultReviewerRole: 'GP Partner',
-        evidenceHint: 'Export showing Level 3 compliance for Clinicians and Level 1/2 for admin.'
-    },
-    {
-        qsId: 'safe.safeguarding',
-        title: 'Safeguarding Meeting Minutes',
-        frequencyType: 'recurring',
-        frequencyDays: 90,
-        defaultReviewerRole: 'GP Partner',
-        evidenceHint: 'Anonymised minutes of practice safeguarding meeting.'
-    },
-    {
-        qsId: 'safe.safeguarding',
-        title: 'DBS Check Register',
-        frequencyType: 'recurring',
-        frequencyDays: 30, // Ongoing check really, but monthly review good
-        defaultReviewerRole: 'Practice Manager',
-        evidenceHint: 'Spreadsheet listing all staff DBS numbers and issue dates.'
-    },
-    // Medicines
-    {
-        qsId: 'safe.medicines',
-        title: 'Vaccine Fridge Temperatures',
-        frequencyType: 'recurring',
-        frequencyDays: 30,
-        defaultReviewerRole: 'Nurse Lead',
-        evidenceHint: 'Data logger download or scanned manual log sheets.'
-    },
-    {
-        qsId: 'safe.medicines',
-        title: 'Cold Chain Policy Review',
-        frequencyType: 'recurring',
-        frequencyDays: 365,
-        defaultReviewerRole: 'Nurse Lead',
-        evidenceHint: 'The practice specific Cold Chain policy reviewed in last 12 months.'
-    },
-    {
-        qsId: 'safe.medicines',
-        title: 'Emergency Drugs Check',
-        frequencyType: 'recurring',
-        frequencyDays: 7, // Weekly
-        defaultReviewerRole: 'Nurse Lead',
-        evidenceHint: 'Log sheet showing weekly checks of oxygen, defib, and emergency drugs.'
-    },
-    // Environments
-    {
-        qsId: 'safe.safety', // mapped to safe environments usually or safe.safety
-        title: 'Fire Risk Assessment',
-        frequencyType: 'recurring',
-        frequencyDays: 365,
-        defaultReviewerRole: 'Practice Manager',
-        evidenceHint: 'Professional fire risk assessment report.'
-    },
-    {
-        qsId: 'safe.safety',
-        title: 'Health & Safety Walkaround',
-        frequencyType: 'recurring',
-        frequencyDays: 90,
-        defaultReviewerRole: 'Practice Manager',
-        evidenceHint: 'Checklist completed identifying hazards.'
-    },
-    // Recruitment
-    {
-        qsId: 'safe.recruitment', // usually safe.safe_staffing or similar
-        title: 'Recruitment File Audit',
-        frequencyType: 'recurring',
-        frequencyDays: 90,
-        defaultReviewerRole: 'Practice Manager',
-        evidenceHint: 'Dip test of 3 random staff files for references/ID.'
-    },
-
-    // === EFFECTIVE ===
-    {
-        qsId: 'effective.evidence_based',
-        title: 'Two-Cycle Clinical Audit',
-        frequencyType: 'recurring',
-        frequencyDays: 365,
-        defaultReviewerRole: 'GP Partner',
-        evidenceHint: 'Completed audit cycle (Cycle 1 -> Change -> Cycle 2) showing improvement.'
-    },
-
-    // === WELL-LED ===
-    {
-        qsId: 'well_led.governance',
-        title: 'Policies & Procedures Review Log',
-        frequencyType: 'recurring',
-        frequencyDays: 30,
-        defaultReviewerRole: 'Practice Manager',
-        evidenceHint: 'Report showing policies within review date.'
-    },
-    {
-        qsId: 'well_led.governance',
-        title: 'Business Continuity Plan',
-        frequencyType: 'recurring',
-        frequencyDays: 365,
-        defaultReviewerRole: 'Practice Manager',
-        evidenceHint: 'BCP document updated with current staff details.'
-    },
-    {
-        qsId: 'well_led.governance', // shared direction / learning
-        title: 'Significant Event (SEA) Log',
-        frequencyType: 'recurring',
-        frequencyDays: 90,
-        defaultReviewerRole: 'Practice Manager',
-        evidenceHint: 'Log of SEAs including dates and closure status.'
-    }
-];
-
 // Fallback mapping if QS IDs don't match exactly what's in DB
-// I'll assume standard IDs for now, but user might need to adjust or generic 'safe'
 const QS_MAP: Record<string, string> = {
-    'safe.safety': 'safe.safe_environments', // Example adjustment
+    'safe.safety': 'safe.safe_environments',
     'safe.recruitment': 'safe.fit_and_proper',
     'safe.medicines': 'safe.medicines',
     'safe.infection_control': 'safe.infection_prevention',
@@ -203,7 +31,6 @@ export const seedLocalControlsFn = createServerFn({ method: "POST" })
 
         if (!tenantId) throw new Error("Tenant ID required");
 
-        // We need a siteId. Use the passed one, or fallback to user context, or fetch first.
         let siteId = ctx.data?.siteId || (user as any).siteId;
 
         if (!siteId) {
@@ -215,24 +42,18 @@ export const seedLocalControlsFn = createServerFn({ method: "POST" })
 
         if (!siteId) throw new Error("No site found for this tenant to seed controls into.");
 
-        // 0. Ensure Evidence Categories Exist (Vital for Uploads)
-        const evidenceCategories = [
-            { id: 'peoples_experience', title: "People's experience of health and care services" },
-            { id: 'staff_feedback', title: 'Feedback from staff and leaders' },
-            { id: 'partner_feedback', title: 'Feedback from partners' },
-            { id: 'observation', title: 'Observation' },
-            { id: 'processes', title: 'Processes' },
-            { id: 'outcomes', title: 'Outcomes' },
-        ];
-
-        for (const cat of evidenceCategories) {
+        // 0. Ensure Evidence Categories Exist
+        for (const cat of EVIDENCE_CATEGORIES) {
             await db.insert(schema.evidenceCategories).values(cat).onConflictDoNothing();
         }
         console.log("Ensured Evidence Categories exist.");
 
         let seededCount = 0;
+        
+        // Use EXTENDED_CONTROLS instead of STARTER_PACK
+        const controlsToSeed = EXTENDED_CONTROLS;
 
-        for (const item of STARTER_PACK) {
+        for (const item of controlsToSeed) {
             // Map QS ID if needed
             let targetQsId = QS_MAP[item.qsId] || item.qsId;
 
@@ -243,10 +64,12 @@ export const seedLocalControlsFn = createServerFn({ method: "POST" })
 
             if (!qs) {
                 console.log(`QS ${targetQsId} not found. Creating it...`);
-                // Parse "safe.infection_prevention" -> kq="safe", code="infection_prevention"
-                const [kqId, code] = targetQsId.split('.');
+                const parts = targetQsId.split('.');
+                // Handle cases where split might not give 2 parts if ID is non-standard
+                const kqId = parts[0];
+                const code = parts[1] || parts[0]; 
 
-                if (!kqId || !code) {
+                if (!kqId) {
                     console.warn(`Skipping control ${item.title} because QS ID ${targetQsId} is invalid format.`);
                     continue;
                 }
@@ -257,7 +80,6 @@ export const seedLocalControlsFn = createServerFn({ method: "POST" })
                 });
 
                 if (!kq) {
-                    // Create KQ if missing (Capitalize first letter for title)
                     const kqTitle = kqId.charAt(0).toUpperCase() + kqId.slice(1);
                     await db.insert(schema.cqcKeyQuestions).values({
                         id: kqId,
@@ -267,7 +89,6 @@ export const seedLocalControlsFn = createServerFn({ method: "POST" })
                 }
 
                 // Create Quality Statement
-                // We need a proper title. For now, prettify the slug.
                 const qsTitle = code.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
                 await db.insert(schema.cqcQualityStatements).values({
@@ -277,7 +98,7 @@ export const seedLocalControlsFn = createServerFn({ method: "POST" })
                     title: qsTitle,
                     displayOrder: 99,
                     active: 1
-                });
+                }).onConflictDoNothing();
 
                 console.log(`Created QS: ${targetQsId}`);
             }
@@ -298,11 +119,14 @@ export const seedLocalControlsFn = createServerFn({ method: "POST" })
                     siteId,
                     qsId: targetQsId,
                     title: item.title,
-                    description: `Standard control for ${item.title}`,
+                    description: item.description || `Standard control for ${item.title}`,
                     evidenceHint: item.evidenceHint,
                     frequencyType: item.frequencyType as any,
                     frequencyDays: item.frequencyDays,
                     defaultReviewerRole: item.defaultReviewerRole,
+                    fallbackReviewerRole: (item as any).fallbackReviewerRole, // Extended pack might have this
+                    evidenceExamples: JSON.stringify((item as any).evidenceExamples || {}),
+                    cqcMythbusterUrl: (item as any).cqcMythbusterUrl,
                     createdAt: new Date(),
                     active: true
                 });
@@ -325,12 +149,9 @@ export const getLocalControlsFn = createServerFn({ method: "GET" })
         const qsId = ctx.data?.qsId;
         const inputSiteId = ctx.data?.siteId;
 
-        // Use passed siteId if available, otherwise try to find one
         let siteId = inputSiteId;
 
         if (!siteId) {
-            // Logic to get siteId from headers/cookie/context if strictly scoped? 
-            // For now let's just use the first site if not present, knowing our MVP limits.
             const firstSite = await db.query.sites.findFirst({
                 where: eq(schema.sites.tenantId, tenantId!)
             });
@@ -356,39 +177,101 @@ export const getLocalControlsFn = createServerFn({ method: "GET" })
 
 export const suggestLocalControlsFn = createServerFn({ method: "POST" })
     .middleware([authMiddleware])
-    .inputValidator((data: { qsId: string }) => data)
+    .inputValidator((data: { qsId?: string; siteId?: string }) => data)
     .handler(async (ctx) => {
-        const { qsId } = ctx.data;
-        const { env } = ctx.context;
-        // Cast env to have AI
+        const { qsId, siteId: inputSiteId } = ctx.data;
+        const { env, db, user } = ctx.context;
+        const tenantId = (user as any).tenantId as string;
+
         const ai = (env as any).AI;
 
         if (!ai) {
             return { suggestions: [], error: "AI binding not available" };
         }
-        const systemPrompt = `
-            You are an expert UK CQC Consultant for GP Practices.
-            Your job is to suggest "Local Controls" (recurring audits, risk assessments, checks) for a specific CQC Quality Statement.
-            
-            Format your response as a JSON object:
-            {
-                "suggestions": [
-                    {
-                        "title": "Control Name",
-                        "description": "Brief description",
-                        "frequencyType": "recurring",
-                        "frequencyDays": 30,
-                        "evidenceHint": "What document to upload",
-                        "defaultReviewerRole": "Practice Manager" (or Nurse Lead, GP Partner)
-                    }
-                ] // Max 3 suggestions
-            }
-        `;
 
-        const userMessage = `Suggest 3 specific local operational controls for CQC Quality Statement: ${qsId}. Focus on practical evidence items.`;
+        let siteId = inputSiteId || (user as any).siteId;
+        if (!siteId) {
+            const firstSite = await db.query.sites.findFirst({
+                where: eq(schema.sites.tenantId, tenantId)
+            });
+            siteId = firstSite?.id;
+        }
+
+        let existingControls: { title: string; evidenceHint: string | null; qsId: string }[] = [];
+        if (siteId && tenantId) {
+            const controls = await db.query.localControls.findMany({
+                where: and(
+                    eq(schema.localControls.tenantId, tenantId),
+                    eq(schema.localControls.siteId, siteId)
+                ),
+                columns: {
+                    title: true,
+                    evidenceHint: true,
+                    qsId: true
+                }
+            });
+            existingControls = controls;
+        }
+
+        const controlsForThisArea = qsId ? existingControls.filter(c => c.qsId === qsId) : [];
+        const controlsForOtherAreas = qsId ? existingControls.filter(c => c.qsId !== qsId) : existingControls;
+
+        let existingControlsContext = '';
+        if (qsId && controlsForThisArea.length > 0) {
+            existingControlsContext += `\n\nEXISTING CONTROLS FOR THIS AREA "${qsId}" (do NOT suggest duplicates):\n${controlsForThisArea.map((c, i) => `${i + 1}. "${c.title}"${c.evidenceHint ? ` - Evidence: ${c.evidenceHint}` : ''}`).join('\n')}`;
+        }
+        if (controlsForOtherAreas.length > 0) {
+            existingControlsContext += `\n\nOTHER EXISTING CONTROLS (avoid suggesting similar):\n${controlsForOtherAreas.map(c => `- "${c.title}" (${c.qsId})`).join('\n')}`;
+        }
+        if (existingControls.length === 0) {
+            existingControlsContext = '\n\nNo controls currently exist for this site - suggest foundational controls.';
+        }
+
+        const systemPrompt = `You are an expert UK CQC (Care Quality Commission) Consultant specialising in GP Practice compliance.
+
+Your task is to analyse gaps in a practice's Local Controls and suggest NEW controls that are NOT already covered.
+
+CONTEXT:
+- Local Controls are recurring audits, risk assessments, checks, or evidence collection tasks
+- Each control should map to specific, uploadable evidence
+- Focus on practical, actionable items that a UK GP practice can realistically maintain
+- Consider CQC inspection requirements and "mythbuster" guidance
+
+ROLES FOR ASSIGNMENT:
+- "Practice Manager" - Administrative, governance, HR, facilities
+- "Nurse Lead" - Clinical audits, IPC, medicines, patient safety
+- "GP Partner" - Clinical governance, safeguarding, significant events
+
+FREQUENCY TYPES:
+- "recurring" - Regular schedule (specify frequencyDays: 7=weekly, 30=monthly, 90=quarterly, 365=annually)
+- "one-off" - Single task
+- "observation" - Ongoing observation-based
+- "feedback" - Based on patient/staff feedback collection
+
+You must return EXACTLY 3 suggestions for controls that are GAPS (not already covered).
+${existingControlsContext}`;
+
+        let userMessage = ``;
+        if (qsId) {
+            userMessage = `Analyse the compliance gaps for CQC Quality Statement area: "${qsId}"
+
+Suggest 3 specific local operational controls that would strengthen this practice's evidence portfolio for this specific area. For each suggestion:
+1. Identify a genuine gap not covered by existing controls
+2. Explain WHY this is important for CQC compliance
+3. Provide practical evidence guidance including good and bad examples
+4. Assign appropriate priority based on CQC risk`;
+        } else {
+            userMessage = `Analyse the compliance gaps across ALL areas for a GP practice.
+
+Suggest 3 specific local operational controls that would strengthen this practice's OVERALL evidence portfolio. Choose high-priority areas that are commonly missed. For each suggestion:
+1. Identify a genuine gap not covered by existing controls
+2. Explain WHY this is important for CQC compliance
+3. Provide practical evidence guidance including good and bad examples
+4. Assign appropriate priority based on CQC risk`;
+        }
 
         try {
-            const response = await ai.run("@cf/meta/llama-3.1-8b-instruct", {
+            const response = await ai.run("@cf/meta/llama-3.1-8b-instruct-fast", {
                 messages: [
                     { role: "system", content: systemPrompt },
                     { role: "user", content: userMessage }
@@ -403,15 +286,67 @@ export const suggestLocalControlsFn = createServerFn({ method: "POST" })
                                 items: {
                                     type: "object",
                                     properties: {
-                                        title: { type: "string" },
-                                        description: { type: "string" },
-                                        frequencyType: { type: "string" },
-                                        frequencyDays: { type: "number" },
-                                        evidenceHint: { type: "string" },
-                                        defaultReviewerRole: { type: "string" }
+                                        title: { type: "string", description: "Clear, specific control name" },
+                                        description: { type: "string", description: "What this control involves" },
+                                        frequencyType: { 
+                                            type: "string", 
+                                            enum: ["recurring", "one-off", "observation", "feedback"],
+                                            description: "How often this should occur"
+                                        },
+                                        frequencyDays: { type: "number", description: "Days between occurrences (for recurring)" },
+                                        evidenceHint: { type: "string", description: "What document/evidence to upload" },
+                                        defaultReviewerRole: { 
+                                            type: "string",
+                                            enum: ["Practice Manager", "Nurse Lead", "GP Partner"],
+                                            description: "Who should own this control"
+                                        },
+                                        fallbackReviewerRole: {
+                                            type: "string",
+                                            enum: ["Practice Manager", "Nurse Lead", "GP Partner"],
+                                            description: "Backup reviewer if primary unavailable"
+                                        },
+                                        evidenceExamples: {
+                                            type: "object",
+                                            properties: {
+                                                good: {
+                                                    type: "array",
+                                                    items: { type: "string" },
+                                                    description: "Examples of good/acceptable evidence"
+                                                },
+                                                bad: {
+                                                    type: "array",
+                                                    items: { type: "string" },
+                                                    description: "Examples of poor/unacceptable evidence"
+                                                }
+                                            },
+                                            required: ["good", "bad"]
+                                        },
+                                        reasoning: { type: "string", description: "Why this is a gap and important for CQC" },
+                                        priority: { 
+                                            type: "string", 
+                                            enum: ["high", "medium", "low"],
+                                            description: "Priority based on CQC risk"
+                                        },
+                                        confidence: { 
+                                            type: "number", 
+                                            description: "Confidence score 0-100 that this is a genuine gap" 
+                                        }
                                     },
-                                    required: ["title", "frequencyDays", "evidenceHint"]
-                                }
+                                    required: [
+                                        "title", 
+                                        "description", 
+                                        "frequencyType", 
+                                        "frequencyDays", 
+                                        "evidenceHint", 
+                                        "defaultReviewerRole",
+                                        "evidenceExamples",
+                                        "reasoning",
+                                        "priority",
+                                        "confidence"
+                                    ]
+                                },
+                                minItems: 3,
+                                maxItems: 3
                             }
                         },
                         required: ["suggestions"]
@@ -420,7 +355,6 @@ export const suggestLocalControlsFn = createServerFn({ method: "POST" })
             });
 
             let result = response;
-            // Handle potentially nested response or string
             if (typeof result === 'string') {
                 try { result = JSON.parse(result); } catch (e) { }
             }
@@ -449,7 +383,10 @@ export const createLocalControlFn = createServerFn({ method: "POST" })
         frequencyDays: z.number().optional(),
         evidenceHint: z.string().optional(),
         defaultReviewerRole: z.string().optional(),
-        siteId: z.string().optional() // Optional override, otherwise inferred
+        fallbackReviewerRole: z.string().optional(),
+        evidenceExamples: z.string().optional(), // Passed as JSON string
+        cqcMythbusterUrl: z.string().optional(),
+        siteId: z.string().optional()
     }).parse(data))
     .handler(async (ctx) => {
         const { db, user } = ctx.context;
@@ -457,7 +394,6 @@ export const createLocalControlFn = createServerFn({ method: "POST" })
 
         let siteId = ctx.data.siteId || (user as any).siteId;
 
-        // Fallback site inference if not provided
         if (!siteId) {
             const firstSite = await db.query.sites.findFirst({
                 where: eq(schema.sites.tenantId, tenantId)
@@ -467,10 +403,8 @@ export const createLocalControlFn = createServerFn({ method: "POST" })
 
         if (!tenantId || !siteId) throw new Error("Context missing tenant or site");
 
-        // Map QS ID if an alias is used (e.g. safe.infection_control -> safe.infection_prevention)
         const targetQsId = QS_MAP[ctx.data.qsId] || ctx.data.qsId;
 
-        // *** ADDED CHECK: Ensure QS exists ***
         const qsExists = await db.query.cqcQualityStatements.findFirst({
             where: eq(schema.cqcQualityStatements.id, targetQsId)
         });
@@ -479,7 +413,6 @@ export const createLocalControlFn = createServerFn({ method: "POST" })
             console.error(`QS Not Found: Input=${ctx.data.qsId}, Target=${targetQsId}`);
             throw new Error(`Quality Statement "${targetQsId}" (mapped from "${ctx.data.qsId}") not found. Please verify the ID.`);
         }
-        // *** END ADDED CHECK ***
 
         const newId = `lc_${crypto.randomUUID()}`;
 
@@ -488,13 +421,16 @@ export const createLocalControlFn = createServerFn({ method: "POST" })
                 id: newId,
                 tenantId,
                 siteId,
-                qsId: targetQsId, // Use the mapped ID
+                qsId: targetQsId,
                 title: ctx.data.title,
                 description: ctx.data.description,
                 frequencyType: ctx.data.frequencyType,
                 frequencyDays: ctx.data.frequencyDays,
                 evidenceHint: ctx.data.evidenceHint,
                 defaultReviewerRole: ctx.data.defaultReviewerRole,
+                fallbackReviewerRole: ctx.data.fallbackReviewerRole,
+                evidenceExamples: ctx.data.evidenceExamples,
+                cqcMythbusterUrl: ctx.data.cqcMythbusterUrl,
                 active: true,
                 createdAt: new Date()
             });
@@ -516,6 +452,9 @@ export const updateLocalControlFn = createServerFn({ method: "POST" })
         frequencyDays: z.number().optional(),
         evidenceHint: z.string().optional(),
         defaultReviewerRole: z.string().optional(),
+        fallbackReviewerRole: z.string().optional(),
+        evidenceExamples: z.string().optional(),
+        cqcMythbusterUrl: z.string().optional(),
         active: z.boolean().optional()
     }).parse(data))
     .handler(async (ctx) => {
@@ -525,7 +464,6 @@ export const updateLocalControlFn = createServerFn({ method: "POST" })
         await db.update(schema.localControls)
             .set({
                 ...ctx.data,
-                // Make sure we don't update ID or tenant/site
             })
             .where(
                 and(
@@ -555,3 +493,43 @@ export const deleteLocalControlFn = createServerFn({ method: "POST" })
         return { success: true };
     });
 
+export const getQualityStatementsFn = createServerFn({ method: "GET" })
+    .middleware([authMiddleware])
+    .handler(async (ctx) => {
+        const { db } = ctx.context;
+        
+        // Fetch all active QS, maybe ordered by Key Question and Display Order
+        const qsList = await db.query.cqcQualityStatements.findMany({
+            where: eq(schema.cqcQualityStatements.active, 1),
+            orderBy: (qs, { asc }) => [asc(qs.keyQuestionId), asc(qs.displayOrder)],
+            with: {
+                keyQuestion: true // Assuming relation exists or we can infer title from ID
+            }
+        });
+
+        // Group by Key Question for UI convenience
+        // But simply returning flat list with Key Question Title is good enough for Select components
+        // We need to fetch Key Questions to get their titles if 'keyQuestion' relation isn't auto-fetched or defined
+        // Looking at schema.ts, cqcQualityStatements has keyQuestionId.
+        // Let's check relations. cqcQualityStatements doesn't have an explicit 'keyQuestion' relation defined in schema.ts relations block?
+        // Wait, line 21 says: keyQuestionId: text('key_question_id').notNull().references(() => cqcKeyQuestions.id),
+        // But relations block doesn't define 'keyQuestion'.
+        // Let's just fetch Key Questions separately or use the ID. 
+        // Better: Fetch Key Questions too.
+        
+        const keyQuestions = await db.query.cqcKeyQuestions.findMany({
+            orderBy: (kq, { asc }) => [asc(kq.displayOrder)]
+        });
+
+        const kqMap = new Map(keyQuestions.map(kq => [kq.id, kq.title]));
+
+        return {
+            qualityStatements: qsList.map(qs => ({
+                id: qs.id,
+                title: qs.title,
+                code: qs.code,
+                keyQuestionId: qs.keyQuestionId,
+                keyQuestionTitle: kqMap.get(qs.keyQuestionId) || qs.keyQuestionId
+            }))
+        };
+    });

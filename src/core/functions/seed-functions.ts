@@ -16,16 +16,9 @@ export const seedCqcTaxonomyFn = createServerFn({ method: "POST" })
         const results = [];
 
         // 1. Seed Evidence Categories
-        const evidenceCategories = [
-            { id: 'peoples_experience', title: "People's experience of health and care services" },
-            { id: 'staff_feedback', title: 'Feedback from staff and leaders' },
-            { id: 'partner_feedback', title: 'Feedback from partners' },
-            { id: 'observation', title: 'Observation' },
-            { id: 'processes', title: 'Processes' },
-            { id: 'outcomes', title: 'Outcomes' },
-        ];
-
-        for (const category of evidenceCategories) {
+        const { EVIDENCE_CATEGORIES } = await import("@/core/data/taxonomy");
+        
+        for (const category of EVIDENCE_CATEGORIES) {
             const existing = await db.select({ id: schema.evidenceCategories.id })
                 .from(schema.evidenceCategories as any)
                 .where(eq(schema.evidenceCategories.id, category.id) as any)
@@ -117,7 +110,7 @@ export const seedCqcTaxonomyFn = createServerFn({ method: "POST" })
         }
 
         const summary = {
-            evidenceCategories: evidenceCategories.length,
+            evidenceCategories: EVIDENCE_CATEGORIES.length,
             keyQuestions: keyQuestions.length,
             qualityStatements: qualityStatements.length,
         };

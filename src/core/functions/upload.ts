@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import * as schema from "@/db/schema";
 import { authMiddleware } from "@/core/middleware/auth-middleware";
 import { eq } from "drizzle-orm";
+import { EVIDENCE_CATEGORIES } from "@/core/data/taxonomy";
 
 export const uploadEvidenceFn = createServerFn({ method: "POST" })
     .middleware([authMiddleware])
@@ -73,10 +74,13 @@ export const uploadEvidenceFn = createServerFn({ method: "POST" })
             if (!qsExists) throw new Error(`System Error: Quality Statement '${qsId}' missing. Please run 'Seeding'.`);
 
             if (!catExists) {
-                if (categoryId === 'processes') {
-                    // try fallback
+                const knownCategory = EVIDENCE_CATEGORIES.find(c => c.id === categoryId);
+                if (knownCategory) {
+                    console.log(`Auto-seeding missing category: ${categoryId} during upload`);
+                    await db.insert(schema.evidenceCategories).values(knownCategory);
+                } else {
+                    throw new Error(`Evidence Category '${categoryId}' not found. Please 'Seed CQC Data'.`);
                 }
-                throw new Error(`Evidence Category '${categoryId}' not found. Please 'Seed CQC Data'.`);
             }
 
             // 3. Insert into DB
