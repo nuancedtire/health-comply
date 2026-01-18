@@ -1,9 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
 import * as schema from "@/db/schema";
 import { eq, desc, and } from "drizzle-orm";
+import { alias } from "drizzle-orm/sqlite-core";
 import { authMiddleware } from "@/core/middleware/auth-middleware";
 import { z } from "zod";
 import { EVIDENCE_CATEGORIES } from "@/core/data/taxonomy";
+import { logEvidenceEvent, AUDIT_ACTIONS } from "@/lib/audit";
+import {
+    validateStatusTransition,
+    canUserApproveEvidence,
+    canUserDeleteEvidence,
+    type EvidenceStatus,
+} from "@/lib/evidence-workflow";
 
 // Helper to get sites for the current user's tenant
 export const getUserSitesFn = createServerFn({ method: "GET" })
@@ -38,6 +46,8 @@ export const getEvidenceForSiteFn = createServerFn({ method: "GET" })
             return []; // Should not happen for auth user
         }
 
+        const suggestedControls = alias(schema.localControls, 'suggested_controls');
+
         // Use explicit joins and flat selection to avoid TS inference issues with deep nesting
         const rawEvidence = await db.select({
             id: schema.evidenceItems.id,
@@ -56,8 +66,16 @@ export const getEvidenceForSiteFn = createServerFn({ method: "GET" })
             textContent: schema.evidenceItems.textContent,
             validUntil: schema.evidenceItems.validUntil,
             createdAt: schema.evidenceItems.createdAt,
+            // New fields
+            classificationResult: schema.evidenceItems.classificationResult,
+            suggestedControlId: schema.evidenceItems.suggestedControlId,
+            reviewNotes: schema.evidenceItems.reviewNotes,
+            reviewedBy: schema.evidenceItems.reviewedBy,
+            reviewedAt: schema.evidenceItems.reviewedAt,
+            
             // Flat joined fields
             localControlTitle: schema.localControls.title,
+            suggestedControlTitle: suggestedControls.title,
             qsTitle: schema.cqcQualityStatements.title,
             kqTitle: schema.cqcKeyQuestions.title,
             uploaderName: schema.users.name
@@ -65,6 +83,7 @@ export const getEvidenceForSiteFn = createServerFn({ method: "GET" })
             .from(schema.evidenceItems)
             .leftJoin(schema.users, eq(schema.evidenceItems.uploadedBy, schema.users.id))
             .leftJoin(schema.localControls, eq(schema.evidenceItems.localControlId, schema.localControls.id))
+            .leftJoin(suggestedControls, eq(schema.evidenceItems.suggestedControlId, suggestedControls.id))
             .leftJoin(schema.cqcQualityStatements, eq(schema.evidenceItems.qsId, schema.cqcQualityStatements.id))
             .leftJoin(schema.cqcKeyQuestions, eq(schema.cqcQualityStatements.keyQuestionId, schema.cqcKeyQuestions.id))
             .where(
@@ -94,7 +113,14 @@ export const getEvidenceForSiteFn = createServerFn({ method: "GET" })
             validUntil: item.validUntil,
             createdAt: item.createdAt,
             uploaderName: item.uploaderName,
+            classificationResult: item.classificationResult as any, // Cast JSON
+            suggestedControlId: item.suggestedControlId,
+            reviewNotes: item.reviewNotes,
+            reviewedAt: item.reviewedAt,
+            reviewedBy: item.reviewedBy,
+            
             localControl: item.localControlTitle ? { title: item.localControlTitle } : null,
+            suggestedControl: item.suggestedControlTitle ? { title: item.suggestedControlTitle } : null,
             qs: item.qsTitle ? {
                 title: item.qsTitle,
                 keyQuestion: item.kqTitle ? { title: item.kqTitle } : null
@@ -138,7 +164,11 @@ export const updateEvidenceFn = createServerFn({ method: "POST" })
             localControlId: z.string().nullable().optional(),
             evidenceCategoryId: z.string().optional(),
             qsId: z.string().optional(),
-            summary: z.string().optional()
+            summary: z.string().optional(),
+            // New fields
+            reviewNotes: z.string().optional(),
+            suggestedControlId: z.string().nullable().optional(),
+            classificationResult: z.any().optional(), // Accept JSON object
         })
     }).parse(data))
     .handler(async ({ context, data }) => {
@@ -158,11 +188,41 @@ export const updateEvidenceFn = createServerFn({ method: "POST" })
             throw new Error("Evidence item not found");
         }
 
+        // 2. Status transition validation (State Machine)
+        if (updates.status && updates.status !== existingItem.status) {
+            validateStatusTransition(
+                existingItem.status as EvidenceStatus,
+                updates.status as EvidenceStatus
+            );
+        }
+
+        // 3. Authorization checks for approval/rejection
+        if (updates.status === 'approved' || updates.status === 'rejected') {
+            const authCheck = await canUserApproveEvidence(db, {
+                userId: user.id,
+                evidenceId,
+                tenantId,
+            });
+
+            if (!authCheck.allowed) {
+                throw new Error(authCheck.reason);
+            }
+        }
+
         const cleanUpdates = Object.fromEntries(
             Object.entries(updates).filter(([_, v]) => v !== undefined)
         );
+        
+        // Add metadata if status changes to review/approved/rejected
+        if (updates.status && ['pending_review', 'approved', 'rejected'].includes(updates.status)) {
+             // Track who reviewed it
+             if (updates.status === 'approved' || updates.status === 'rejected') {
+                 (cleanUpdates as any).reviewedBy = user.id;
+                 (cleanUpdates as any).reviewedAt = new Date();
+             }
+        }
 
-        // 2. Perform Update
+        // 4. Perform Update
         await db.update(schema.evidenceItems)
             .set(cleanUpdates)
             .where(
@@ -172,7 +232,29 @@ export const updateEvidenceFn = createServerFn({ method: "POST" })
                 )
             );
 
-        // 3. Post-Process: Update Local Control Timestamp if needed
+        // 5. Audit Logging
+        const auditAction = updates.status === 'approved'
+            ? AUDIT_ACTIONS.EVIDENCE_APPROVED
+            : updates.status === 'rejected'
+                ? AUDIT_ACTIONS.EVIDENCE_REJECTED
+                : updates.status === 'pending_review'
+                    ? AUDIT_ACTIONS.EVIDENCE_SUBMITTED
+                    : AUDIT_ACTIONS.EVIDENCE_UPDATED;
+
+        await logEvidenceEvent(db, {
+            tenantId,
+            actorUserId: user.id,
+            evidenceId,
+            action: auditAction,
+            details: {
+                previousStatus: existingItem.status,
+                newStatus: updates.status || existingItem.status,
+                reviewNotes: updates.reviewNotes,
+                controlId: existingItem.localControlId || undefined,
+            },
+        });
+
+        // 6. Post-Process: Update Local Control Timestamp if needed
         // Condition: Evidence IS approved (either newly or already) AND it has a local control
         const newStatus = (cleanUpdates.status as string) || existingItem.status;
         const newControlId = (cleanUpdates.localControlId !== undefined ? cleanUpdates.localControlId : existingItem.localControlId) as string | null;
@@ -208,7 +290,18 @@ export const deleteEvidenceFn = createServerFn({ method: "POST" })
         const tenantId = (user as any).tenantId;
         const { evidenceId } = data;
 
-        // 1. Get the item details before deletion
+        // 1. Authorization check
+        const authCheck = await canUserDeleteEvidence(db, {
+            userId: user.id,
+            evidenceId,
+            tenantId,
+        });
+
+        if (!authCheck.allowed) {
+            throw new Error(authCheck.reason);
+        }
+
+        // 2. Get the item details before deletion
         const item = await db.query.evidenceItems.findFirst({
             where: and(
                 eq(schema.evidenceItems.id, evidenceId),
@@ -217,17 +310,32 @@ export const deleteEvidenceFn = createServerFn({ method: "POST" })
             columns: {
                 r2Key: true,
                 localControlId: true,
-                status: true
+                status: true,
+                title: true,
             }
         });
 
         if (!item) throw new Error("Item not found");
 
+        // 3. Audit log BEFORE deletion (so we have the record)
+        await logEvidenceEvent(db, {
+            tenantId,
+            actorUserId: user.id,
+            evidenceId,
+            action: AUDIT_ACTIONS.EVIDENCE_DELETED,
+            details: {
+                fileName: item.title,
+                previousStatus: item.status,
+                controlId: item.localControlId || undefined,
+            },
+        });
+
+        // 4. Delete from R2
         if (env.R2 && item.r2Key) {
             await env.R2.delete(item.r2Key);
         }
 
-        // 2. Delete the evidence
+        // 5. Delete the evidence
         await db.delete(schema.evidenceItems)
             .where(
                 and(
@@ -236,7 +344,7 @@ export const deleteEvidenceFn = createServerFn({ method: "POST" })
                 )
             );
 
-        // 3. Recalculate lastEvidenceAt for the affected control
+        // 6. Recalculate lastEvidenceAt for the affected control
         if (item.localControlId) {
             const latestEvidence = await db.query.evidenceItems.findFirst({
                 where: and(
@@ -325,5 +433,10 @@ export const getEvidenceFn = createServerFn({ method: "GET" })
             }
         });
 
-        return item;
+        if (!item) return undefined;
+
+        return {
+            ...item,
+            classificationResult: item.classificationResult as any
+        };
     });

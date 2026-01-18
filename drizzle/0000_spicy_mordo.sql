@@ -105,6 +105,11 @@ CREATE TABLE `evidence_items` (
 	`valid_until` integer,
 	`is_archived` integer DEFAULT false,
 	`status` text DEFAULT 'pending_review' NOT NULL,
+	`classification_result` text,
+	`suggested_control_id` text,
+	`review_notes` text,
+	`reviewed_by` text,
+	`reviewed_at` integer,
 	`summary` text,
 	`text_content` text,
 	`ai_confidence` integer,
@@ -114,7 +119,9 @@ CREATE TABLE `evidence_items` (
 	FOREIGN KEY (`qs_id`) REFERENCES `cqc_quality_statements`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`local_control_id`) REFERENCES `local_controls`(`id`) ON UPDATE no action ON DELETE set null,
 	FOREIGN KEY (`evidence_category_id`) REFERENCES `evidence_categories`(`id`) ON UPDATE no action ON DELETE no action,
-	FOREIGN KEY (`uploaded_by`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE no action
+	FOREIGN KEY (`uploaded_by`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`suggested_control_id`) REFERENCES `local_controls`(`id`) ON UPDATE no action ON DELETE set null,
+	FOREIGN KEY (`reviewed_by`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
 CREATE INDEX `idx_evidence_items_qs` ON `evidence_items` (`tenant_id`,`site_id`,`qs_id`);--> statement-breakpoint
@@ -195,6 +202,9 @@ CREATE TABLE `local_controls` (
 	`fallback_reviewer_role` text,
 	`active` integer DEFAULT true NOT NULL,
 	`created_at` integer NOT NULL,
+	`source_pack_id` text,
+	`evidence_examples` text,
+	`cqc_mythbuster_url` text,
 	FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`site_id`) REFERENCES `sites`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`qs_id`) REFERENCES `cqc_quality_statements`(`id`) ON UPDATE no action ON DELETE no action

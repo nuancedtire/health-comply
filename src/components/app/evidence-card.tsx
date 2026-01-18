@@ -43,7 +43,7 @@ export function EvidenceCard({ item }: { item: EvidenceItem }) {
             </CardContent>
             <CardFooter>
                 <Button variant="outline" size="sm" className="w-full" asChild>
-                    <Link to="/evidence/$evidenceId" params={{ evidenceId: item.id }}>View Details</Link>
+                    <Link to="/documents">View Details</Link>
                 </Button>
             </CardFooter>
         </Card>

@@ -4,6 +4,7 @@ import { authMiddleware } from "@/core/middleware/auth-middleware";
 import { z } from "zod";
 import { EVIDENCE_CATEGORIES } from "@/core/data/taxonomy";
 import EXTENDED_CONTROLS from "@/core/data/extended_controls.json";
+import { logControlEvent, AUDIT_ACTIONS } from "@/lib/audit";
 
 import { eq, and } from "drizzle-orm";
 
@@ -392,6 +393,19 @@ export const createLocalControlFn = createServerFn({ method: "POST" })
         const { db, user } = ctx.context;
         const tenantId = (user as any).tenantId;
 
+        // Authorization check
+        const userRoles = await db.select({ role: schema.userRoles.role, siteId: schema.userRoles.siteId })
+            .from(schema.userRoles)
+            .where(eq(schema.userRoles.userId, user.id));
+
+        const allowedRoles = ["Practice Manager", "Admin", "Compliance Officer"];
+        const isSystemAdmin = (user as any).isSystemAdmin;
+        const hasPermission = isSystemAdmin || userRoles.some(r => allowedRoles.includes(r.role));
+
+        if (!hasPermission) {
+            throw new Error("Unauthorized: Only Practice Managers, Admins, and Compliance Officers can create controls");
+        }
+
         let siteId = ctx.data.siteId || (user as any).siteId;
 
         if (!siteId) {
@@ -402,6 +416,12 @@ export const createLocalControlFn = createServerFn({ method: "POST" })
         }
 
         if (!tenantId || !siteId) throw new Error("Context missing tenant or site");
+
+        // Check site scope if user has site-scoped role
+        const userSiteRole = userRoles.find(r => r.siteId !== null);
+        if (userSiteRole && userSiteRole.siteId !== siteId) {
+            throw new Error("Unauthorized: Cannot create controls for other sites");
+        }
 
         const targetQsId = QS_MAP[ctx.data.qsId] || ctx.data.qsId;
 
@@ -434,6 +454,18 @@ export const createLocalControlFn = createServerFn({ method: "POST" })
                 active: true,
                 createdAt: new Date()
             });
+
+            // Audit log
+            await logControlEvent(db, {
+                tenantId,
+                actorUserId: user.id,
+                controlId: newId,
+                action: AUDIT_ACTIONS.CONTROL_CREATED,
+                details: {
+                    controlTitle: ctx.data.title,
+                    qsId: targetQsId,
+                },
+            });
         } catch (e: any) {
             console.error("Failed to insert local control:", e);
             throw new Error(`Failed to save control: ${e.message}`);
@@ -461,6 +493,37 @@ export const updateLocalControlFn = createServerFn({ method: "POST" })
         const { db, user } = ctx.context;
         const tenantId = (user as any).tenantId;
 
+        // Authorization check
+        const userRoles = await db.select({ role: schema.userRoles.role, siteId: schema.userRoles.siteId })
+            .from(schema.userRoles)
+            .where(eq(schema.userRoles.userId, user.id));
+
+        const allowedRoles = ["Practice Manager", "Admin", "Compliance Officer"];
+        const isSystemAdmin = (user as any).isSystemAdmin;
+        const hasPermission = isSystemAdmin || userRoles.some(r => allowedRoles.includes(r.role));
+
+        if (!hasPermission) {
+            throw new Error("Unauthorized: Only Practice Managers, Admins, and Compliance Officers can update controls");
+        }
+
+        // Check site scope
+        const control = await db.query.localControls.findFirst({
+            where: and(
+                eq(schema.localControls.id, ctx.data.id),
+                eq(schema.localControls.tenantId, tenantId)
+            ),
+            columns: { siteId: true, title: true }
+        });
+
+        if (!control) {
+            throw new Error("Control not found");
+        }
+
+        const userSiteRole = userRoles.find(r => r.siteId !== null);
+        if (userSiteRole && userSiteRole.siteId !== control.siteId) {
+            throw new Error("Unauthorized: Cannot update controls for other sites");
+        }
+
         await db.update(schema.localControls)
             .set({
                 ...ctx.data,
@@ -472,6 +535,17 @@ export const updateLocalControlFn = createServerFn({ method: "POST" })
                 )
             );
 
+        // Audit log
+        await logControlEvent(db, {
+            tenantId,
+            actorUserId: user.id,
+            controlId: ctx.data.id,
+            action: AUDIT_ACTIONS.CONTROL_UPDATED,
+            details: {
+                controlTitle: ctx.data.title || control.title,
+            },
+        });
+
         return { success: true };
     });
 
@@ -481,6 +555,48 @@ export const deleteLocalControlFn = createServerFn({ method: "POST" })
     .handler(async (ctx) => {
         const { db, user } = ctx.context;
         const tenantId = (user as any).tenantId;
+
+        // Authorization check
+        const userRoles = await db.select({ role: schema.userRoles.role, siteId: schema.userRoles.siteId })
+            .from(schema.userRoles)
+            .where(eq(schema.userRoles.userId, user.id));
+
+        const allowedRoles = ["Practice Manager", "Admin"];
+        const isSystemAdmin = (user as any).isSystemAdmin;
+        const hasPermission = isSystemAdmin || userRoles.some(r => allowedRoles.includes(r.role));
+
+        if (!hasPermission) {
+            throw new Error("Unauthorized: Only Practice Managers and Admins can delete controls");
+        }
+
+        // Check site scope and get control info for audit
+        const control = await db.query.localControls.findFirst({
+            where: and(
+                eq(schema.localControls.id, ctx.data.id),
+                eq(schema.localControls.tenantId, tenantId)
+            ),
+            columns: { siteId: true, title: true }
+        });
+
+        if (!control) {
+            throw new Error("Control not found");
+        }
+
+        const userSiteRole = userRoles.find(r => r.siteId !== null);
+        if (userSiteRole && userSiteRole.siteId !== control.siteId) {
+            throw new Error("Unauthorized: Cannot delete controls for other sites");
+        }
+
+        // Audit log before delete
+        await logControlEvent(db, {
+            tenantId,
+            actorUserId: user.id,
+            controlId: ctx.data.id,
+            action: AUDIT_ACTIONS.CONTROL_DELETED,
+            details: {
+                controlTitle: control.title,
+            },
+        });
 
         await db.delete(schema.localControls)
             .where(

@@ -3,6 +3,7 @@ import * as schema from "@/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { authMiddleware } from "@/core/middleware/auth-middleware";
+import { logUserEvent, AUDIT_ACTIONS } from "@/lib/audit";
 
 // Admin functions are protected by authMiddleware
 // Middleware provides: user, session, db
@@ -110,9 +111,10 @@ export const inviteUserFn = createServerFn({ method: "POST" })
         }
 
         const token = crypto.randomUUID();
+        const inviteId = `inv_${crypto.randomUUID()}`;
 
         await db.insert(schema.invitations as any).values({
-            id: `inv_${crypto.randomUUID()}`,
+            id: inviteId,
             email: data.email,
             tenantId: data.tenantId,
             siteId: data.siteId,
@@ -122,6 +124,18 @@ export const inviteUserFn = createServerFn({ method: "POST" })
             status: 'pending',
             invitedBy: user.id,
             createdAt: new Date(),
+        });
+
+        // Audit log
+        await logUserEvent(db, {
+            tenantId: data.tenantId,
+            actorUserId: user.id,
+            targetUserId: inviteId, // Use invite ID since user doesn't exist yet
+            action: AUDIT_ACTIONS.USER_INVITED,
+            details: {
+                targetUserEmail: data.email,
+                newRole: data.role,
+            },
         });
 
         return { token };
@@ -415,11 +429,31 @@ export const updateUserRoleFn = createServerFn({ method: "POST" })
         const roleConfig = getRole(role);
         if (!roleConfig) throw new Error("Invalid role");
 
+        // Get previous role for audit log
+        const previousRoleData = await db.select({ role: schema.userRoles.role })
+            .from(schema.userRoles)
+            .where(eq(schema.userRoles.userId, userId))
+            .get();
 
         // 3. Update
         await db.update(schema.userRoles)
             .set({ role })
             .where(eq(schema.userRoles.userId, userId));
+
+        // 4. Audit log
+        const tenantId = (user as any).tenantId;
+        if (tenantId) {
+            await logUserEvent(db, {
+                tenantId,
+                actorUserId: user.id,
+                targetUserId: userId,
+                action: AUDIT_ACTIONS.USER_ROLE_CHANGED,
+                details: {
+                    previousRole: previousRoleData?.role,
+                    newRole: role,
+                },
+            });
+        }
 
         // Note: If the new role is site-scoped but the user was tenant-scoped, they might need a siteId update.
         // For now, we assume the UI handles site assignment separately or we only change role here keeping siteId if it exists.

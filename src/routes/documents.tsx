@@ -7,6 +7,9 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { useSite } from '@/components/site-context'
 import { useState } from 'react'
 import { EvidenceDetailDialog } from '@/components/evidence/evidence-detail-dialog'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { DraftsView } from '@/components/evidence/drafts-view'
+import { FailedEvidenceList } from '@/components/evidence/failed-evidence-list'
 
 export const Route = createFileRoute('/documents')({
     beforeLoad: ({ context }) => {
@@ -48,11 +51,6 @@ function DocumentsPage() {
         }
     });
 
-    // Auto-open newly uploaded evidence
-
-
-
-
     if (isSiteLoading) {
         return <MainLayout><div className="p-8">Loading site context...</div></MainLayout>;
     }
@@ -66,6 +64,12 @@ function DocumentsPage() {
             </MainLayout>
         );
     }
+
+    const allEvidence = evidence || [];
+    const drafts = allEvidence.filter(e => e.status === 'draft');
+    const failed = allEvidence.filter(e => e.status === 'failed');
+    // Everything else (pending_review, approved, rejected, archived, processing)
+    const processedEvidence = allEvidence.filter(e => e.status !== 'draft' && e.status !== 'failed');
 
     return (
         <MainLayout title="Documents">
@@ -83,16 +87,35 @@ function DocumentsPage() {
                     />
                 </div>
 
-                <div className="rounded-lg bg-card text-card-foreground shadow-sm">
-                    {isEvidenceLoading ? (
-                        <div className="p-8 text-center text-muted-foreground">Loading evidence...</div>
-                    ) : (
-                        <EvidenceList
-                            evidence={evidence || []}
-                            onSelect={setSelectedEvidence}
-                        />
-                    )}
-                </div>
+                {/* Failed uploads section */}
+                <FailedEvidenceList evidence={failed as any[]} />
+
+                <Tabs defaultValue="drafts" className="space-y-4">
+                    <TabsList>
+                        <TabsTrigger value="drafts">
+                            Drafts
+                            {drafts.length > 0 && <span className="ml-2 bg-muted-foreground/20 px-1.5 py-0.5 rounded-full text-xs">{drafts.length}</span>}
+                        </TabsTrigger>
+                        <TabsTrigger value="processed">Pending Review / Approved</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="drafts" className="mt-4">
+                        <DraftsView drafts={drafts as any[]} />
+                    </TabsContent>
+                    
+                    <TabsContent value="processed" className="mt-4">
+                        <div className="rounded-lg bg-card text-card-foreground shadow-sm">
+                            {isEvidenceLoading ? (
+                                <div className="p-8 text-center text-muted-foreground">Loading evidence...</div>
+                            ) : (
+                                <EvidenceList
+                                    evidence={processedEvidence}
+                                    onSelect={setSelectedEvidence}
+                                />
+                            )}
+                        </div>
+                    </TabsContent>
+                </Tabs>
 
                 <EvidenceDetailDialog
                     open={!!selectedEvidence}

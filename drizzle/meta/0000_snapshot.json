@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "4c6ece34-2295-4855-8a78-da7e7bceecc7",
+  "id": "de34ec05-f257-4a9b-9967-5a615d4db5c0",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "account": {
@@ -759,6 +759,41 @@
           "autoincrement": false,
           "default": "'pending_review'"
         },
+        "classification_result": {
+          "name": "classification_result",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "suggested_control_id": {
+          "name": "suggested_control_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "review_notes": {
+          "name": "review_notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "reviewed_by": {
+          "name": "reviewed_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "reviewed_at": {
+          "name": "reviewed_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "summary": {
           "name": "summary",
           "type": "text",
@@ -878,6 +913,32 @@
           "tableTo": "user",
           "columnsFrom": [
             "uploaded_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "evidence_items_suggested_control_id_local_controls_id_fk": {
+          "name": "evidence_items_suggested_control_id_local_controls_id_fk",
+          "tableFrom": "evidence_items",
+          "tableTo": "local_controls",
+          "columnsFrom": [
+            "suggested_control_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "evidence_items_reviewed_by_user_id_fk": {
+          "name": "evidence_items_reviewed_by_user_id_fk",
+          "tableFrom": "evidence_items",
+          "tableTo": "user",
+          "columnsFrom": [
+            "reviewed_by"
           ],
           "columnsTo": [
             "id"
@@ -1449,6 +1510,27 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false
+        },
+        "source_pack_id": {
+          "name": "source_pack_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "evidence_examples": {
+          "name": "evidence_examples",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "cqc_mythbuster_url": {
+          "name": "cqc_mythbuster_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         }
       },

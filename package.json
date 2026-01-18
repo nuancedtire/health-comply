@@ -4,13 +4,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev --port 3000",
-    "build": "vite build",
+    "build": "NODE_OPTIONS='--max-old-space-size=8192' vite build",
     "deploy": "pnpm run build && wrangler deploy",
     "serve": "vite preview",
     "cf-typegen": "wrangler types --env-interface Env",
     "db:generate": "drizzle-kit generate",
     "db:local": "wrangler d1 migrations apply DB --local",
-    "db:seed": "wrangler d1 execute DB --local --file=./src/db/seed.sql"
+    "test": "vitest"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

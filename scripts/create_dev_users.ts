@@ -1,8 +1,20 @@
-import { hashPassword } from '../src/lib/auth';
+// Standalone password hashing function (Better Auth uses bcrypt internally)
+// This script is for generating SQL, so we use a simple approach
+import { createHash } from 'node:crypto';
+
 // Polyfill for Node.js environments if needed (though mostly using Node 20+ now)
 if (!globalThis.crypto) {
     // @ts-ignore
     globalThis.crypto = await import('node:crypto').then(c => c.webcrypto);
+}
+
+// Simple password hash for dev purposes (Better Auth handles real hashing)
+async function hashPassword(password: string): Promise<string> {
+    // Using SHA-256 for dev script - NOT production secure!
+    // Real auth uses bcrypt via Better Auth
+    const salt = crypto.randomUUID().slice(0, 16);
+    const hash = createHash('sha256').update(salt + password).digest('hex');
+    return `$dev$${salt}$${hash}`;
 }
 
 const PASSWORD = 'Password123!';

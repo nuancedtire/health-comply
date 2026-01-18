@@ -204,7 +204,16 @@ export const evidenceItems = sqliteTable('evidence_items', {
     isArchived: integer('is_archived', { mode: 'boolean' }).default(false), // Historical record
 
     // Review Workflow
-    status: text('status').notNull().default('pending_review'), // 'pending_review', 'approved', 'rejected', 'archived'
+    status: text('status').notNull().default('pending_review'), // 'draft', 'pending_review', 'approved', 'rejected', 'archived'
+
+    // Classification & Analysis
+    classificationResult: text('classification_result', { mode: 'json' }), // JSON: { type: 'match'|'suggestion'|'irrelevant', confidence: number, ... }
+    suggestedControlId: text('suggested_control_id').references(() => localControls.id, { onDelete: 'set null' }),
+    
+    // Manual Review Details
+    reviewNotes: text('review_notes'),
+    reviewedBy: text('reviewed_by').references(() => users.id),
+    reviewedAt: integer('reviewed_at', { mode: 'timestamp' }),
 
     summary: text('summary'),
     textContent: text('text_content'), // Extracted text/markdown from the file

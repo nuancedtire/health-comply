@@ -105,11 +105,15 @@ export function EvidenceExamplesTooltip({
 interface EvidenceExamplesSectionProps {
     evidenceExamples: string | EvidenceExamples | null | undefined;
     cqcMythbusterUrl?: string | null;
+    className?: string;
+    variant?: "default" | "minimal";
 }
 
 export function EvidenceExamplesSection({ 
     evidenceExamples, 
-    cqcMythbusterUrl 
+    cqcMythbusterUrl,
+    className,
+    variant = "default"
 }: EvidenceExamplesSectionProps) {
     let examples: EvidenceExamples | null = null;
     
@@ -125,8 +129,62 @@ export function EvidenceExamplesSection({
     
     if (!examples && !cqcMythbusterUrl) return null;
 
+    if (variant === "minimal") {
+        return (
+            <div className={cn("space-y-4", className)}>
+                <div className="grid gap-4 sm:grid-cols-2">
+                    {examples?.good && examples.good.length > 0 && (
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600">
+                                <CheckCircle2 className="h-3.5 w-3.5" />
+                                Good Evidence
+                            </div>
+                            <ul className="space-y-1.5">
+                                {examples.good.map((item, i) => (
+                                    <li key={i} className="text-xs text-muted-foreground flex items-start gap-2">
+                                        <span className="text-emerald-500 mt-0.5">•</span>
+                                        {item}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                    
+                    {examples?.bad && examples.bad.length > 0 && (
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-1.5 text-xs font-medium text-rose-600">
+                                <XCircle className="h-3.5 w-3.5" />
+                                Avoid
+                            </div>
+                            <ul className="space-y-1.5">
+                                {examples.bad.map((item, i) => (
+                                    <li key={i} className="text-xs text-muted-foreground flex items-start gap-2">
+                                        <span className="text-rose-500 mt-0.5">•</span>
+                                        {item}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                </div>
+                
+                {cqcMythbusterUrl && (
+                    <a 
+                        href={cqcMythbusterUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+                    >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                        View CQC Guidance
+                    </a>
+                )}
+            </div>
+        );
+    }
+
     return (
-        <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
+        <div className={cn("rounded-lg border bg-muted/30 p-4 space-y-4", className)}>
             <h4 className="font-medium text-sm">Evidence Guidance</h4>
             
             <div className="grid gap-4 sm:grid-cols-2">

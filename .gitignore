@@ -11,6 +11,7 @@ count.txt
 .output
 .vinxi
 .vscode
+.ruff_cache
 todos.json
 
 .dev.vars*

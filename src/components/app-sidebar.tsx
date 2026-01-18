@@ -14,6 +14,7 @@ import {
   Presentation,
   Building,
   UserPlus,
+  ClipboardList,
 } from "lucide-react"
 import { Link, useRouter } from "@tanstack/react-router"
 import {
@@ -57,7 +58,7 @@ const items = [
   },
   {
     title: "Expert Sign-Off",
-    url: "/sign-off",
+    url: "/signoff",
     icon: FileCheck,
   },
   {
@@ -84,6 +85,11 @@ const items = [
     title: "Users",
     url: "/admin/users",
     icon: UserPlus,
+  },
+  {
+    title: "Audit Log",
+    url: "/admin/audit",
+    icon: ClipboardList,
   }
 ]
 
@@ -100,10 +106,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const filteredItems = items.filter(item => {
     // List of strict superadmin-only items
-    const superAdminItems = ["Debug", "Tenants", "Users"];
+    const superAdminItems = ["Debug", "Tenants", "Users", "Audit Log"];
 
     if (isSystemAdmin) {
-      return ["Compliance Checklist", "Debug", "Tenants", "Users"].includes(item.title);
+      return ["Debug", "Tenants", "Users", "Audit Log"].includes(item.title);
     } else {
       // Standard/Practice Manager view: 
       // MUST NOT include superAdminItems

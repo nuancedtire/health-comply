@@ -121,10 +121,6 @@ function TenantsPage() {
   }
 
   const openInviteDialog = (tenant: any) => {
-    if (!tenant.practiceManagerRoleId) {
-      toast.error("Practice Manager role missing for this tenant. Cannot invite.")
-      return;
-    }
     setSelectedTenant(tenant)
     setInviteEmail('')
     setInviteDialogOpen(true)
@@ -137,7 +133,7 @@ function TenantsPage() {
       data: {
         email: inviteEmail,
         tenantId: selectedTenant.id,
-        roleId: selectedTenant.practiceManagerRoleId
+        role: "Practice Manager" // Use role name string, not roleId
       }
     })
   }

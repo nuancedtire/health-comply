@@ -48,16 +48,13 @@ function CreateSitePage() {
 
     const createSiteMutation = useMutation({
         mutationFn: createSiteFn,
-        onSuccess: () => {
+        onSuccess: (data) => {
             toast.success("Site created successfully")
             // Invalidate sites query to refresh the list
             queryClient.invalidateQueries({ queryKey: ['sites'] })
 
-            // Set as active site and redirect
-            // We construct a temporary site object or fetch it. 
-            // Ideally backend returns the full object or we wait for refetch.
-            // For now, let's just navigate to dashboard, and let the context pick up the new list.
-            navigate({ to: '/dashboard' })
+            // Redirect to onboarding wizard with the new site ID
+            navigate({ to: '/onboarding', search: { siteId: data.siteId } })
         },
         onError: (error) => {
             toast.error("Failed to create site")

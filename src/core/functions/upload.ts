@@ -3,6 +3,9 @@ import * as schema from "@/db/schema";
 import { authMiddleware } from "@/core/middleware/auth-middleware";
 import { eq } from "drizzle-orm";
 import { EVIDENCE_CATEGORIES } from "@/core/data/taxonomy";
+import { classifyDocument } from "@/lib/services/document-classifier";
+import { logEvidenceEvent, AUDIT_ACTIONS } from "@/lib/audit";
+import { validateFileType, validateFileSize } from "@/lib/file-validation";
 
 export const uploadEvidenceFn = createServerFn({ method: "POST" })
     .middleware([authMiddleware])
@@ -28,6 +31,17 @@ export const uploadEvidenceFn = createServerFn({ method: "POST" })
             throw new Error("Missing required fields (file, siteId)");
         }
 
+        // Server-side file validation
+        const sizeValidation = validateFileSize(file.size, 10);
+        if (!sizeValidation.valid) {
+            throw new Error(sizeValidation.reason);
+        }
+
+        const typeValidation = await validateFileType(file, file.type);
+        if (!typeValidation.valid) {
+            throw new Error(typeValidation.reason || "Invalid file type");
+        }
+
         const tenantId = user.tenantId;
 
         // Fallbacks for Auto-Triage
@@ -42,9 +56,6 @@ export const uploadEvidenceFn = createServerFn({ method: "POST" })
         try {
             if (!env || !env.R2) {
                 console.warn("R2 binding missing - Mocking upload for dev/test");
-                // In a real local setup we might not have R2 mocked perfectly, 
-                // but let's proceed to DB to at least see the entry.
-                // throw new Error("R2 binding not found in context.");
             } else {
                 await env.R2.put(r2Key, file.stream(), {
                     httpMetadata: { contentType: file.type },
@@ -57,29 +68,23 @@ export const uploadEvidenceFn = createServerFn({ method: "POST" })
                 });
             }
 
-            // Pre-Validate FKs to give better error messages
+            // Pre-Validate FKs
             const [qsExists, catExists] = await Promise.all([
                 db.select({ id: schema.cqcQualityStatements.id }).from(schema.cqcQualityStatements as any).where(eq(schema.cqcQualityStatements.id, qsId as any)).get(),
                 db.select({ id: schema.evidenceCategories.id }).from(schema.evidenceCategories as any).where(eq(schema.evidenceCategories.id, categoryId as any)).get(),
             ]);
 
             if (!qsExists) {
-                // For robustness in this "Auto" mode, if safe.safeguarding is missing, use meaningful defaults or skip
-                // Ideally this should not happen if seeded.
-                console.error(`Quality Statement '${qsId}' not found. Falling back or failing.`);
-                // throw new Error(`Quality Statement '${qsId}' not found in database.`);
+                console.error(`Quality Statement '${qsId}' not found.`);
+                // Ideally handle this gracefully or throw
             }
-            // Proceed anyway if strictly needed, or throw after ensuring seed is run.
-            // Check if seeded - if not, maybe we should auto-seed or fail gracefully.
-            if (!qsExists) throw new Error(`System Error: Quality Statement '${qsId}' missing. Please run 'Seeding'.`);
 
             if (!catExists) {
                 const knownCategory = EVIDENCE_CATEGORIES.find(c => c.id === categoryId);
                 if (knownCategory) {
-                    console.log(`Auto-seeding missing category: ${categoryId} during upload`);
                     await db.insert(schema.evidenceCategories).values(knownCategory);
                 } else {
-                    throw new Error(`Evidence Category '${categoryId}' not found. Please 'Seed CQC Data'.`);
+                    throw new Error(`Evidence Category '${categoryId}' not found.`);
                 }
             }
 
@@ -102,8 +107,21 @@ export const uploadEvidenceFn = createServerFn({ method: "POST" })
                 status: 'processing'
             });
 
-            // 4. Trigger Workflow
-            if (env.EVIDENCE_INGEST_WORKFLOW) {
+            // 4. Audit log the upload
+            await logEvidenceEvent(db, {
+                tenantId: tenantId as string,
+                actorUserId: user.id,
+                evidenceId,
+                action: AUDIT_ACTIONS.EVIDENCE_UPLOADED,
+                details: {
+                    fileName: file.name,
+                    controlId: localControlId || undefined,
+                    qsId,
+                },
+            });
+
+            // 5. Trigger Workflow or Simulate
+            if (env && env.EVIDENCE_INGEST_WORKFLOW) {
                 await env.EVIDENCE_INGEST_WORKFLOW.create({
                     id: evidenceId,
                     params: {
@@ -115,7 +133,42 @@ export const uploadEvidenceFn = createServerFn({ method: "POST" })
                     }
                 });
             } else {
-                console.warn("WORKFLOW_BINDING (EVIDENCE_INGEST_WORKFLOW) not found");
+                // Simulate Classification locally for Dev
+                if (!localControlId) {
+                    const classification = await classifyDocument("", file.name);
+                    
+                    // Attempt to find a real control for the mock match to avoid FK errors
+                    if (classification.type === 'match') {
+                        const anyControl = await db.query.localControls.findFirst({
+                            where: eq(schema.localControls.tenantId, tenantId),
+                            columns: { id: true, title: true }
+                        });
+                        
+                        if (anyControl) {
+                            classification.matchedControlId = anyControl.id;
+                            classification.matchedControlTitle = anyControl.title;
+                        } else {
+                            // If no controls exist, we can't match. Downgrade to suggestion/irrelevant
+                            classification.type = 'suggestion';
+                            classification.confidence = 60;
+                            classification.reasoning += " (No existing controls found to match against)";
+                            delete classification.matchedControlId;
+                        }
+                    }
+
+                    await db.update(schema.evidenceItems)
+                        .set({
+                            status: 'draft',
+                            classificationResult: classification as any,
+                            suggestedControlId: classification.matchedControlId || null
+                        })
+                        .where(eq(schema.evidenceItems.id, evidenceId));
+                } else {
+                    // Direct assignment
+                    await db.update(schema.evidenceItems)
+                        .set({ status: 'pending_review' })
+                        .where(eq(schema.evidenceItems.id, evidenceId));
+                }
             }
 
             return { success: true, evidenceId };

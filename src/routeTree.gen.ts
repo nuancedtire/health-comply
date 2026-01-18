@@ -11,10 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TeamRouteImport } from './routes/team'
 import { Route as SignupRouteImport } from './routes/signup'
-import { Route as SignOffRouteImport } from './routes/sign-off'
+import { Route as SignoffRouteImport } from './routes/signoff'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as PresentationRouteImport } from './routes/presentation'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
@@ -31,6 +32,7 @@ import { Route as LegalCookiesRouteImport } from './routes/legal/cookies'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminTenantsRouteImport } from './routes/admin/tenants'
 import { Route as AdminDebugRouteImport } from './routes/admin/debug'
+import { Route as AdminAuditRouteImport } from './routes/admin/audit'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const TeamRoute = TeamRouteImport.update({
@@ -43,9 +45,9 @@ const SignupRoute = SignupRouteImport.update({
   path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SignOffRoute = SignOffRouteImport.update({
-  id: '/sign-off',
-  path: '/sign-off',
+const SignoffRoute = SignoffRouteImport.update({
+  id: '/signoff',
+  path: '/signoff',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -61,6 +63,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const PresentationRoute = PresentationRouteImport.update({
   id: '/presentation',
   path: '/presentation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NotificationsRoute = NotificationsRouteImport.update({
@@ -143,6 +150,11 @@ const AdminDebugRoute = AdminDebugRouteImport.update({
   path: '/debug',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAuditRoute = AdminAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => AdminRoute,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -160,12 +172,14 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/notifications': typeof NotificationsRoute
+  '/onboarding': typeof OnboardingRoute
   '/presentation': typeof PresentationRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
-  '/sign-off': typeof SignOffRoute
+  '/signoff': typeof SignoffRoute
   '/signup': typeof SignupRoute
   '/team': typeof TeamRoute
+  '/admin/audit': typeof AdminAuditRoute
   '/admin/debug': typeof AdminDebugRoute
   '/admin/tenants': typeof AdminTenantsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -185,12 +199,14 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/notifications': typeof NotificationsRoute
+  '/onboarding': typeof OnboardingRoute
   '/presentation': typeof PresentationRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
-  '/sign-off': typeof SignOffRoute
+  '/signoff': typeof SignoffRoute
   '/signup': typeof SignupRoute
   '/team': typeof TeamRoute
+  '/admin/audit': typeof AdminAuditRoute
   '/admin/debug': typeof AdminDebugRoute
   '/admin/tenants': typeof AdminTenantsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -211,12 +227,14 @@ export interface FileRoutesById {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/notifications': typeof NotificationsRoute
+  '/onboarding': typeof OnboardingRoute
   '/presentation': typeof PresentationRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
-  '/sign-off': typeof SignOffRoute
+  '/signoff': typeof SignoffRoute
   '/signup': typeof SignupRoute
   '/team': typeof TeamRoute
+  '/admin/audit': typeof AdminAuditRoute
   '/admin/debug': typeof AdminDebugRoute
   '/admin/tenants': typeof AdminTenantsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -238,12 +256,14 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/notifications'
+    | '/onboarding'
     | '/presentation'
     | '/reset-password'
     | '/settings'
-    | '/sign-off'
+    | '/signoff'
     | '/signup'
     | '/team'
+    | '/admin/audit'
     | '/admin/debug'
     | '/admin/tenants'
     | '/admin/users'
@@ -263,12 +283,14 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/notifications'
+    | '/onboarding'
     | '/presentation'
     | '/reset-password'
     | '/settings'
-    | '/sign-off'
+    | '/signoff'
     | '/signup'
     | '/team'
+    | '/admin/audit'
     | '/admin/debug'
     | '/admin/tenants'
     | '/admin/users'
@@ -288,12 +310,14 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/notifications'
+    | '/onboarding'
     | '/presentation'
     | '/reset-password'
     | '/settings'
-    | '/sign-off'
+    | '/signoff'
     | '/signup'
     | '/team'
+    | '/admin/audit'
     | '/admin/debug'
     | '/admin/tenants'
     | '/admin/users'
@@ -314,10 +338,11 @@ export interface RootRouteChildren {
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   NotificationsRoute: typeof NotificationsRoute
+  OnboardingRoute: typeof OnboardingRoute
   PresentationRoute: typeof PresentationRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SettingsRoute: typeof SettingsRoute
-  SignOffRoute: typeof SignOffRoute
+  SignoffRoute: typeof SignoffRoute
   SignupRoute: typeof SignupRoute
   TeamRoute: typeof TeamRoute
   LegalCookiesRoute: typeof LegalCookiesRoute
@@ -342,11 +367,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/sign-off': {
-      id: '/sign-off'
-      path: '/sign-off'
-      fullPath: '/sign-off'
-      preLoaderRoute: typeof SignOffRouteImport
+    '/signoff': {
+      id: '/signoff'
+      path: '/signoff'
+      fullPath: '/signoff'
+      preLoaderRoute: typeof SignoffRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -368,6 +393,13 @@ declare module '@tanstack/react-router' {
       path: '/presentation'
       fullPath: '/presentation'
       preLoaderRoute: typeof PresentationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/notifications': {
@@ -482,6 +514,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDebugRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/audit': {
+      id: '/admin/audit'
+      path: '/audit'
+      fullPath: '/admin/audit'
+      preLoaderRoute: typeof AdminAuditRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -493,12 +532,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminAuditRoute: typeof AdminAuditRoute
   AdminDebugRoute: typeof AdminDebugRoute
   AdminTenantsRoute: typeof AdminTenantsRoute
   AdminUsersRoute: typeof AdminUsersRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAuditRoute: AdminAuditRoute,
   AdminDebugRoute: AdminDebugRoute,
   AdminTenantsRoute: AdminTenantsRoute,
   AdminUsersRoute: AdminUsersRoute,
@@ -517,10 +558,11 @@ const rootRouteChildren: RootRouteChildren = {
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   NotificationsRoute: NotificationsRoute,
+  OnboardingRoute: OnboardingRoute,
   PresentationRoute: PresentationRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SettingsRoute: SettingsRoute,
-  SignOffRoute: SignOffRoute,
+  SignoffRoute: SignoffRoute,
   SignupRoute: SignupRoute,
   TeamRoute: TeamRoute,
   LegalCookiesRoute: LegalCookiesRoute,

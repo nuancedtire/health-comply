@@ -223,8 +223,18 @@ export class EvidenceIngestWorkflow extends WorkflowEntrypoint<Env, EvidenceInge
             // Check for failure signal
             // @ts-ignore
             if (aiResult.__failed) {
-                console.warn(`AI Analysis failed for ${evidenceId}. Deleting record.`);
-                await db.delete(schema.evidenceItems)
+                console.warn(`AI Analysis failed for ${evidenceId}. Marking as failed (soft-delete).`);
+                // Soft-delete: set status to 'failed' instead of deleting
+                // User can see failed items and manually classify or delete them
+                await db.update(schema.evidenceItems)
+                    .set({
+                        status: 'failed',
+                        classificationResult: {
+                            type: 'error',
+                            error: aiResult.error || 'AI analysis failed',
+                            failedAt: new Date().toISOString(),
+                        } as any,
+                    })
                     .where(eq(schema.evidenceItems.id, evidenceId));
                 return;
             }
@@ -238,27 +248,56 @@ export class EvidenceIngestWorkflow extends WorkflowEntrypoint<Env, EvidenceInge
             let evidenceDate = aiResult.evidenceDate ? new Date(aiResult.evidenceDate) : new Date();
             if (isNaN(evidenceDate.getTime())) evidenceDate = new Date();
 
-            // Use matched control ID if AI found one
-            let finalControlId = aiResult.matchedControlId;
-            if (finalControlId === 'null' || finalControlId === 'undefined') finalControlId = null;
+            // Calculate Confidence
+            const confidence = Math.round((aiResult.confidence || 0) * 100);
+            
+            // Determine Classification Type
+            let type: 'match' | 'suggestion' | 'irrelevant' = 'irrelevant';
+            if (confidence >= 80) type = 'match';
+            else if (confidence >= 40) type = 'suggestion';
 
-            // If AI didn't find one, but suggested a name, we COULD try to fuzzy match again, 
-            // but for now let's trust the AI's "matchedControlId" if it picked from the list.
+            // Resolve Control IDs
+            let matchedControlId = aiResult.matchedControlId;
+            if (matchedControlId === 'null' || matchedControlId === 'undefined') matchedControlId = undefined;
+            
+            // If we have a match but confidence is low, downgrade to suggestion
+            if (matchedControlId && type === 'irrelevant') type = 'suggestion'; 
+            
+            // If no match found but we have a suggestion name, ensure type is suggestion (or irrelevant if very low)
+            if (!matchedControlId && type === 'match') type = 'suggestion';
+
+            // Construct Classification Result
+            const classificationResult = {
+                type,
+                confidence,
+                matchedControlId: matchedControlId,
+                matchedControlTitle: matchedControlId ? (await db.query.localControls.findFirst({
+                    where: eq(schema.localControls.id, matchedControlId),
+                    columns: { title: true }
+                }))?.title : undefined,
+                suggestedControlTitle: aiResult.suggestedControlName,
+                suggestedQsId: aiResult.suggestedQsId,
+                reasoning: aiResult.summary || "AI Analysis completed.",
+                analyzedAt: new Date().toISOString()
+            };
 
             await db.update(schema.evidenceItems)
                 .set({
                     status: 'draft',
                     qsId: safeQsId,
                     evidenceCategoryId: safeCategoryId,
-                    localControlId: finalControlId,
+                    // We DO NOT set localControlId here. We let the user confirm the match in Drafts.
+                    // localControlId: null, 
+                    classificationResult: classificationResult,
+                    suggestedControlId: matchedControlId || null, // Use this column for the "suggested" FK reference
                     summary: aiResult.summary,
                     textContent: aiResult.extractedText, // Save the extracted markdown/text
                     evidenceDate: evidenceDate,
-                    aiConfidence: Math.round((aiResult.confidence || 0) * 100)
+                    aiConfidence: confidence
                 })
                 .where(eq(schema.evidenceItems.id, evidenceId));
 
-            console.log(`Updated evidence ${evidenceId} with control ${finalControlId} and date ${evidenceDate}`);
+            console.log(`Updated evidence ${evidenceId} with classification ${type} (${confidence}%)`);
         });
     }
 }
