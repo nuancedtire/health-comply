@@ -7,6 +7,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +25,7 @@ import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateEvidenceFn, deleteEvidenceFn, getEvidenceReferenceDataFn } from "@/core/functions/evidence";
 import { getLocalControlsFn } from "@/core/functions/local-control-functions";
+import { parseCsv } from "@/utils/csv";
 import { Loader2, Trash2, Download, FileText, Calendar, Database, Eye, FileImage, Table as TableIcon, AlertTriangle as AlertIcon } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -382,19 +384,42 @@ export function EvidenceDetailDialog({ evidence, open, onOpenChange }: EvidenceD
                                     <p className="text-sm font-medium">Text content was extracted automatically from the file.</p>
                                 </div>
                                 <div className="prose prose-sm dark:prose-invert max-w-none p-6 border rounded-lg bg-background shadow-xs overflow-auto">
-                                    <ReactMarkdown
-                                        remarkPlugins={[remarkGfm]}
-                                        components={{
-                                            ul: ({ node, ...props }) => <ul className="list-disc pl-5 my-2" {...props} />,
-                                            ol: ({ node, ...props }) => <ol className="list-decimal pl-5 my-2" {...props} />,
-                                            li: ({ node, ...props }) => <li className="my-1" {...props} />,
-                                            table: ({ node, ...props }) => <table className="w-full border-collapse border my-4" {...props} />,
-                                            th: ({ node, ...props }) => <th className="border px-4 py-2 bg-muted font-semibold" {...props} />,
-                                            td: ({ node, ...props }) => <td className="border px-4 py-2" {...props} />,
-                                        }}
-                                    >
-                                        {evidence.textContent}
-                                    </ReactMarkdown>
+                                    {evidence.mimeType?.includes('text/csv') || evidence.title.endsWith('.csv') ? (
+                                        <div className="rounded-md border not-prose">
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        {parseCsv(evidence.textContent)[0]?.map((header, i) => (
+                                                            <TableHead key={i}>{header}</TableHead>
+                                                        ))}
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {parseCsv(evidence.textContent).slice(1).map((row, i) => (
+                                                        <TableRow key={i}>
+                                                            {row.map((cell, j) => (
+                                                                <TableCell key={j}>{cell}</TableCell>
+                                                            ))}
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
+                                        </div>
+                                    ) : (
+                                        <ReactMarkdown
+                                            remarkPlugins={[remarkGfm]}
+                                            components={{
+                                                ul: ({ node, ...props }) => <ul className="list-disc pl-5 my-2" {...props} />,
+                                                ol: ({ node, ...props }) => <ol className="list-decimal pl-5 my-2" {...props} />,
+                                                li: ({ node, ...props }) => <li className="my-1" {...props} />,
+                                                table: ({ node, ...props }) => <table className="w-full border-collapse border my-4" {...props} />,
+                                                th: ({ node, ...props }) => <th className="border px-4 py-2 bg-muted font-semibold" {...props} />,
+                                                td: ({ node, ...props }) => <td className="border px-4 py-2" {...props} />,
+                                            }}
+                                        >
+                                            {evidence.textContent}
+                                        </ReactMarkdown>
+                                    )}
                                 </div>
                             </div>
                         ) : (
