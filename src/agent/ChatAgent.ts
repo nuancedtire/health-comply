@@ -3,6 +3,7 @@ import { DurableObject } from "cloudflare:workers";
 interface Env {
     AI: any;
     EXA_API_KEY?: string;
+    CEREBRAS_API_KEY?: string;
     [key: string]: any;
 }
 
@@ -66,55 +67,64 @@ export class ChatAgent extends DurableObject<Env> {
             const steps: any[] = []; // Capture tool execution steps
 
             // Run LLM
-            let response = await this.env.AI.run(
-                "@cf/meta/llama-3.1-8b-instruct",
-                {
-                    messages: [
-                        { role: "system", content: this.getSystemPrompt() },
-                        ...this.history
-                    ],
-                    tools: tools.map(t => t.definition)
-                },
-                {
-                    gateway: {
-                        id: "compass-chat",
-                        skipCache: false,
-                        cacheTtl: 3360,
-                    }
-                }
-            );
+            let response: any;
+            try {
+                response = await this.runLLM([
+                    { role: "system", content: this.getSystemPrompt() },
+                    ...this.history
+                ], tools.map(t => t.definition));
+            } catch (err: any) {
+                console.error("LLM Error:", err);
+                return new Response(JSON.stringify({
+                    content: `AI Error: ${err.message}`,
+                    steps
+                }));
+            }
+
+            // Standardize response format handling (OpenAI style to our internal format)
+            const choice = response.choices?.[0];
+            const responseMessage = choice?.message;
+            const content = responseMessage?.content || "";
+            const toolCalls = responseMessage?.tool_calls;
 
             // Save the tool call request to history so it persists
-            // @ts-ignore
-            if (response.tool_calls && response.tool_calls.length > 0) {
+            if (toolCalls && toolCalls.length > 0) {
                 this.history.push({
                     role: "assistant",
-                    content: (response as any).response || "",
+                    content: content,
                     // @ts-ignore
-                    tool_calls: response.tool_calls
+                    tool_calls: toolCalls
                 });
                 await this.saveHistory();
             }
 
             // Handle Tool Calls
-            let finalContent = "";
+            let finalContent = content;
 
-            if (response.tool_calls && response.tool_calls.length > 0) {
+            if (toolCalls && toolCalls.length > 0) {
                 const toolResults = [];
-                for (const call of response.tool_calls) {
-                    const tool = tools.find(t => t.definition.name === call.name);
+                for (const call of toolCalls) {
+                    const tool = tools.find(t => t.definition.function.name === call.function.name);
                     if (tool) {
+                        // Parse arguments: they come as a JSON string
+                        let args = {};
+                        try {
+                            args = JSON.parse(call.function.arguments);
+                        } catch (e) {
+                            console.error("Failed to parse tool arguments", e);
+                        }
+
                         // Record step start
                         const stepInfo = {
-                            tool: call.name,
-                            input: call.arguments,
+                            tool: call.function.name,
+                            input: args,
                             output: "",
                             sources: [] as any[]
                         };
 
                         try {
                             // Execute tool - now returns Object { text, sources }
-                            const result = await tool.handler(call.arguments);
+                            const result = await tool.handler(args);
 
                             // result might be string (legacy/error) or object
                             const textContent = typeof result === 'string' ? result : result.text;
@@ -125,12 +135,11 @@ export class ChatAgent extends DurableObject<Env> {
 
                             const toolResultMsg = {
                                 role: "tool",
-                                name: call.name,
                                 tool_call_id: call.id,
                                 content: JSON.stringify({
                                     text: textContent,
                                     sources: sources
-                                })
+                                }) // OpenAI expects string content for tool outputs
                             };
 
                             toolResults.push(toolResultMsg);
@@ -141,7 +150,6 @@ export class ChatAgent extends DurableObject<Env> {
                             stepInfo.output = `Error: ${err.message}`;
                             const errorMsg = {
                                 role: "tool",
-                                name: call.name,
                                 tool_call_id: call.id,
                                 content: `Error: ${err.message}`
                             };
@@ -157,22 +165,13 @@ export class ChatAgent extends DurableObject<Env> {
 
                 try {
                     // Feed back to LLM
-                    response = await this.env.AI.run(
-                        "@cf/meta/llama-3.1-8b-instruct",
-                        {
-                            messages: [
-                                { role: "system", content: this.getSystemPrompt() },
-                                ...this.history
-                            ]
-                        },
-                        {
-                            gateway: {
-                                id: "compass-chat",
-                                skipCache: false,
-                                cacheTtl: 3360,
-                            }
-                        }
-                    );
+                    response = await this.runLLM([
+                        { role: "system", content: this.getSystemPrompt() },
+                        ...this.history
+                    ]);
+
+                    finalContent = response.choices?.[0]?.message?.content || "";
+
                 } catch (err: any) {
                     console.error("Error in AI tool loop:", err);
                     // Return a valid JSON error so frontend doesn't break
@@ -182,9 +181,6 @@ export class ChatAgent extends DurableObject<Env> {
                     }));
                 }
             }
-
-            // Extract final response
-            finalContent = response.response || response;
 
             this.history.push({ role: "assistant", content: finalContent });
             await this.saveHistory();
@@ -227,12 +223,15 @@ export class ChatAgent extends DurableObject<Env> {
             // Tool 1: AutoRAG (Internal Evidence)
             {
                 definition: {
-                    name: "search_evidence",
-                    description: "Search uploaded compliance evidence files in the specific tenant.",
-                    parameters: {
-                        type: "object",
-                        properties: { query: { type: "string" } },
-                        required: ["query"]
+                    type: "function",
+                    function: {
+                        name: "search_evidence",
+                        description: "Search uploaded compliance evidence files in the specific tenant.",
+                        parameters: {
+                            type: "object",
+                            properties: { query: { type: "string" } },
+                            required: ["query"]
+                        }
                     }
                 },
                 handler: async (args: any) => {
@@ -301,12 +300,15 @@ export class ChatAgent extends DurableObject<Env> {
         if (this.env.EXA_API_KEY) {
             tools.push({
                 definition: {
-                    name: "web_search",
-                    description: "Search the public internet for CQC regulations, news, or clinical guidelines.",
-                    parameters: {
-                        type: "object",
-                        properties: { query: { type: "string" } },
-                        required: ["query"]
+                    type: "function",
+                    function: {
+                        name: "web_search",
+                        description: "Search the public internet for CQC regulations, news, or clinical guidelines.",
+                        parameters: {
+                            type: "object",
+                            properties: { query: { type: "string" } },
+                            required: ["query"]
+                        }
                     }
                 },
                 handler: async (args: any) => {
@@ -370,5 +372,35 @@ export class ChatAgent extends DurableObject<Env> {
     3. Be friendly, helpful, professional, and concise.
     4. You do not always need to use a tool if you can answer directly.
     5. Use tools only when necessary.`;
+    }
+    async runLLM(messages: any[], tools: any[] | null = null) {
+        const apiKey = this.env.CEREBRAS_API_KEY;
+        if (!apiKey) throw new Error("CEREBRAS_API_KEY is missing");
+
+        const body: any = {
+            model: "zai-glm-4.7",
+            messages: messages,
+            temperature: 0.1
+        };
+
+        if (tools && tools.length > 0) {
+            body.tools = tools;
+        }
+
+        const response = await fetch("https://api.cerebras.ai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${apiKey}`
+            },
+            body: JSON.stringify(body)
+        });
+
+        if (!response.ok) {
+            const err = await response.text();
+            throw new Error(`Cerebras API Error: ${err}`);
+        }
+
+        return await response.json();
     }
 }

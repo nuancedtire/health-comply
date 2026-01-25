@@ -8,6 +8,7 @@ type Env = {
     AI: any;
     DB: D1Database;
     EVIDENCE_INGEST_WORKFLOW: Workflow;
+    CEREBRAS_API_KEY: string;
 };
 
 type EvidenceIngestParams = {
@@ -166,37 +167,43 @@ export class EvidenceIngestWorkflow extends WorkflowEntrypoint<Env, EvidenceInge
 
             // Call AI
             try {
-                const response = await this.env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
-                    messages: [
-                        { role: "system", content: systemPrompt },
-                        { role: "user", content: userMessage }
-                    ],
-                    response_format: {
-                        type: "json_schema",
-                        json_schema: {
-                            type: "object",
-                            properties: {
-                                summary: { type: "string" },
-                                evidenceDate: { type: "string" }, // "YYYY-MM-DD"
-                                matchedControlId: { type: ["string", "null"] },
-                                suggestedControlName: { type: "string" },
-                                suggestedQsId: { type: "string" },
-                                suggestedCategoryId: { type: "string" },
-                                confidence: { type: "number" }
-                            },
-                            required: ["summary", "suggestedQsId", "confidence"]
-                        }
-                    }
+                const apiKey = this.env.CEREBRAS_API_KEY;
+                if (!apiKey) throw new Error("CEREBRAS_API_KEY is missing");
+
+                const response = await fetch("https://api.cerebras.ai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: "zai-glm-4.7",
+                        messages: [
+                            { role: "system", content: systemPrompt },
+                            { role: "user", content: userMessage }
+                        ],
+                        response_format: {
+                            type: "json_object"
+                        },
+                        temperature: 0.1
+                    })
                 });
 
-                let result = response;
-                if (typeof response === 'string') {
-                    try { result = JSON.parse(response); } catch { }
+                if (!response.ok) {
+                    const err = await response.text();
+                    throw new Error(`Cerebras API Error: ${err}`);
                 }
-                // @ts-ignore
-                if (result.response) result = result.response;
-                if (typeof result === 'string') {
-                    result = JSON.parse(result);
+
+                const json: any = await response.json();
+                const content = json.choices?.[0]?.message?.content;
+                let result = content;
+
+                try {
+                    if (typeof content === 'string') {
+                        result = JSON.parse(content);
+                    }
+                } catch (e) {
+                    console.error("Error parsing JSON from AI", e);
                 }
 
                 console.log("AI Result:", JSON.stringify(result, null, 2));
@@ -250,7 +257,7 @@ export class EvidenceIngestWorkflow extends WorkflowEntrypoint<Env, EvidenceInge
 
             // Calculate Confidence
             const confidence = Math.round((aiResult.confidence || 0) * 100);
-            
+
             // Determine Classification Type
             let type: 'match' | 'suggestion' | 'irrelevant' = 'irrelevant';
             if (confidence >= 80) type = 'match';
@@ -259,10 +266,10 @@ export class EvidenceIngestWorkflow extends WorkflowEntrypoint<Env, EvidenceInge
             // Resolve Control IDs
             let matchedControlId = aiResult.matchedControlId;
             if (matchedControlId === 'null' || matchedControlId === 'undefined') matchedControlId = undefined;
-            
+
             // If we have a match but confidence is low, downgrade to suggestion
-            if (matchedControlId && type === 'irrelevant') type = 'suggestion'; 
-            
+            if (matchedControlId && type === 'irrelevant') type = 'suggestion';
+
             // If no match found but we have a suggestion name, ensure type is suggestion (or irrelevant if very low)
             if (!matchedControlId && type === 'match') type = 'suggestion';
 

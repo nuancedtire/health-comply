@@ -3,5 +3,6 @@ export interface Env {
     AI: any;
     CHAT_AGENT: DurableObjectNamespace;
     EXA_API_KEY: string;
+    CEREBRAS_API_KEY: string;
     EVIDENCE_INGEST_WORKFLOW: Workflow;
 }

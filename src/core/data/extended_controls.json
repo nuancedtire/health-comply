@@ -49,7 +49,7 @@
                 "Missing review dates"
             ]
         },
-        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters/gp-mythbuster-33-safeguarding-children"
     },
     {
         "packId": "safe_safeguarding",
@@ -75,7 +75,7 @@
                 "Missing consent"
             ]
         },
-        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters/gp-mythbuster-25-safeguarding-adults-risk"
     },
     {
         "packId": "safe_safeguarding",
@@ -127,7 +127,7 @@
                 "No action plan"
             ]
         },
-        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters/gp-mythbuster-99-infection-prevention-control-general-practice"
     },
     {
         "packId": "safe_infection_control",
@@ -153,7 +153,7 @@
                 "No verification"
             ]
         },
-        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters/gp-mythbuster-99-infection-prevention-control-general-practice"
     },
     {
         "packId": "safe_infection_control",
@@ -179,7 +179,7 @@
                 "No distribution record"
             ]
         },
-        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters/gp-mythbuster-99-infection-prevention-control-general-practice"
     },
     {
         "packId": "safe_infection_control",
@@ -205,7 +205,7 @@
                 "No injury reporting"
             ]
         },
-        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters/gp-mythbuster-99-infection-prevention-control-general-practice"
     },
     {
         "packId": "safe_infection_control",
@@ -231,7 +231,7 @@
                 "No follow-up on non-immune"
             ]
         },
-        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters/gp-mythbuster-37-immunising-healthcare-staff"
     },
     {
         "packId": "safe_medicines",
@@ -257,7 +257,7 @@
                 "Missing destructions"
             ]
         },
-        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters/gp-mythbuster-28-management-controlled-drugs"
     },
     {
         "packId": "safe_medicines",
@@ -491,7 +491,7 @@
                 "No flushing regime"
             ]
         },
-        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters/gp-mythbuster-27-legionella"
     },
     {
         "packId": "safe_learning",
@@ -1798,7 +1798,7 @@
         "packName": "Safe Recruitment",
         "packIcon": "UserPlus",
         "keyQuestion": "safe",
-        "qsId": "safe.safeguarding",
+        "qsId": "safe.safe_and_effective_staffing",
         "title": "DBS checks current for all staff",
         "description": "Ensure DBS checks are current and appropriate for roles",
         "evidenceHint": "DBS register showing check dates and levels",
@@ -1817,14 +1817,14 @@
                 "Expired checks"
             ]
         },
-        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters/gp-mythbuster-2-who-should-have-disclosure-barring-service-dbs-check"
     },
     {
         "packId": "safe_recruitment",
         "packName": "Safe Recruitment",
         "packIcon": "UserPlus",
         "keyQuestion": "safe",
-        "qsId": "safe.safeguarding",
+        "qsId": "safe.safe_and_effective_staffing",
         "title": "Professional registration verified",
         "description": "Verify professional registrations are current for clinical staff",
         "evidenceHint": "Registration verification log with dates",
@@ -1843,14 +1843,14 @@
                 "Conditions unknown"
             ]
         },
-        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters/gp-mythbuster-2-who-should-have-disclosure-barring-service-dbs-check"
     },
     {
         "packId": "safe_recruitment",
         "packName": "Safe Recruitment",
         "packIcon": "UserPlus",
         "keyQuestion": "safe",
-        "qsId": "safe.safeguarding",
+        "qsId": "safe.safe_and_effective_staffing",
         "title": "Induction completion verified",
         "description": "Verify all new starters complete comprehensive induction",
         "evidenceHint": "Induction checklist completion records",
@@ -1869,6 +1869,6 @@
                 "No follow-up"
             ]
         },
-        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters"
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters/gp-mythbuster-2-who-should-have-disclosure-barring-service-dbs-check"
     }
 ]
