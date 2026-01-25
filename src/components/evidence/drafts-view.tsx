@@ -45,7 +45,7 @@ export function DraftsView({ drafts }: { drafts: DraftItem[] }) {
 
     const handleAcceptMatch = (item: DraftItem) => {
         if (!item.classificationResult?.matchedControlId) return;
-        
+
         updateMutation.mutate({
             data: {
                 evidenceId: item.id,
@@ -97,14 +97,14 @@ export function DraftsView({ drafts }: { drafts: DraftItem[] }) {
                         {drafts.map(item => {
                             const result = item.classificationResult;
                             const isSelected = item.id === selectedId;
-                            
+
                             return (
                                 <div
                                     key={item.id}
                                     onClick={() => setSelectedId(item.id)}
                                     className={cn(
                                         "p-3 rounded-lg border cursor-pointer transition-colors hover:bg-muted/50",
-                                        isSelected ? "bg-muted border-primary/50" : "bg-card"
+                                        isSelected ? "bg-muted dark:bg-muted/50 border-primary/50" : "bg-card"
                                     )}
                                 >
                                     <div className="flex justify-between items-start mb-1">
@@ -112,9 +112,9 @@ export function DraftsView({ drafts }: { drafts: DraftItem[] }) {
                                         {result?.confidence && (
                                             <span className={cn(
                                                 "text-[10px] px-1.5 py-0.5 rounded-full font-medium",
-                                                result.confidence > 80 ? "bg-green-100 text-green-700" :
-                                                result.confidence > 40 ? "bg-yellow-100 text-yellow-700" :
-                                                "bg-red-100 text-red-700"
+                                                result.confidence > 80 ? "bg-green-100 dark:bg-green-900/20 text-green-700" :
+                                                    result.confidence > 40 ? "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700" :
+                                                        "bg-red-100 dark:bg-red-900/20 text-red-700"
                                             )}>
                                                 {result.confidence}%
                                             </span>
@@ -149,7 +149,7 @@ export function DraftsView({ drafts }: { drafts: DraftItem[] }) {
                                 </div>
                             </div>
                         </CardHeader>
-                        
+
                         <div className="flex-1 grid grid-cols-2 divide-x">
                             {/* Left: Analysis */}
                             <div className="p-6 space-y-6">
@@ -157,9 +157,9 @@ export function DraftsView({ drafts }: { drafts: DraftItem[] }) {
                                     <h4 className="text-sm font-medium text-muted-foreground mb-2">AI Analysis</h4>
                                     <div className={cn(
                                         "p-4 rounded-lg border",
-                                        selectedItem.classificationResult?.type === 'match' ? "bg-green-50/50 border-green-100" :
-                                        selectedItem.classificationResult?.type === 'suggestion' ? "bg-yellow-50/50 border-yellow-100" :
-                                        "bg-red-50/50 border-red-100"
+                                        selectedItem.classificationResult?.type === 'match' ? "bg-green-50/50 dark:bg-green-900/20 border-green-100" :
+                                            selectedItem.classificationResult?.type === 'suggestion' ? "bg-yellow-50/50 dark:bg-yellow-900/20 border-yellow-100" :
+                                                "bg-red-50/50 dark:bg-red-900/20 border-red-100"
                                     )}>
                                         <div className="flex items-center gap-2 mb-2">
                                             <Wand2 className="h-4 w-4" />
@@ -196,24 +196,24 @@ export function DraftsView({ drafts }: { drafts: DraftItem[] }) {
                             {/* Right: Actions */}
                             <div className="p-6 flex flex-col justify-center gap-4 bg-muted/10">
                                 {selectedItem.classificationResult?.type === 'match' && (
-                                    <Button 
-                                        className="w-full bg-green-600 hover:bg-green-700" 
+                                    <Button
+                                        className="w-full bg-green-600 hover:bg-green-700"
                                         onClick={() => handleAcceptMatch(selectedItem)}
                                         disabled={updateMutation.isPending}
                                     >
-                                        <Check className="mr-2 h-4 w-4" /> 
+                                        <Check className="mr-2 h-4 w-4" />
                                         Confirm Match
                                     </Button>
                                 )}
 
                                 {selectedItem.classificationResult?.type === 'suggestion' && (
                                     <>
-                                        <Button 
-                                            className="w-full" 
+                                        <Button
+                                            className="w-full"
                                             variant="secondary"
                                             onClick={() => handleCreateControl(selectedItem)}
                                         >
-                                            <ArrowRight className="mr-2 h-4 w-4" /> 
+                                            <ArrowRight className="mr-2 h-4 w-4" />
                                             Create & Assign Control
                                         </Button>
                                         <div className="text-center text-xs text-muted-foreground">- OR -</div>
@@ -224,14 +224,14 @@ export function DraftsView({ drafts }: { drafts: DraftItem[] }) {
                                 )}
 
                                 <Separator className="my-2" />
-                                
-                                <Button 
-                                    variant="ghost" 
+
+                                <Button
+                                    variant="ghost"
                                     className="w-full text-muted-foreground hover:text-destructive"
                                     onClick={() => handleReject(selectedItem)}
                                     disabled={updateMutation.isPending}
                                 >
-                                    <X className="mr-2 h-4 w-4" /> 
+                                    <X className="mr-2 h-4 w-4" />
                                     Mark as Irrelevant
                                 </Button>
                             </div>

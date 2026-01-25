@@ -153,16 +153,6 @@ export class EvidenceIngestWorkflow extends WorkflowEntrypoint<Env, EvidenceInge
                 ---
                 ${fileContentMarkdown ? fileContentMarkdown : "(No text content extracted)"}
                 ---
-                
-                Return JSON: {
-                    "summary": "string",
-                    "evidenceDate": "YYYY-MM-DD",
-                    "matchedControlId": "string | null", 
-                    "suggestedControlName": "string", 
-                    "suggestedQsId": "string",
-                    "suggestedCategoryId": "string",
-                    "confidence": number
-                }
              `;
 
             // Call AI
@@ -183,7 +173,33 @@ export class EvidenceIngestWorkflow extends WorkflowEntrypoint<Env, EvidenceInge
                             { role: "user", content: userMessage }
                         ],
                         response_format: {
-                            type: "json_object"
+                            type: "json_schema",
+                            json_schema: {
+                                name: "evidence_analysis",
+                                strict: true,
+                                schema: {
+                                    type: "object",
+                                    properties: {
+                                        summary: { type: "string" },
+                                        evidenceDate: { type: "string" }, // "YYYY-MM-DD"
+                                        matchedControlId: { type: ["string", "null"] },
+                                        suggestedControlName: { type: "string" },
+                                        suggestedQsId: { type: "string" },
+                                        suggestedCategoryId: { type: "string" },
+                                        confidence: { type: "number" }
+                                    },
+                                    required: [
+                                        "summary",
+                                        "evidenceDate",
+                                        "matchedControlId",
+                                        "suggestedControlName",
+                                        "suggestedQsId",
+                                        "suggestedCategoryId",
+                                        "confidence"
+                                    ],
+                                    additionalProperties: false
+                                }
+                            }
                         },
                         temperature: 0.1
                     })

@@ -50,7 +50,7 @@ export const seedLocalControlsFn = createServerFn({ method: "POST" })
         console.log("Ensured Evidence Categories exist.");
 
         let seededCount = 0;
-        
+
         // Use EXTENDED_CONTROLS instead of STARTER_PACK
         const controlsToSeed = EXTENDED_CONTROLS;
 
@@ -68,7 +68,7 @@ export const seedLocalControlsFn = createServerFn({ method: "POST" })
                 const parts = targetQsId.split('.');
                 // Handle cases where split might not give 2 parts if ID is non-standard
                 const kqId = parts[0];
-                const code = parts[1] || parts[0]; 
+                const code = parts[1] || parts[0];
 
                 if (!kqId) {
                     console.warn(`Skipping control ${item.title} because QS ID ${targetQsId} is invalid format.`);
@@ -184,10 +184,10 @@ export const suggestLocalControlsFn = createServerFn({ method: "POST" })
         const { env, db, user } = ctx.context;
         const tenantId = (user as any).tenantId as string;
 
-        const ai = (env as any).AI;
+        const apiKey = (env as any).CEREBRAS_API_KEY;
 
-        if (!ai) {
-            return { suggestions: [], error: "AI binding not available" };
+        if (!apiKey) {
+            return { suggestions: [], error: "CEREBRAS_API_KEY not configured" };
         }
 
         let siteId = inputSiteId || (user as any).siteId;
@@ -272,95 +272,113 @@ Suggest 3 specific local operational controls that would strengthen this practic
         }
 
         try {
-            const response = await ai.run("@cf/meta/llama-3.1-8b-instruct-fast", {
-                messages: [
-                    { role: "system", content: systemPrompt },
-                    { role: "user", content: userMessage }
-                ],
-                response_format: {
-                    type: "json_schema",
-                    json_schema: {
-                        type: "object",
-                        properties: {
-                            suggestions: {
-                                type: "array",
-                                items: {
-                                    type: "object",
-                                    properties: {
-                                        title: { type: "string", description: "Clear, specific control name" },
-                                        description: { type: "string", description: "What this control involves" },
-                                        frequencyType: { 
-                                            type: "string", 
-                                            enum: ["recurring", "one-off", "observation", "feedback"],
-                                            description: "How often this should occur"
-                                        },
-                                        frequencyDays: { type: "number", description: "Days between occurrences (for recurring)" },
-                                        evidenceHint: { type: "string", description: "What document/evidence to upload" },
-                                        defaultReviewerRole: { 
-                                            type: "string",
-                                            enum: ["Practice Manager", "Nurse Lead", "GP Partner"],
-                                            description: "Who should own this control"
-                                        },
-                                        fallbackReviewerRole: {
-                                            type: "string",
-                                            enum: ["Practice Manager", "Nurse Lead", "GP Partner"],
-                                            description: "Backup reviewer if primary unavailable"
-                                        },
-                                        evidenceExamples: {
+            const response = await fetch("https://api.cerebras.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                    model: "zai-glm-4.7",
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: userMessage }
+                    ],
+                    response_format: {
+                        type: "json_schema",
+                        json_schema: {
+                            name: "suggestions_response",
+                            strict: true,
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    suggestions: {
+                                        type: "array",
+                                        items: {
                                             type: "object",
                                             properties: {
-                                                good: {
-                                                    type: "array",
-                                                    items: { type: "string" },
-                                                    description: "Examples of good/acceptable evidence"
+                                                title: { type: "string", description: "Clear, specific control name" },
+                                                description: { type: "string", description: "What this control involves" },
+                                                frequencyType: {
+                                                    type: "string",
+                                                    enum: ["recurring", "one-off", "observation", "feedback"],
+                                                    description: "How often this should occur"
                                                 },
-                                                bad: {
-                                                    type: "array",
-                                                    items: { type: "string" },
-                                                    description: "Examples of poor/unacceptable evidence"
+                                                frequencyDays: { type: "number", description: "Days between occurrences (for recurring)" },
+                                                evidenceHint: { type: "string", description: "What document/evidence to upload" },
+                                                defaultReviewerRole: {
+                                                    type: "string",
+                                                    enum: ["Practice Manager", "Nurse Lead", "GP Partner"],
+                                                    description: "Who should own this control"
+                                                },
+                                                fallbackReviewerRole: {
+                                                    type: "string",
+                                                    enum: ["Practice Manager", "Nurse Lead", "GP Partner"],
+                                                    description: "Backup reviewer if primary unavailable"
+                                                },
+                                                evidenceExamples: {
+                                                    type: "object",
+                                                    properties: {
+                                                        good: {
+                                                            type: "array",
+                                                            items: { type: "string" },
+                                                            description: "Examples of good/acceptable evidence"
+                                                        },
+                                                        bad: {
+                                                            type: "array",
+                                                            items: { type: "string" },
+                                                            description: "Examples of poor/unacceptable evidence"
+                                                        }
+                                                    },
+                                                    required: ["good", "bad"],
+                                                    additionalProperties: false
+                                                },
+                                                reasoning: { type: "string", description: "Why this is a gap and important for CQC" },
+                                                priority: {
+                                                    type: "string",
+                                                    enum: ["high", "medium", "low"],
+                                                    description: "Priority based on CQC risk"
+                                                },
+                                                confidence: {
+                                                    type: "number",
+                                                    description: "Confidence score 0-100 that this is a genuine gap"
                                                 }
                                             },
-                                            required: ["good", "bad"]
-                                        },
-                                        reasoning: { type: "string", description: "Why this is a gap and important for CQC" },
-                                        priority: { 
-                                            type: "string", 
-                                            enum: ["high", "medium", "low"],
-                                            description: "Priority based on CQC risk"
-                                        },
-                                        confidence: { 
-                                            type: "number", 
-                                            description: "Confidence score 0-100 that this is a genuine gap" 
+                                            required: [
+                                                "title",
+                                                "description",
+                                                "frequencyType",
+                                                "frequencyDays",
+                                                "evidenceHint",
+                                                "defaultReviewerRole",
+                                                "fallbackReviewerRole",
+                                                "evidenceExamples",
+                                                "reasoning",
+                                                "priority",
+                                                "confidence"
+                                            ],
+                                            additionalProperties: false
                                         }
-                                    },
-                                    required: [
-                                        "title", 
-                                        "description", 
-                                        "frequencyType", 
-                                        "frequencyDays", 
-                                        "evidenceHint", 
-                                        "defaultReviewerRole",
-                                        "evidenceExamples",
-                                        "reasoning",
-                                        "priority",
-                                        "confidence"
-                                    ]
+                                    }
                                 },
-                                minItems: 3,
-                                maxItems: 3
+                                required: ["suggestions"],
+                                additionalProperties: false
                             }
-                        },
-                        required: ["suggestions"]
-                    }
-                }
+                        }
+                    },
+                    temperature: 0.1
+                })
             });
 
-            let result = response;
-            if (typeof result === 'string') {
-                try { result = JSON.parse(result); } catch (e) { }
+            if (!response.ok) {
+                const err = await response.text();
+                throw new Error(`Cerebras API Error: ${err}`);
             }
-            // @ts-ignore
-            if (result.response) result = result.response;
+
+            const json: any = await response.json();
+            const content = json.choices?.[0]?.message?.content;
+            let result = content;
+
             if (typeof result === 'string') {
                 try { result = JSON.parse(result); } catch (e) { }
             }
@@ -613,7 +631,7 @@ export const getQualityStatementsFn = createServerFn({ method: "GET" })
     .middleware([authMiddleware])
     .handler(async (ctx) => {
         const { db } = ctx.context;
-        
+
         // Fetch all active QS, maybe ordered by Key Question and Display Order
         const qsList = await db.query.cqcQualityStatements.findMany({
             where: eq(schema.cqcQualityStatements.active, 1),
@@ -632,7 +650,7 @@ export const getQualityStatementsFn = createServerFn({ method: "GET" })
         // But relations block doesn't define 'keyQuestion'.
         // Let's just fetch Key Questions separately or use the ID. 
         // Better: Fetch Key Questions too.
-        
+
         const keyQuestions = await db.query.cqcKeyQuestions.findMany({
             orderBy: (kq, { asc }) => [asc(kq.displayOrder)]
         });
