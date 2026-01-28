@@ -13,6 +13,12 @@ import {
     type EvidenceStatus,
 } from "@/lib/evidence-workflow";
 
+// Reviewer display helper
+export function getReviewerLabel(role?: string | null) {
+    if (!role) return "Practice Manager";
+    return role;
+}
+
 // Helper to get sites for the current user's tenant
 export const getUserSitesFn = createServerFn({ method: "GET" })
     .middleware([authMiddleware])
@@ -180,6 +186,7 @@ export const getEvidenceForSiteFn = createServerFn({ method: "GET" })
         }
 
         const suggestedControls = alias(schema.localControls, 'suggested_controls');
+        const reviewerUsers = alias(schema.users, 'reviewer_users');
 
         // Use explicit joins and flat selection to avoid TS inference issues with deep nesting
         const rawEvidence = await db.select({
@@ -205,15 +212,21 @@ export const getEvidenceForSiteFn = createServerFn({ method: "GET" })
             reviewNotes: schema.evidenceItems.reviewNotes,
             reviewedBy: schema.evidenceItems.reviewedBy,
             reviewedAt: schema.evidenceItems.reviewedAt,
-            
+
             // Flat joined fields
             localControlTitle: schema.localControls.title,
             suggestedControlTitle: suggestedControls.title,
             qsTitle: schema.cqcQualityStatements.title,
             kqTitle: schema.cqcKeyQuestions.title,
-            uploaderName: schema.users.name
+            uploaderName: schema.users.name,
+            reviewerName: reviewerUsers.name,
+
+            // Control reviewer roles
+            controlDefaultReviewer: schema.localControls.defaultReviewerRole,
+            controlFallbackReviewer: schema.localControls.fallbackReviewerRole,
         })
             .from(schema.evidenceItems)
+            .leftJoin(reviewerUsers, eq(schema.evidenceItems.reviewedBy, reviewerUsers.id))
             .leftJoin(schema.users, eq(schema.evidenceItems.uploadedBy, schema.users.id))
             .leftJoin(schema.localControls, eq(schema.evidenceItems.localControlId, schema.localControls.id))
             .leftJoin(suggestedControls, eq(schema.evidenceItems.suggestedControlId, suggestedControls.id))
@@ -251,7 +264,11 @@ export const getEvidenceForSiteFn = createServerFn({ method: "GET" })
             reviewNotes: item.reviewNotes,
             reviewedAt: item.reviewedAt,
             reviewedBy: item.reviewedBy,
-            
+
+            reviewerName: item.reviewerName,
+            assigneeRole: item.controlDefaultReviewer || item.controlFallbackReviewer || 'Practice Manager',
+
+
             localControl: item.localControlTitle ? { title: item.localControlTitle } : null,
             suggestedControl: item.suggestedControlTitle ? { title: item.suggestedControlTitle } : null,
             qs: item.qsTitle ? {
@@ -345,14 +362,14 @@ export const updateEvidenceFn = createServerFn({ method: "POST" })
         const cleanUpdates = Object.fromEntries(
             Object.entries(updates).filter(([_, v]) => v !== undefined)
         );
-        
+
         // Add metadata if status changes to review/approved/rejected
         if (updates.status && ['pending_review', 'approved', 'rejected'].includes(updates.status)) {
-             // Track who reviewed it
-             if (updates.status === 'approved' || updates.status === 'rejected') {
-                 (cleanUpdates as any).reviewedBy = user.id;
-                 (cleanUpdates as any).reviewedAt = new Date();
-             }
+            // Track who reviewed it
+            if (updates.status === 'approved' || updates.status === 'rejected') {
+                (cleanUpdates as any).reviewedBy = user.id;
+                (cleanUpdates as any).reviewedAt = new Date();
+            }
         }
 
         // 4. Perform Update

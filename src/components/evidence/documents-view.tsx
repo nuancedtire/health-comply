@@ -23,7 +23,6 @@ import {
     LayoutGrid,
     LayoutList,
     ChevronDown,
-    ChevronRight,
     FileText,
     FileImage,
     FileSpreadsheet,
@@ -36,6 +35,8 @@ import {
     Eye,
     Sparkles,
     Filter,
+    UserCheck,
+    User,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { ClassificationResult } from "@/types/classification";
@@ -135,6 +136,8 @@ export interface EvidenceItem {
             title: string;
         } | null;
     } | null;
+    reviewerName?: string | null;
+    assigneeRole?: string | null;
 }
 
 interface DocumentsViewProps {
@@ -199,8 +202,8 @@ function ConfidenceBadge({ confidence, type }: { confidence?: number | null; typ
     const color = type === "match"
         ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
         : type === "suggestion"
-        ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
-        : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400";
+            ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
+            : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400";
 
     return (
         <span className={cn("text-[10px] px-1.5 py-0.5 rounded font-medium", color)}>
@@ -265,6 +268,26 @@ function DocumentListItem({
                     )}
                     <span className="text-border">·</span>
                     <span>{formatDistanceToNow(new Date(item.uploadedAt), { addSuffix: true })}</span>
+
+                    {/* Reviewer Info */}
+                    {(item.status === 'pending_review' || item.status === 'approved' || item.status === 'rejected') && (
+                        <>
+                            <span className="text-border">·</span>
+                            <span className="flex items-center gap-1 text-muted-foreground/80">
+                                {item.status === 'pending_review' ? (
+                                    <>
+                                        <User className="h-3 w-3" />
+                                        <span>Reviewer: {item.assigneeRole}</span>
+                                    </>
+                                ) : item.reviewerName ? (
+                                    <>
+                                        <UserCheck className="h-3 w-3" />
+                                        <span>Reviewed by {item.reviewerName}</span>
+                                    </>
+                                ) : null}
+                            </span>
+                        </>
+                    )}
                 </div>
             </div>
 

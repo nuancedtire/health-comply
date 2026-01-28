@@ -122,7 +122,7 @@ export function UnifiedControlsHub({
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isAIOpen, setIsAIOpen] = useState(false);
     const [pendingLinkEvidenceId, setPendingLinkEvidenceId] = useState<string | null>(linkEvidenceId || null);
-    
+
     const [activeFilters, setActiveFilters] = useState<{
         frequency: string[];
         reviewer: string[];
@@ -190,20 +190,20 @@ export function UnifiedControlsHub({
     // Computed Values
     const controls = useMemo(() => {
         if (!controlsData?.controls) return [];
-        
+
         return controlsData.controls.map(c => {
             const hasEvidence = c.lastEvidenceAt !== null;
-            
+
             // Calculate next due date from last evidence + frequency
             let nextDueAt: Date | null = null;
             if (hasEvidence && c.frequencyType === 'recurring' && c.frequencyDays) {
                 nextDueAt = addDays(new Date(c.lastEvidenceAt!), c.frequencyDays);
             }
-            
+
             const isOverdue = nextDueAt && isPast(nextDueAt) && !isToday(nextDueAt);
             const isDueSoon = nextDueAt && !isOverdue && nextDueAt < addDays(new Date(), 7);
             const isOnTrack = hasEvidence && !isOverdue;
-            
+
             let status: 'overdue' | 'due-soon' | 'on-track' | 'not-started' = 'not-started';
             if (isOverdue) status = 'overdue';
             else if (isDueSoon) status = 'due-soon';
@@ -229,8 +229,8 @@ export function UnifiedControlsHub({
             if (activeStatusTab !== 'all' && c.computedStatus !== activeStatusTab) return false;
 
             // Search Filter
-            const matchesSearch = 
-                c.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+            const matchesSearch =
+                c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (c.qs?.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (c.description || "").toLowerCase().includes(searchQuery.toLowerCase());
             if (!matchesSearch) return false;
@@ -309,7 +309,7 @@ export function UnifiedControlsHub({
     const toggleFilter = (type: keyof typeof activeFilters, value: string) => {
         setActiveFilters(prev => {
             const current = prev[type];
-            const updated = current.includes(value) 
+            const updated = current.includes(value)
                 ? current.filter(v => v !== value)
                 : [...current, value];
             return { ...prev, [type]: updated };
@@ -338,7 +338,7 @@ export function UnifiedControlsHub({
                         <h1 className="text-3xl font-bold tracking-tight text-foreground">Compliance Controls Hub</h1>
                         <p className="text-muted-foreground mt-1">Manage, track, and evidence your service standards.</p>
                     </div>
-                    
+
                     <div className="bg-card p-4 rounded-xl border shadow-sm max-w-xl">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-sm font-medium">Overall Compliance Status</span>
@@ -350,7 +350,7 @@ export function UnifiedControlsHub({
 
                 <div className="flex items-center gap-3">
                     {controls.length === 0 && (
-                        <Button 
+                        <Button
                             variant="outline"
                             onClick={() => seedMutation.mutate({ data: { siteId: activeSite?.id } })}
                             disabled={seedMutation.isPending}
@@ -360,8 +360,8 @@ export function UnifiedControlsHub({
                             Import Starter Pack
                         </Button>
                     )}
-                    <Button 
-                        variant="outline" 
+                    <Button
+                        variant="outline"
                         onClick={() => setIsAIOpen(true)}
                         className="border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 shadow-sm"
                     >
@@ -398,38 +398,38 @@ export function UnifiedControlsHub({
                 <div className="flex flex-col md:flex-row gap-3 items-center bg-card p-3 rounded-xl border shadow-sm">
                     <div className="relative w-full md:flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                            placeholder="Search controls..." 
+                        <Input
+                            placeholder="Search controls..."
                             className="pl-9 bg-background h-9 text-sm"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
-                    
+
                     <div className="flex flex-wrap items-center gap-2">
-                        <FilterDropdown 
-                            label="Key Question" 
-                            options={["safe", "effective", "caring", "responsive", "well_led"]} 
+                        <FilterDropdown
+                            label="Key Question"
+                            options={["safe", "effective", "caring", "responsive", "well_led"]}
                             selected={activeFilters.keyQuestion}
                             onToggle={(v) => toggleFilter('keyQuestion', v)}
                         />
-                        <FilterDropdown 
-                            label="Frequency" 
-                            options={["Weekly", "Monthly", "Quarterly", "Annually"]} 
+                        <FilterDropdown
+                            label="Frequency"
+                            options={["Weekly", "Monthly", "Quarterly", "Annually"]}
                             selected={activeFilters.frequency}
                             onToggle={(v) => toggleFilter('frequency', v)}
                         />
-                        <FilterDropdown 
-                            label="Reviewer" 
-                            options={["Practice Manager", "Nurse Lead", "GP Partner", "Trainee"]} 
+                        <FilterDropdown
+                            label="Reviewer"
+                            options={["Practice Manager", "Nurse Lead", "GP Partner", "Trainee"]}
                             selected={activeFilters.reviewer}
                             onToggle={(v) => toggleFilter('reviewer', v)}
                         />
-                        
+
                         {(searchQuery || activeFilters.frequency.length > 0 || activeFilters.reviewer.length > 0 || activeFilters.keyQuestion.length > 0) && (
-                            <Button 
-                                variant="ghost" 
-                                size="sm" 
+                            <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => {
                                     setSearchQuery("");
                                     setActiveFilters({ frequency: [], reviewer: [], keyQuestion: [] });
@@ -546,7 +546,7 @@ export function UnifiedControlsHub({
                 }}
             />
 
-            <SuggestControlsDialog 
+            <SuggestControlsDialog
                 open={isAIOpen}
                 onOpenChange={setIsAIOpen}
                 qsList={qsData?.qualityStatements || []}
@@ -940,8 +940,8 @@ function InlineAISuggestion({ qsId, siteId, onSelectSuggestion }: { qsId: string
                                     <span className={cn(
                                         "text-[9px] font-medium uppercase px-1.5 py-0.5 rounded",
                                         s.priority === 'high' ? "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-400" :
-                                        s.priority === 'medium' ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400" :
-                                        "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                                            s.priority === 'medium' ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400" :
+                                                "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
                                     )}>
                                         {s.priority}
                                     </span>
@@ -1016,7 +1016,7 @@ function ControlDialog({ open, onOpenChange, control, siteId, onClose, qsList, l
     const navigate = useNavigate();
     const isEdit = !!control?.id;
     const [activeTab, setActiveTab] = useState("basic");
-    
+
     const [formData, setFormData] = useState({
         qsId: '',
         title: '',
@@ -1042,7 +1042,7 @@ function ControlDialog({ open, onOpenChange, control, siteId, onClose, qsList, l
                         good = parsed.good?.join('\n') || '';
                         bad = parsed.bad?.join('\n') || '';
                     }
-                } catch (e) {}
+                } catch (e) { }
 
                 setFormData({
                     qsId: control.qsId || (qsList[0]?.id || ''),
@@ -1238,7 +1238,7 @@ function ControlDialog({ open, onOpenChange, control, siteId, onClose, qsList, l
                                     <Label className="text-xs">Active Status</Label>
                                     <p className="text-[10px] text-muted-foreground">Inactive controls won't appear in checklists</p>
                                 </div>
-                                <Switch checked={formData.active} onCheckedChange={c => setFormData({...formData, active: c})} />
+                                <Switch checked={formData.active} onCheckedChange={c => setFormData({ ...formData, active: c })} />
                             </div>
                         </TabsContent>
 
@@ -1327,7 +1327,7 @@ function ControlDialog({ open, onOpenChange, control, siteId, onClose, qsList, l
                                     <Textarea
                                         className="min-h-[100px] text-xs border-emerald-200 focus-visible:ring-emerald-500"
                                         value={formData.goodExamples}
-                                        onChange={e => setFormData({...formData, goodExamples: e.target.value})}
+                                        onChange={e => setFormData({ ...formData, goodExamples: e.target.value })}
                                         placeholder="One example per line..."
                                     />
                                 </div>
@@ -1339,7 +1339,7 @@ function ControlDialog({ open, onOpenChange, control, siteId, onClose, qsList, l
                                     <Textarea
                                         className="min-h-[100px] text-xs border-rose-200 focus-visible:ring-rose-500"
                                         value={formData.badExamples}
-                                        onChange={e => setFormData({...formData, badExamples: e.target.value})}
+                                        onChange={e => setFormData({ ...formData, badExamples: e.target.value })}
                                         placeholder="One example per line..."
                                     />
                                 </div>
@@ -1433,7 +1433,7 @@ function SuggestControlsDialog({ open, onOpenChange, qsList, onSelectSuggestion 
                             <p>Analyzing your compliance gaps...</p>
                         </div>
                     )}
-                    
+
                     {!suggestMutation.data && !suggestMutation.isPending && (
                         <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-60 py-20">
                             <Sparkles className="h-12 w-12 mb-2" />

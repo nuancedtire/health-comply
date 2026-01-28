@@ -59,7 +59,6 @@ import {
     ChevronDown,
     Calendar,
     AlertTriangle,
-    ArrowRight,
     Plus,
     Eye,
     Send,
@@ -72,7 +71,7 @@ import { toast } from "sonner";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-import { EvidenceItem, STATUS_CONFIG, EvidenceStatus } from "./documents-view";
+import { EvidenceItem, STATUS_CONFIG } from "./documents-view";
 import { updateEvidenceFn, deleteEvidenceFn, getEvidenceReferenceDataFn } from "@/core/functions/evidence";
 import { getLocalControlsFn } from "@/core/functions/local-control-functions";
 import { parseCsv } from "@/utils/csv";
@@ -279,17 +278,15 @@ export function DocumentsSidebar({
     const handleCreateControl = () => {
         if (!evidence?.classificationResult) return;
 
-        const params = new URLSearchParams();
-        params.set("createControl", "true");
-        if (evidence.classificationResult.suggestedControlTitle) {
-            params.set("title", evidence.classificationResult.suggestedControlTitle);
-        }
-        if (evidence.classificationResult.suggestedQsId) {
-            params.set("qsId", evidence.classificationResult.suggestedQsId);
-        }
-        params.set("linkEvidenceId", evidence.id);
-
-        navigate({ to: "/checklist", search: `?${params.toString()}` });
+        navigate({
+            to: "/checklist",
+            search: {
+                createControl: "true",
+                title: evidence.classificationResult.suggestedControlTitle,
+                qsId: evidence.classificationResult.suggestedQsId,
+                linkEvidenceId: evidence.id
+            }
+        });
     };
 
     if (!evidence) {
@@ -308,7 +305,6 @@ export function DocumentsSidebar({
     const isDraft = evidence.status === "draft";
     const isFailed = evidence.status === "failed";
     const isProcessing = evidence.status === "processing";
-    const isRejected = evidence.status === "rejected";
 
     // Find the effective control
     const effectiveControl = localControlId
@@ -333,7 +329,10 @@ export function DocumentsSidebar({
             {/* Resize Handle */}
             <div
                 ref={resizeRef}
-                onMouseDown={() => setIsResizing(true)}
+                onMouseDown={(e) => {
+                    e.preventDefault();
+                    setIsResizing(true);
+                }}
                 className={cn(
                     "absolute left-0 top-0 bottom-0 w-1 cursor-col-resize z-10 group",
                     "hover:bg-primary/20 active:bg-primary/30",
@@ -391,8 +390,8 @@ export function DocumentsSidebar({
                                     {isAiMatch
                                         ? "AI matched this document to a control. Confirm or change the assignment, then submit for review."
                                         : isAiSuggestion
-                                        ? "AI couldn't find a matching control but suggests creating one. Create the control or assign manually."
-                                        : "Select a local control to assign this document, then submit for review."}
+                                            ? "AI couldn't find a matching control but suggests creating one. Create the control or assign manually."
+                                            : "Select a local control to assign this document, then submit for review."}
                                 </p>
                             </div>
                         </div>
@@ -434,8 +433,8 @@ export function DocumentsSidebar({
                                 classResult.type === "match"
                                     ? "bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800"
                                     : classResult.type === "suggestion"
-                                    ? "bg-purple-50/50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800"
-                                    : "bg-slate-50/50 dark:bg-slate-950/20 border-slate-200 dark:border-slate-800"
+                                        ? "bg-purple-50/50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800"
+                                        : "bg-slate-50/50 dark:bg-slate-950/20 border-slate-200 dark:border-slate-800"
                             )}>
                                 <div className="flex items-center gap-2 mb-2">
                                     <Badge variant="outline" className={cn(
@@ -443,8 +442,8 @@ export function DocumentsSidebar({
                                         classResult.type === "match"
                                             ? "border-emerald-300 text-emerald-700 bg-emerald-50"
                                             : classResult.type === "suggestion"
-                                            ? "border-purple-300 text-purple-700 bg-purple-50"
-                                            : "border-slate-300 text-slate-600 bg-slate-50"
+                                                ? "border-purple-300 text-purple-700 bg-purple-50"
+                                                : "border-slate-300 text-slate-600 bg-slate-50"
                                     )}>
                                         {classResult.type === "match" ? (
                                             <><CheckCircle2 className="h-3 w-3 mr-1" /> Matched</>
@@ -479,41 +478,20 @@ export function DocumentsSidebar({
                                         {evidence.status === "approved" ? "Approved" : "Under Review"}
                                     </p>
                                     <p className="text-slate-700 dark:text-slate-300 mt-0.5">
-                                        This document is {evidence.status === "approved" ? "approved and" : ""} read-only.
+                                        {evidence.status === "approved"
+                                            ? "This document is approved and read-only."
+                                            : "This document is read-only."}
                                     </p>
                                 </div>
                             </div>
 
                             {/* Summary Display */}
-                            <div className="space-y-3">
+                            {evidence.summary && (
                                 <div className="space-y-1">
-                                    <Label className="text-xs text-muted-foreground">Title</Label>
-                                    <p className="text-sm font-medium">{evidence.title}</p>
+                                    <Label className="text-xs text-muted-foreground">Summary</Label>
+                                    <p className="text-xs text-muted-foreground leading-relaxed">{evidence.summary}</p>
                                 </div>
-
-                                {evidence.localControl && (
-                                    <div className="space-y-1">
-                                        <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                                            <Link2 className="h-3 w-3" /> Linked Control
-                                        </Label>
-                                        <p className="text-sm font-medium">{evidence.localControl.title}</p>
-                                    </div>
-                                )}
-
-                                {evidence.qs && (
-                                    <div className="space-y-1">
-                                        <Label className="text-xs text-muted-foreground">Quality Statement</Label>
-                                        <p className="text-sm">{evidence.qs.title}</p>
-                                    </div>
-                                )}
-
-                                {evidence.summary && (
-                                    <div className="space-y-1">
-                                        <Label className="text-xs text-muted-foreground">Summary</Label>
-                                        <p className="text-xs text-muted-foreground leading-relaxed">{evidence.summary}</p>
-                                    </div>
-                                )}
-                            </div>
+                            )}
                         </div>
                     ) : !isProcessing && (
                         /* EDITABLE state (draft, rejected, failed) */

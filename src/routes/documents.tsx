@@ -7,7 +7,6 @@ import { getEvidenceForSiteFn } from '@/core/functions/evidence'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useSite } from '@/components/site-context'
 import { useState, useEffect } from 'react'
-import { cn } from '@/lib/utils'
 import { FileText, FileUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -128,8 +127,8 @@ function DocumentsPage() {
                                 siteId={activeSite.id}
                                 width={sidebarWidth}
                                 onWidthChange={setSidebarWidth}
-                                minWidth={320}
-                                maxWidth={700}
+                                minWidth={700}
+                                maxWidth={1400}
                             />
                         )}
                     </div>
