@@ -19,9 +19,8 @@ export const Route = createFileRoute('/dashboard')({
 function DashboardPage() {
   // Minimal stubs for UI composition. Data will be wired up by the real app logic.
   const evidence: any[] = []
-  const handleSelectEvidence = (item: any) => {
+  const handleSelectEvidence = (_item: any) => {
     // no-op placeholder for evidence row click in this UI pass
-    return
   }
 
   return (
