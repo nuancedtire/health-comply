@@ -6,7 +6,8 @@ import { ComplianceProgress } from '@/components/dashboard/compliance-progress'
 import { AlertsList } from '@/components/dashboard/alerts-list'
 import { EvidenceList } from '@/components/evidence/evidence-list'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Users, FileText, ShieldCheck } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Users, FileText, ShieldCheck, TrendingUp, Calendar, CheckCircle, AlertCircle } from 'lucide-react'
 
 export const Route = createFileRoute('/dashboard')({
   beforeLoad: ({ context }) => {
@@ -19,7 +20,6 @@ export const Route = createFileRoute('/dashboard')({
 })
 
 function DashboardPage() {
-  // Static demo data for the Evidence table (placeholder)
   const evidence: any[] = [
     {
       id: 'ev-001',
@@ -51,12 +51,26 @@ function DashboardPage() {
       aiConfidence: 74,
       localControl: { title: 'Fire drill' },
     },
+    {
+      id: 'ev-003',
+      siteId: 's_1',
+      title: 'Patient feedback summary - Q4 2025',
+      qsId: 'caring.patient_experience',
+      evidenceCategoryId: 'service_user_feedback',
+      status: 'approved',
+      uploadedAt: new Date(),
+      evidenceDate: new Date(),
+      sizeBytes: 15234,
+      mimeType: 'application/pdf',
+      summary: 'Overall satisfaction score 4.7/5. Key feedback themes compiled.',
+      aiConfidence: 91,
+      localControl: { title: 'Patient experience monitoring' },
+    },
   ]
 
   const [samplePacks, setSamplePacks] = useState<any[]>([])
 
   useEffect(() => {
-    // Dynamically import the extended_controls JSON so the UI demo reads the same source of truth
     import('@/core/data/extended_controls.json')
       .then((m: any) => {
         const arr = m?.default || m || []
@@ -75,77 +89,170 @@ function DashboardPage() {
 
   return (
     <MainLayout title="Dashboard">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <KPICard
-          title="Compliance Score"
-          value="82%"
-          description="Practice average"
-          icon={ShieldCheck}
-          trend="up"
-          trendValue="4%"
-        />
-
-        <KPICard
-          title="Evidence Uploaded"
-          value="59"
-          description="Last 7 days"
-          icon={FileText}
-          trend="neutral"
-        />
-
-        <KPICard
-          title="Open Actions"
-          value="7"
-          description="Overdue tasks"
-          icon={Users}
-          trend="down"
-          trendValue="2"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3 mt-4">
-        <div className="md:col-span-2">
-          <ComplianceProgress />
+      <div className="space-y-6">
+        <div className="border-b pb-4">
+          <h1 className="text-3xl font-bold mb-1">Compliance Dashboard</h1>
+          <p className="text-muted-foreground">Monitor your CQC compliance progress and evidence collection status</p>
         </div>
-        <div>
-          <AlertsList />
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <KPICard
+            title="Compliance Score"
+            value="82%"
+            description="Practice average"
+            icon={ShieldCheck}
+            trend="up"
+            trendValue="4%"
+          />
+
+          <KPICard
+            title="Evidence Uploaded"
+            value="59"
+            description="Last 7 days"
+            icon={FileText}
+            trend="neutral"
+          />
+
+          <KPICard
+            title="Open Actions"
+            value="7"
+            description="Overdue tasks"
+            icon={Users}
+            trend="down"
+            trendValue="2"
+          />
         </div>
-      </div>
 
-      <div className="mt-6">
-        <h2 className="text-lg font-semibold mb-2">Recent Evidence</h2>
-        <EvidenceList evidence={evidence} onSelect={handleSelectEvidence} />
-      </div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="md:col-span-2">
+            <ComplianceProgress />
+          </div>
+          <div>
+            <AlertsList />
+          </div>
+        </div>
 
-      <div className="mt-8">
-        <h2 className="text-lg font-semibold mb-4">Sample Inspection Packs</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {samplePacks.length === 0 ? (
-            <div className="text-muted-foreground">Loading sample packs...</div>
-          ) : (
-            samplePacks.map((pack: any, idx: number) => (
-              <Card key={`${pack.packId}-${idx}`}>
-                <CardHeader>
-                  <CardTitle>{pack.packName}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm font-medium">{pack.title}</p>
-                  <p className="text-xs text-muted-foreground mt-2">{pack.description}</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <TrendingUp className="w-5 h-5" />
+                This Month's Progress
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="font-medium">Quality Statement Coverage</p>
+                  <p className="text-xs text-muted-foreground">8 of 10 statements</p>
+                </div>
+                <Badge variant="outline">80%</Badge>
+              </div>
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="font-medium">Evidence Examples Collected</p>
+                  <p className="text-xs text-muted-foreground">23 items submitted</p>
+                </div>
+                <Badge variant="outline">Active</Badge>
+              </div>
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="font-medium">Compliance Gaps Resolved</p>
+                  <p className="text-xs text-muted-foreground">12 of 15 actions</p>
+                </div>
+                <Badge variant="outline">80%</Badge>
+              </div>
+            </CardContent>
+          </Card>
 
-                  {pack.evidenceExamples?.good?.length ? (
-                    <div className="mt-3">
-                      <div className="text-[11px] font-semibold mb-1">Good evidence examples</div>
-                      <ul className="list-disc ml-4 text-xs text-muted-foreground">
-                        {pack.evidenceExamples.good.slice(0, 3).map((ex: string, i: number) => (
-                          <li key={i}>{ex}</li>
-                        ))}
-                      </ul>
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Upcoming Milestones
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <div className="flex gap-3">
+                <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                <div>
+                  <p className="font-medium">Q1 Evidence Review</p>
+                  <p className="text-xs text-muted-foreground">Due Feb 28, 2026</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0" />
+                <div>
+                  <p className="font-medium">Prepare Inspection Pack</p>
+                  <p className="text-xs text-muted-foreground">Due Apr 15, 2026</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <CheckCircle className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                <div>
+                  <p className="font-medium">Mock Inspection Review</p>
+                  <p className="text-xs text-muted-foreground">Due May 1, 2026</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold mb-3">Recent Evidence Submissions</h2>
+            <EvidenceList evidence={evidence} onSelect={handleSelectEvidence} />
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold mb-3">Quality Statement Reference Packs</h2>
+            <p className="text-sm text-muted-foreground mb-4">Use these packs as templates when gathering evidence. Each includes best-practice examples.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {samplePacks.length === 0 ? (
+              <div className="col-span-full text-center py-8 text-muted-foreground">Loading reference packs...</div>
+            ) : (
+              samplePacks.map((pack: any, idx: number) => (
+                <Card key={`${pack.packId}-${idx}`} className="shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                  <CardHeader>
+                    <div>
+                      <Badge className="mb-2 w-fit">{pack.packName}</Badge>
+                      <CardTitle className="text-base">{pack.title}</CardTitle>
                     </div>
-                  ) : null}
-                </CardContent>
-              </Card>
-            ))
-          )}
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <p className="text-sm text-muted-foreground">{pack.description}</p>
+
+                    {pack.evidenceExamples?.good?.length ? (
+                      <div>
+                        <div className="text-xs font-semibold mb-2 flex items-center gap-1">
+                          <CheckCircle className="w-3 h-3 text-green-600" />
+                          Good Evidence Examples
+                        </div>
+                        <ul className="space-y-1">
+                          {pack.evidenceExamples.good.slice(0, 2).map((ex: string, i: number) => (
+                            <li key={i} className="text-xs text-muted-foreground flex gap-2">
+                              <span className="text-green-600 flex-shrink-0">•</span>
+                              <span>{ex}</span>
+                            </li>
+                          ))}
+                          {pack.evidenceExamples.good.length > 2 && (
+                            <li className="text-xs text-muted-foreground italic">+{pack.evidenceExamples.good.length - 2} more examples</li>
+                          )}
+                        </ul>
+                      </div>
+                    ) : null}
+
+                    <div className="pt-2 border-t">
+                      <p className="text-xs text-muted-foreground">View full pack for complete guidance and examples.</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </MainLayout>
