@@ -222,13 +222,13 @@ export function UnifiedControlsHub() {
         });
     }, [controls, searchQuery, activeStatusTab, activeFilters]);
 
-    // Key Question icons and display info
-    const keyQuestionMeta: Record<string, { icon: typeof Shield, color: string, order: number }> = {
-        'safe': { icon: Shield, color: 'text-blue-600', order: 1 },
-        'effective': { icon: CheckCircle, color: 'text-green-600', order: 2 },
-        'caring': { icon: Heart, color: 'text-pink-600', order: 3 },
-        'responsive': { icon: Zap, color: 'text-amber-600', order: 4 },
-        'well_led': { icon: Users, color: 'text-purple-600', order: 5 },
+    // Key Question display names and metadata
+    const keyQuestionMeta: Record<string, { icon: typeof Shield, color: string, bgColor: string, label: string, order: number }> = {
+        'safe': { icon: Shield, color: 'text-blue-600', bgColor: 'bg-blue-50 dark:bg-blue-950/30', label: 'Safe', order: 1 },
+        'effective': { icon: CheckCircle, color: 'text-emerald-600', bgColor: 'bg-emerald-50 dark:bg-emerald-950/30', label: 'Effective', order: 2 },
+        'caring': { icon: Heart, color: 'text-pink-600', bgColor: 'bg-pink-50 dark:bg-pink-950/30', label: 'Caring', order: 3 },
+        'responsive': { icon: Zap, color: 'text-amber-600', bgColor: 'bg-amber-50 dark:bg-amber-950/30', label: 'Responsive', order: 4 },
+        'well_led': { icon: Users, color: 'text-violet-600', bgColor: 'bg-violet-50 dark:bg-violet-950/30', label: 'Well-led', order: 5 },
     };
 
     // Group controls by Key Question -> Quality Statement
@@ -242,7 +242,8 @@ export function UnifiedControlsHub() {
         filteredControls.forEach(control => {
             // Extract Key Question from qsId (format: "safe.learning_culture")
             const kqId = control.qsId?.split('.')[0] || 'unknown';
-            const kqTitle = kqId.replace('_', '-').split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+            // Use the label from meta, or fallback to formatted ID
+            const kqTitle = keyQuestionMeta[kqId]?.label || kqId.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
             const qsTitle = control.qs?.title || control.qsId || "General Controls";
             const qsId = control.qsId || 'general';
 
@@ -459,9 +460,9 @@ export function UnifiedControlsHub() {
                         )}
                     </div>
                 ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                         {groupedByKeyQuestion.map((kqGroup) => {
-                            const meta = keyQuestionMeta[kqGroup.kqId] || { icon: CheckCircle2, color: 'text-muted-foreground', order: 99 };
+                            const meta = keyQuestionMeta[kqGroup.kqId] || { icon: CheckCircle2, color: 'text-muted-foreground', bgColor: 'bg-muted', label: kqGroup.kqTitle, order: 99 };
                             const KqIcon = meta.icon;
                             const totalControls = Object.values(kqGroup.qualityStatements).reduce((sum, qs) => sum + qs.controls.length, 0);
 
@@ -472,6 +473,7 @@ export function UnifiedControlsHub() {
                                     kqTitle={kqGroup.kqTitle}
                                     KqIcon={KqIcon}
                                     iconColor={meta.color}
+                                    bgColor={meta.bgColor}
                                     totalControls={totalControls}
                                     qualityStatements={kqGroup.qualityStatements}
                                     siteId={activeSite?.id || ''}
@@ -522,11 +524,84 @@ export function UnifiedControlsHub() {
 
 // --- Sub-components ---
 
+// Creative status indicator showing distribution as colored segments
+function StatusSegments({ controls }: { controls: any[] }) {
+    const counts = {
+        overdue: controls.filter(c => c.computedStatus === 'overdue').length,
+        'due-soon': controls.filter(c => c.computedStatus === 'due-soon').length,
+        'on-track': controls.filter(c => c.computedStatus === 'on-track').length,
+        'not-started': controls.filter(c => c.computedStatus === 'not-started').length,
+    };
+
+    const total = controls.length;
+    if (total === 0) return null;
+
+    const segments = [
+        { key: 'on-track', color: 'bg-emerald-500', count: counts['on-track'] },
+        { key: 'due-soon', color: 'bg-amber-500', count: counts['due-soon'] },
+        { key: 'overdue', color: 'bg-rose-500', count: counts.overdue },
+        { key: 'not-started', color: 'bg-slate-300 dark:bg-slate-600', count: counts['not-started'] },
+    ].filter(s => s.count > 0);
+
+    return (
+        <div className="flex items-center gap-1">
+            {/* Stacked segment bar */}
+            <div className="flex h-2 w-20 rounded-full overflow-hidden bg-muted/50">
+                {segments.map(seg => (
+                    <div
+                        key={seg.key}
+                        className={cn("h-full transition-all", seg.color)}
+                        style={{ width: `${(seg.count / total) * 100}%` }}
+                    />
+                ))}
+            </div>
+            {/* Completion text */}
+            <span className={cn(
+                "text-[10px] font-medium tabular-nums ml-1",
+                counts['on-track'] === total ? "text-emerald-600" : "text-muted-foreground"
+            )}>
+                {counts['on-track']}/{total}
+            </span>
+        </div>
+    );
+}
+
+// Mini dot grid showing each control's status
+function StatusDotGrid({ controls, max = 12 }: { controls: any[], max?: number }) {
+    const statusColors = {
+        overdue: 'bg-rose-500',
+        'due-soon': 'bg-amber-500',
+        'on-track': 'bg-emerald-500',
+        'not-started': 'bg-slate-300 dark:bg-slate-600',
+    };
+
+    const displayControls = controls.slice(0, max);
+    const remaining = controls.length - max;
+
+    return (
+        <div className="flex items-center gap-0.5">
+            {displayControls.map((c, i) => (
+                <div
+                    key={i}
+                    className={cn(
+                        "w-1.5 h-1.5 rounded-[2px] transition-all",
+                        statusColors[c.computedStatus as keyof typeof statusColors]
+                    )}
+                />
+            ))}
+            {remaining > 0 && (
+                <span className="text-[9px] text-muted-foreground ml-1">+{remaining}</span>
+            )}
+        </div>
+    );
+}
+
 function KeyQuestionSection({
     kqId,
     kqTitle,
     KqIcon,
     iconColor,
+    bgColor,
     totalControls,
     qualityStatements,
     siteId,
@@ -538,6 +613,7 @@ function KeyQuestionSection({
     kqTitle: string,
     KqIcon: any,
     iconColor: string,
+    bgColor: string,
     totalControls: number,
     qualityStatements: Record<string, { qsId: string, qsTitle: string, controls: any[] }>,
     siteId: string,
@@ -546,37 +622,44 @@ function KeyQuestionSection({
     onSelectSuggestion: (s: any, qsId: string) => void
 }) {
     const [isOpen, setIsOpen] = useState(true);
+    const qsCount = Object.keys(qualityStatements).length;
+
+    // Get all controls for this Key Question
+    const allControls = Object.values(qualityStatements).flatMap(qs => qs.controls);
 
     return (
-        <Collapsible open={isOpen} onOpenChange={setIsOpen} className="border rounded-xl bg-card shadow-sm overflow-hidden">
+        <Collapsible open={isOpen} onOpenChange={setIsOpen} className="group">
             <CollapsibleTrigger asChild>
-                <button className="w-full px-5 py-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center gap-3">
-                        <div className={cn("p-2 rounded-lg bg-muted", iconColor)}>
-                            <KqIcon className="h-5 w-5" />
-                        </div>
-                        <div className="text-left">
-                            <h3 className="font-bold text-lg text-foreground">{kqTitle}</h3>
-                            <p className="text-xs text-muted-foreground">
-                                {Object.keys(qualityStatements).length} quality statement{Object.keys(qualityStatements).length !== 1 ? 's' : ''} &middot; {totalControls} control{totalControls !== 1 ? 's' : ''}
-                            </p>
-                        </div>
+                <button className={cn(
+                    "w-full px-4 py-3 flex items-center gap-4 rounded-lg transition-all duration-200",
+                    "hover:bg-accent/50 border border-transparent",
+                    isOpen && bgColor
+                )}>
+                    <div className={cn(
+                        "flex items-center justify-center w-9 h-9 rounded-lg transition-colors",
+                        iconColor,
+                        isOpen ? "bg-background shadow-sm" : "bg-muted/60"
+                    )}>
+                        <KqIcon className="h-[18px] w-[18px]" />
                     </div>
-                    <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="bg-muted font-medium">
-                            {totalControls}
-                        </Badge>
-                        {isOpen ? (
-                            <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform" />
-                        ) : (
-                            <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform" />
-                        )}
+                    <div className="flex-1 text-left min-w-0">
+                        <div className="flex items-center gap-3">
+                            <h3 className="font-semibold text-[15px] text-foreground">{kqTitle}</h3>
+                            <StatusSegments controls={allControls} />
+                        </div>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                            {qsCount} quality statement{qsCount !== 1 ? 's' : ''}
+                        </p>
                     </div>
+                    <ChevronDown className={cn(
+                        "h-4 w-4 text-muted-foreground/60 transition-transform duration-200",
+                        !isOpen && "-rotate-90"
+                    )} />
                 </button>
             </CollapsibleTrigger>
-            <CollapsibleContent>
-                <div className="px-5 pb-5 space-y-4">
-                    {Object.entries(qualityStatements).map(([qsTitle, { qsId, controls }]) => (
+            <CollapsibleContent className="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0">
+                <div className="ml-[52px] border-l border-border/60 pl-4 pb-2 space-y-1 mt-1">
+                    {Object.entries(qualityStatements).map(([qsTitle, { qsId, controls }], idx) => (
                         <QualityStatementSection
                             key={qsId}
                             qsId={qsId}
@@ -586,6 +669,7 @@ function KeyQuestionSection({
                             onEditControl={onEditControl}
                             onDeleteControl={onDeleteControl}
                             onSelectSuggestion={(s) => onSelectSuggestion(s, qsId)}
+                            isLast={idx === Object.keys(qualityStatements).length - 1}
                         />
                     ))}
                 </div>
@@ -601,7 +685,8 @@ function QualityStatementSection({
     siteId,
     onEditControl,
     onDeleteControl,
-    onSelectSuggestion
+    onSelectSuggestion,
+    isLast
 }: {
     qsId: string,
     qsTitle: string,
@@ -609,40 +694,34 @@ function QualityStatementSection({
     siteId: string,
     onEditControl: (control: any) => void,
     onDeleteControl: (id: string) => void,
-    onSelectSuggestion: (s: any) => void
+    onSelectSuggestion: (s: any) => void,
+    isLast?: boolean
 }) {
-    const [isOpen, setIsOpen] = useState(true);
+    const [isOpen, setIsOpen] = useState(false);
 
     return (
-        <Collapsible open={isOpen} onOpenChange={setIsOpen} className="border rounded-lg bg-background">
+        <Collapsible open={isOpen} onOpenChange={setIsOpen} className={cn(!isLast && "pb-0.5")}>
             <CollapsibleTrigger asChild>
-                <button className="w-full px-4 py-3 flex items-center justify-between hover:bg-muted/30 transition-colors rounded-lg">
-                    <div className="flex items-center gap-2">
-                        {isOpen ? (
-                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                        ) : (
-                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                        )}
-                        <h4 className="font-semibold text-sm text-foreground">{qsTitle}</h4>
-                        <Badge variant="outline" className="h-5 px-1.5 text-[10px] font-medium">
-                            {controls.length}
-                        </Badge>
-                    </div>
+                <button className="w-full py-2 px-3 flex items-center gap-3 rounded-md hover:bg-accent/50 transition-colors text-left group/qs">
+                    <ChevronRight className={cn(
+                        "h-3.5 w-3.5 text-muted-foreground/50 transition-transform duration-200 shrink-0",
+                        isOpen && "rotate-90"
+                    )} />
+                    <span className="font-medium text-[13px] text-foreground/90 truncate flex-1">{qsTitle}</span>
+                    <StatusDotGrid controls={controls} max={8} />
                 </button>
             </CollapsibleTrigger>
             <CollapsibleContent>
-                <div className="px-4 pb-4 space-y-3">
-                    <div className="grid gap-2">
-                        {controls.map((control) => (
-                            <ControlHubRow
-                                key={control.id}
-                                control={control}
-                                siteId={siteId}
-                                onEdit={() => onEditControl(control)}
-                                onDelete={() => onDeleteControl(control.id)}
-                            />
-                        ))}
-                    </div>
+                <div className="pl-5 pr-2 pb-3 pt-1 space-y-1">
+                    {controls.map((control) => (
+                        <ControlHubRow
+                            key={control.id}
+                            control={control}
+                            siteId={siteId}
+                            onEdit={() => onEditControl(control)}
+                            onDelete={() => onDeleteControl(control.id)}
+                        />
+                    ))}
 
                     <InlineAISuggestion
                         qsId={qsId}
@@ -657,88 +736,89 @@ function QualityStatementSection({
 
 function ControlHubRow({ control, siteId, onEdit, onDelete }: { control: any, siteId: string, onEdit: () => void, onDelete: () => void }) {
     const [isExpanded, setIsExpanded] = useState(false);
-    
+
     const statusConfig = {
-        overdue: { color: "bg-rose-500", label: "Overdue" },
-        'due-soon': { color: "bg-amber-500", label: "Due Soon" },
-        'on-track': { color: "bg-emerald-500", label: "On Track" },
-        'not-started': { color: "bg-slate-300", label: "Not Started" }
+        overdue: { dot: "bg-rose-500", text: "text-rose-600", label: "Overdue" },
+        'due-soon': { dot: "bg-amber-500", text: "text-amber-600", label: "Due Soon" },
+        'on-track': { dot: "bg-emerald-500", text: "text-emerald-600", label: "On Track" },
+        'not-started': { dot: "bg-slate-300 dark:bg-slate-600", text: "text-muted-foreground", label: "Not Started" }
     };
 
     const status = control.computedStatus as keyof typeof statusConfig;
     const config = statusConfig[status];
 
     const nextDueAt = control.computedNextDueAt;
-    const nextDueLabel = nextDueAt 
-        ? `${isPast(new Date(nextDueAt)) ? 'Was due' : 'Due'}: ${format(new Date(nextDueAt), 'MMM d')}`
-        : 'No due date';
+    const nextDueLabel = nextDueAt
+        ? `${isPast(new Date(nextDueAt)) ? 'Was due' : 'Due'} ${format(new Date(nextDueAt), 'MMM d')}`
+        : null;
 
     return (
-        <div className="group bg-card border rounded-xl overflow-hidden hover:shadow-md transition-all duration-200">
-            <div className="p-4 flex items-center gap-4">
-                <div className={cn("w-2 h-2 rounded-full shrink-0", config.color)} title={config.label} />
-                
+        <div className={cn(
+            "group rounded-lg transition-all duration-150",
+            "hover:bg-accent/40 border border-transparent hover:border-border/50",
+            isExpanded && "bg-accent/30 border-border/50"
+        )}>
+            <div className="px-3 py-2.5 flex items-center gap-3">
+                <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", config.dot)} title={config.label} />
+
                 <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                        <h5 
-                            className="font-semibold text-foreground cursor-pointer hover:underline underline-offset-4 decoration-primary/30"
+                    <div className="flex items-center gap-2">
+                        <button
+                            className="font-medium text-[13px] text-foreground hover:text-primary transition-colors text-left truncate"
                             onClick={() => setIsExpanded(!isExpanded)}
                         >
                             {control.title}
-                        </h5>
+                        </button>
                         {control.sourcePackId && (
-                            <Badge variant="outline" className="h-4 px-1.5 text-[9px] font-bold uppercase tracking-wider bg-primary/5 text-primary border-primary/20">
+                            <span className="text-[9px] font-semibold uppercase tracking-wide text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded">
                                 Pack
-                            </Badge>
+                            </span>
                         )}
                     </div>
-                    
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1.5">
-                            <Clock className="w-3 h-3 opacity-60" />
-                            {formatFrequency(control.frequencyType, control.frequencyDays)}
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                            <User className="w-3 h-3 opacity-60" />
-                            {control.defaultReviewerRole || 'Unassigned'}
-                        </span>
-                        <span>
-                            Last: {control.lastEvidenceAt ? format(new Date(control.lastEvidenceAt), 'MMM d') : 'Never'}
-                        </span>
-                        <span className={cn("font-medium", status === 'overdue' && "text-rose-600")}>
-                            {nextDueLabel}
-                        </span>
+
+                    <div className="flex items-center gap-3 mt-0.5 text-[11px] text-muted-foreground">
+                        <span>{formatFrequency(control.frequencyType, control.frequencyDays)}</span>
+                        <span className="text-border">·</span>
+                        <span>{control.defaultReviewerRole || 'Unassigned'}</span>
+                        {nextDueLabel && (
+                            <>
+                                <span className="text-border">·</span>
+                                <span className={cn(status === 'overdue' && config.text, "font-medium")}>
+                                    {nextDueLabel}
+                                </span>
+                            </>
+                        )}
                     </div>
                 </div>
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                     <UploadModal
                         siteId={siteId}
                         initialQsId={control.qsId}
                         initialControlId={control.id}
                         trigger={
-                            <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs">
-                                <Upload className="w-3.5 h-3.5" />
-                                <span className="hidden sm:inline">Upload</span>
+                            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground">
+                                <Upload className="w-3.5 h-3.5 mr-1" />
+                                Upload
                             </Button>
                         }
                     />
-                    <Button size="sm" variant="ghost" onClick={onEdit} className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
-                        <Pencil className="w-3.5 h-3.5" />
+                    <Button size="sm" variant="ghost" onClick={onEdit} className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground">
+                        <Pencil className="w-3 h-3" />
                     </Button>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0 text-muted-foreground">
-                                <MoreHorizontal className="h-4 w-4" />
+                            <Button variant="ghost" className="h-7 w-7 p-0 text-muted-foreground">
+                                <MoreHorizontal className="h-3.5 w-3.5" />
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setIsExpanded(!isExpanded)}>
-                                <FileText className="mr-2 h-4 w-4" /> {isExpanded ? 'Hide' : 'View'} Details
+                        <DropdownMenuContent align="end" className="w-40">
+                            <DropdownMenuItem onClick={() => setIsExpanded(!isExpanded)} className="text-xs">
+                                <FileText className="mr-2 h-3.5 w-3.5" /> {isExpanded ? 'Hide' : 'View'} Details
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-rose-600 focus:text-rose-600" onClick={onDelete}>
-                                <Trash2 className="mr-2 h-4 w-4" /> Delete Control
+                            <DropdownMenuItem className="text-rose-600 focus:text-rose-600 text-xs" onClick={onDelete}>
+                                <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -746,46 +826,32 @@ function ControlHubRow({ control, siteId, onEdit, onDelete }: { control: any, si
             </div>
 
             {isExpanded && (
-                <div className="px-10 pb-4 pt-1 animate-in slide-in-from-top-2 duration-200">
-                    <div className="bg-muted/30 rounded-lg p-3 border grid md:grid-cols-2 gap-6 text-sm">
-                        <div className="space-y-3">
-                            <div>
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Description</span>
-                                <p className="mt-1 text-muted-foreground leading-relaxed">{control.description || "No description provided."}</p>
+                <div className="px-3 pb-3 pt-1 ml-[18px] animate-in fade-in slide-in-from-top-1 duration-200">
+                    <div className="border-l-2 border-muted pl-4 space-y-3">
+                        {control.description && (
+                            <p className="text-xs text-muted-foreground leading-relaxed">{control.description}</p>
+                        )}
+
+                        {control.evidenceHint && (
+                            <div className="text-xs">
+                                <span className="text-muted-foreground">Evidence needed:</span>
+                                <span className="ml-1.5">{control.evidenceHint}</span>
                             </div>
-                            <div>
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Evidence Guidance</span>
-                                <div className="mt-1 flex gap-2 items-start text-muted-foreground bg-background p-2 rounded border border-dashed">
-                                    <FileText className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                                    <p className="text-xs">{control.evidenceHint || "No specific evidence guidance provided."}</p>
-                                </div>
-                                <EvidenceExamplesSection 
-                                    evidenceExamples={control.evidenceExamples}
-                                    variant="minimal"
-                                    className="mt-3 pt-3 border-t border-dashed"
-                                />
-                            </div>
-                        </div>
-                        <div className="space-y-3">
-                            <div>
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Configuration</span>
-                                <dl className="mt-1 grid grid-cols-2 gap-y-1.5 text-xs">
-                                    <dt className="text-muted-foreground">Type:</dt>
-                                    <dd className="font-medium">{control.frequencyType}</dd>
-                                    <dt className="text-muted-foreground">Reviewer Role:</dt>
-                                    <dd className="font-medium">{control.defaultReviewerRole || '-'}</dd>
-                                    <dt className="text-muted-foreground">Fallback Role:</dt>
-                                    <dd className="font-medium">{control.fallbackReviewerRole || '-'}</dd>
-                                    <dt className="text-muted-foreground">CQC Ref:</dt>
-                                    <dd className="font-medium">{control.qsId}</dd>
-                                </dl>
-                            </div>
+                        )}
+
+                        <EvidenceExamplesSection
+                            evidenceExamples={control.evidenceExamples}
+                            variant="minimal"
+                        />
+
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground pt-1">
+                            <span>Last evidence: {control.lastEvidenceAt ? format(new Date(control.lastEvidenceAt), 'MMM d, yyyy') : 'Never'}</span>
+                            {control.defaultReviewerRole && <span>Reviewer: {control.defaultReviewerRole}</span>}
+                            {control.fallbackReviewerRole && <span>Fallback: {control.fallbackReviewerRole}</span>}
                             {control.cqcMythbusterUrl && (
-                                <div className="pt-2">
-                                    <a href={control.cqcMythbusterUrl} target="_blank" rel="noreferrer" className="inline-flex items-center text-xs text-primary font-medium hover:underline">
-                                        <ArrowRight className="h-3 w-3 mr-1" /> View CQC Mythbuster
-                                    </a>
-                                </div>
+                                <a href={control.cqcMythbusterUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
+                                    <ArrowRight className="h-3 w-3" /> CQC Mythbuster
+                                </a>
                             )}
                         </div>
                     </div>
@@ -797,7 +863,7 @@ function ControlHubRow({ control, siteId, onEdit, onDelete }: { control: any, si
 
 function InlineAISuggestion({ qsId, siteId, onSelectSuggestion }: { qsId: string, siteId: string, onSelectSuggestion: (s: any) => void }) {
     const [isOpen, setIsOpen] = useState(false);
-    
+
     const suggestMutation = useMutation({
         mutationFn: suggestLocalControlsFn,
     });
@@ -810,54 +876,72 @@ function InlineAISuggestion({ qsId, siteId, onSelectSuggestion }: { qsId: string
     };
 
     return (
-        <div className="space-y-3">
-            <button 
+        <div className="mt-2">
+            <button
                 onClick={handleSuggest}
-                className="w-full flex items-center gap-2 py-2 px-3 bg-primary/5 border border-primary/20 rounded-lg text-sm hover:bg-primary/10 transition-colors group"
+                className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-primary transition-colors group py-1"
             >
-                <Sparkles className="h-4 w-4 text-primary group-hover:scale-110 transition-transform" />
-                <span className="text-muted-foreground">
-                    AI detected potential gaps in this area. <span className="text-primary font-medium hover:underline">Get 3 suggested controls</span>
-                </span>
-                {suggestMutation.isPending && <Loader2 className="h-3 w-3 animate-spin ml-auto text-primary" />}
+                <Sparkles className="h-3 w-3 group-hover:text-primary transition-colors" />
+                <span>Get AI suggestions</span>
+                {suggestMutation.isPending && <Loader2 className="h-2.5 w-2.5 animate-spin ml-1" />}
             </button>
 
-            {isOpen && (
-                <div className="pl-4 border-l-2 border-primary/20 space-y-3 animate-in slide-in-from-top-2">
-                    {suggestMutation.isPending ? (
-                        <div className="py-8 flex flex-col items-center justify-center text-muted-foreground gap-2">
-                            <Wand2 className="h-6 w-6 animate-pulse text-primary" />
-                            <p className="text-xs">Analyzing CQC standards and your current controls...</p>
-                        </div>
-                    ) : (
-                        <div className="grid md:grid-cols-3 gap-3">
-                            {suggestMutation.data?.suggestions?.map((s: any, i: number) => (
-                                <div key={i} className="bg-card border rounded-lg p-3 space-y-2 relative group overflow-hidden">
-                                    <div className="absolute top-0 right-0 p-1">
-                                        <Badge variant="outline" className="text-[8px] h-4 border-primary/20 bg-primary/5 text-primary">
-                                            {s.priority}
-                                        </Badge>
-                                    </div>
-                                    <h6 className="font-semibold text-sm pr-10 leading-tight">{s.title}</h6>
-                                    <p className="text-[11px] text-muted-foreground line-clamp-2">{s.description}</p>
-                                    <Button 
-                                        size="sm" 
-                                        onClick={() => onSelectSuggestion(s)}
-                                        className="w-full h-7 text-[10px] gap-1.5"
-                                    >
-                                        <Plus className="w-3 h-3" /> Add Suggestion
-                                    </Button>
+            {isOpen && suggestMutation.data?.suggestions && (
+                <div className="mt-2 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                    {suggestMutation.data.suggestions.map((s: any, i: number) => (
+                        <div
+                            key={i}
+                            className="flex items-center justify-between gap-3 py-2 px-3 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors group/suggestion"
+                        >
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                    <span className="font-medium text-[12px] text-foreground/80 truncate">{s.title}</span>
+                                    <span className={cn(
+                                        "text-[9px] font-medium uppercase px-1.5 py-0.5 rounded",
+                                        s.priority === 'high' ? "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-400" :
+                                        s.priority === 'medium' ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400" :
+                                        "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                                    )}>
+                                        {s.priority}
+                                    </span>
                                 </div>
-                            ))}
+                                <p className="text-[10px] text-muted-foreground truncate mt-0.5">{s.description}</p>
+                            </div>
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => onSelectSuggestion(s)}
+                                className="h-6 px-2 text-[10px] opacity-0 group-hover/suggestion:opacity-100 transition-opacity"
+                            >
+                                <Plus className="w-3 h-3 mr-1" /> Add
+                            </Button>
                         </div>
-                    )}
+                    ))}
+                </div>
+            )}
+
+            {isOpen && suggestMutation.isPending && (
+                <div className="py-4 flex items-center justify-center gap-2 text-muted-foreground">
+                    <Wand2 className="h-4 w-4 animate-pulse" />
+                    <span className="text-[11px]">Analyzing...</span>
                 </div>
             )}
         </div>
     );
 }
 
+// Display labels for Key Question filter values
+const keyQuestionLabels: Record<string, string> = {
+    'safe': 'Safe',
+    'effective': 'Effective',
+    'caring': 'Caring',
+    'responsive': 'Responsive',
+    'well_led': 'Well-led',
+};
+
 function FilterDropdown({ label, options, selected, onToggle }: { label: string, options: string[], selected: string[], onToggle: (v: string) => void }) {
+    const getDisplayLabel = (opt: string) => keyQuestionLabels[opt] || opt;
+
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -871,13 +955,13 @@ function FilterDropdown({ label, options, selected, onToggle }: { label: string,
                 <DropdownMenuLabel className="text-xs">{label}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {options.map(opt => (
-                    <DropdownMenuCheckboxItem 
-                        key={opt} 
+                    <DropdownMenuCheckboxItem
+                        key={opt}
                         checked={selected.includes(opt)}
                         onCheckedChange={() => onToggle(opt)}
                         className="text-xs"
                     >
-                        {opt}
+                        {getDisplayLabel(opt)}
                     </DropdownMenuCheckboxItem>
                 ))}
             </DropdownMenuContent>
