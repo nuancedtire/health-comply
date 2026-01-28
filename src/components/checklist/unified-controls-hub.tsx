@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import {
     Search,
     Plus,
@@ -29,15 +30,16 @@ import { isPast, isToday, addDays, format } from "date-fns";
 
 import { useSite } from "@/components/site-context";
 import { getChecklistDataFn } from "@/core/functions/checklist-functions";
-import { 
-    getLocalControlsFn, 
-    getQualityStatementsFn, 
+import {
+    getLocalControlsFn,
+    getQualityStatementsFn,
     deleteLocalControlFn,
     suggestLocalControlsFn,
     createLocalControlFn,
     updateLocalControlFn,
     seedLocalControlsFn
 } from "@/core/functions/local-control-functions";
+import { updateEvidenceFn } from "@/core/functions/evidence";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -95,16 +97,30 @@ function formatFrequency(type: string, days?: number | null) {
 
 // --- Main Component ---
 
-export function UnifiedControlsHub() {
+interface UnifiedControlsHubProps {
+    initialCreateControl?: boolean;
+    initialTitle?: string;
+    initialQsId?: string;
+    linkEvidenceId?: string;
+}
+
+export function UnifiedControlsHub({
+    initialCreateControl,
+    initialTitle,
+    initialQsId,
+    linkEvidenceId,
+}: UnifiedControlsHubProps = {}) {
     const { activeSite } = useSite();
     const queryClient = useQueryClient();
-    
+    const navigate = useNavigate();
+
     // State
     const [searchQuery, setSearchQuery] = useState("");
     const [activeStatusTab, setActiveStatusTab] = useState("all");
     const [editControl, setEditControl] = useState<any>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isAIOpen, setIsAIOpen] = useState(false);
+    const [pendingLinkEvidenceId, setPendingLinkEvidenceId] = useState<string | null>(linkEvidenceId || null);
     
     const [activeFilters, setActiveFilters] = useState<{
         frequency: string[];
@@ -154,6 +170,21 @@ export function UnifiedControlsHub() {
             }
         }
     });
+
+    // Auto-open dialog when coming from documents page with createControl param
+    useEffect(() => {
+        if (initialCreateControl && !isDialogOpen) {
+            // Set up the control with prefilled data from AI suggestion
+            setEditControl({
+                title: initialTitle || '',
+                qsId: initialQsId || '',
+                active: true,
+            });
+            setIsDialogOpen(true);
+            // Clear the URL params after opening
+            navigate({ to: '/checklist', replace: true });
+        }
+    }, [initialCreateControl, initialTitle, initialQsId]);
 
     // Computed Values
     const controls = useMemo(() => {
@@ -501,8 +532,17 @@ export function UnifiedControlsHub() {
                 onOpenChange={setIsDialogOpen}
                 control={editControl}
                 siteId={activeSite?.id}
-                onClose={() => { setIsDialogOpen(false); setEditControl(null); }}
+                onClose={() => {
+                    setIsDialogOpen(false);
+                    setEditControl(null);
+                    setPendingLinkEvidenceId(null);
+                }}
                 qsList={qsData?.qualityStatements || []}
+                linkEvidenceId={pendingLinkEvidenceId}
+                onControlCreated={(controlId: string) => {
+                    // Clear the pending evidence ID after linking
+                    setPendingLinkEvidenceId(null);
+                }}
             />
 
             <SuggestControlsDialog 
@@ -970,8 +1010,9 @@ function FilterDropdown({ label, options, selected, onToggle }: { label: string,
 }
 
 // Reuse/Refactor these from LocalControlsManager or similar
-function ControlDialog({ open, onOpenChange, control, siteId, onClose, qsList }: any) {
+function ControlDialog({ open, onOpenChange, control, siteId, onClose, qsList, linkEvidenceId, onControlCreated }: any) {
     const queryClient = useQueryClient();
+    const navigate = useNavigate();
     const isEdit = !!control?.id;
     const [activeTab, setActiveTab] = useState("basic");
     
@@ -1037,10 +1078,34 @@ function ControlDialog({ open, onOpenChange, control, siteId, onClose, qsList }:
 
     const createMutation = useMutation({
         mutationFn: createLocalControlFn,
-        onSuccess: () => {
+        onSuccess: async (result) => {
             toast.success("Control created");
             queryClient.invalidateQueries({ queryKey: ["local-controls"] });
             queryClient.invalidateQueries({ queryKey: ["checklist-data"] });
+
+            // If we have a pending evidence to link, do it now
+            if (linkEvidenceId && result?.id) {
+                try {
+                    await updateEvidenceFn({
+                        data: {
+                            evidenceId: linkEvidenceId,
+                            updates: {
+                                localControlId: result.id,
+                                status: 'pending_review',
+                                reviewNotes: "Control created from AI suggestion and linked by user.",
+                            },
+                        },
+                    });
+                    queryClient.invalidateQueries({ queryKey: ["evidence"] });
+                    toast.success("Evidence linked to the new control and submitted for review");
+                    onControlCreated?.(result.id);
+                    // Navigate back to documents page
+                    navigate({ to: '/documents' });
+                } catch (err: any) {
+                    toast.error("Control created but failed to link evidence: " + err.message);
+                }
+            }
+
             onClose();
         },
         onError: (e) => toast.error(e.message)
