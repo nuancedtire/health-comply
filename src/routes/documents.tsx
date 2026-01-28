@@ -31,6 +31,7 @@ export const Route = createFileRoute('/documents')({
 function DocumentsPage() {
     const { activeSite, isLoading: isSiteLoading } = useSite()
     const [selectedEvidence, setSelectedEvidence] = useState<EvidenceItem | null>(null)
+    const [sidebarWidth, setSidebarWidth] = useState(420)
 
     // Fetch evidence for the active site
     const { data: evidence, isLoading: isEvidenceLoading } = useSuspenseQuery({
@@ -110,10 +111,7 @@ function DocumentsPage() {
                 ) : (
                     <div className="flex-1 flex rounded-xl border bg-card overflow-hidden">
                         {/* Documents List */}
-                        <div className={cn(
-                            "flex-1 min-w-0 transition-all duration-200",
-                            selectedEvidence ? "w-1/2 lg:w-3/5" : "w-full"
-                        )}>
+                        <div className="flex-1 min-w-0">
                             <DocumentsView
                                 evidence={allEvidence}
                                 selectedId={selectedEvidence?.id || null}
@@ -123,16 +121,17 @@ function DocumentsPage() {
                         </div>
 
                         {/* Details Sidebar */}
-                        <div className={cn(
-                            "transition-all duration-200 overflow-hidden",
-                            selectedEvidence ? "w-1/2 lg:w-2/5" : "w-0"
-                        )}>
+                        {selectedEvidence && (
                             <DocumentsSidebar
                                 evidence={selectedEvidence}
                                 onClose={() => setSelectedEvidence(null)}
                                 siteId={activeSite.id}
+                                width={sidebarWidth}
+                                onWidthChange={setSidebarWidth}
+                                minWidth={320}
+                                maxWidth={700}
                             />
-                        </div>
+                        )}
                     </div>
                 )}
             </div>

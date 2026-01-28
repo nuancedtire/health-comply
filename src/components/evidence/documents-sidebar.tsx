@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import {
     Select,
     SelectContent,
@@ -57,7 +56,6 @@ import {
     ChevronsUpDown,
     Wand2,
     Sparkles,
-    ExternalLink,
     ChevronDown,
     Calendar,
     AlertTriangle,
@@ -65,6 +63,9 @@ import {
     Plus,
     Eye,
     Send,
+    GripVertical,
+    CheckCircle2,
+    Link2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -81,6 +82,10 @@ interface DocumentsSidebarProps {
     evidence: EvidenceItem | null;
     onClose: () => void;
     siteId: string;
+    width: number;
+    onWidthChange: (width: number) => void;
+    minWidth?: number;
+    maxWidth?: number;
 }
 
 function getFileIcon(mimeType: string) {
@@ -96,13 +101,21 @@ function formatFileSize(bytes: number): string {
     return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-export function DocumentsSidebar({ evidence, onClose, siteId }: DocumentsSidebarProps) {
+export function DocumentsSidebar({
+    evidence,
+    onClose,
+    siteId,
+    width,
+    onWidthChange,
+    minWidth = 320,
+    maxWidth = 600,
+}: DocumentsSidebarProps) {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const resizeRef = useRef<HTMLDivElement>(null);
 
     // Form state
     const [title, setTitle] = useState("");
-    const [status, setStatus] = useState<EvidenceStatus>("draft");
     const [summary, setSummary] = useState("");
     const [evidenceDate, setEvidenceDate] = useState("");
     const [localControlId, setLocalControlId] = useState<string>("");
@@ -114,6 +127,7 @@ export function DocumentsSidebar({ evidence, onClose, siteId }: DocumentsSidebar
     const [showContentPreview, setShowContentPreview] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [hasChanges, setHasChanges] = useState(false);
+    const [isResizing, setIsResizing] = useState(false);
 
     // Fetch reference data
     const { data: refData } = useQuery({
@@ -124,23 +138,28 @@ export function DocumentsSidebar({ evidence, onClose, siteId }: DocumentsSidebar
 
     // Fetch local controls
     const { data: controlsData } = useQuery({
-        queryKey: ["local-controls", siteId, qsId],
-        queryFn: () => getLocalControlsFn({ data: { siteId, qsId: qsId || undefined } }),
+        queryKey: ["local-controls", siteId],
+        queryFn: () => getLocalControlsFn({ data: { siteId } }),
         enabled: !!evidence && !!siteId,
     });
 
     const controls = controlsData?.controls || [];
 
-    // Initialize form when evidence changes
+    // Initialize form when evidence changes - INCLUDING AI matched control
     useEffect(() => {
         if (evidence) {
             setTitle(evidence.title || "");
-            setStatus(evidence.status);
             setSummary(evidence.summary || "");
             setEvidenceDate(evidence.evidenceDate ? format(new Date(evidence.evidenceDate), "yyyy-MM-dd") : "");
-            setLocalControlId(evidence.localControlId || "");
             setCategoryId(evidence.evidenceCategoryId || "");
             setQsId(evidence.qsId || "");
+
+            // Priority: existing localControlId > AI matched control
+            const effectiveControlId = evidence.localControlId ||
+                evidence.classificationResult?.matchedControlId ||
+                "";
+            setLocalControlId(effectiveControlId);
+
             setHasChanges(false);
             setShowContentPreview(false);
         }
@@ -149,15 +168,44 @@ export function DocumentsSidebar({ evidence, onClose, siteId }: DocumentsSidebar
     // Track changes
     useEffect(() => {
         if (!evidence) return;
+        const initialControlId = evidence.localControlId ||
+            evidence.classificationResult?.matchedControlId ||
+            "";
         const changed =
             title !== (evidence.title || "") ||
-            status !== evidence.status ||
             summary !== (evidence.summary || "") ||
             evidenceDate !== (evidence.evidenceDate ? format(new Date(evidence.evidenceDate), "yyyy-MM-dd") : "") ||
-            localControlId !== (evidence.localControlId || "") ||
+            localControlId !== initialControlId ||
             categoryId !== (evidence.evidenceCategoryId || "");
         setHasChanges(changed);
-    }, [title, status, summary, evidenceDate, localControlId, categoryId, evidence]);
+    }, [title, summary, evidenceDate, localControlId, categoryId, evidence]);
+
+    // Handle resize
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            if (!isResizing) return;
+            const newWidth = window.innerWidth - e.clientX;
+            onWidthChange(Math.max(minWidth, Math.min(maxWidth, newWidth)));
+        };
+
+        const handleMouseUp = () => {
+            setIsResizing(false);
+            document.body.style.cursor = "";
+            document.body.style.userSelect = "";
+        };
+
+        if (isResizing) {
+            document.body.style.cursor = "col-resize";
+            document.body.style.userSelect = "none";
+            document.addEventListener("mousemove", handleMouseMove);
+            document.addEventListener("mouseup", handleMouseUp);
+        }
+
+        return () => {
+            document.removeEventListener("mousemove", handleMouseMove);
+            document.removeEventListener("mouseup", handleMouseUp);
+        };
+    }, [isResizing, minWidth, maxWidth, onWidthChange]);
 
     // Mutations
     const updateMutation = useMutation({
@@ -189,12 +237,9 @@ export function DocumentsSidebar({ evidence, onClose, siteId }: DocumentsSidebar
     const handleSave = (submitForReview = false) => {
         if (!evidence) return;
 
-        // Validation for submitting
-        if (submitForReview) {
-            if (!localControlId || localControlId === "none") {
-                toast.error("Please select a Local Control before submitting for review.");
-                return;
-            }
+        if (submitForReview && (!localControlId || localControlId === "none")) {
+            toast.error("Please select a Local Control before submitting for review.");
+            return;
         }
 
         updateMutation.mutate({
@@ -202,7 +247,7 @@ export function DocumentsSidebar({ evidence, onClose, siteId }: DocumentsSidebar
                 evidenceId: evidence.id,
                 updates: {
                     title,
-                    status: submitForReview ? "pending_review" : status,
+                    status: submitForReview ? "pending_review" : evidence.status,
                     summary,
                     evidenceDate: evidenceDate ? new Date(evidenceDate) : null,
                     localControlId: localControlId === "none" ? null : localControlId,
@@ -234,24 +279,22 @@ export function DocumentsSidebar({ evidence, onClose, siteId }: DocumentsSidebar
     const handleCreateControl = () => {
         if (!evidence?.classificationResult) return;
 
-        // Navigate to checklist page with prefilled data via URL params
         const params = new URLSearchParams();
+        params.set("createControl", "true");
         if (evidence.classificationResult.suggestedControlTitle) {
-            params.set("createControl", "true");
             params.set("title", evidence.classificationResult.suggestedControlTitle);
         }
         if (evidence.classificationResult.suggestedQsId) {
             params.set("qsId", evidence.classificationResult.suggestedQsId);
         }
-        // Store the evidence ID so we can link it after creating the control
         params.set("linkEvidenceId", evidence.id);
 
-        navigate({ to: "/checklist", search: params.toString() ? `?${params.toString()}` : undefined });
+        navigate({ to: "/checklist", search: `?${params.toString()}` });
     };
 
     if (!evidence) {
         return (
-            <div className="flex flex-col items-center justify-center h-full p-8 text-center text-muted-foreground">
+            <div className="flex flex-col items-center justify-center h-full p-8 text-center text-muted-foreground border-l bg-card">
                 <FileText className="h-12 w-12 mb-4 opacity-30" />
                 <h3 className="font-medium text-foreground">No document selected</h3>
                 <p className="text-sm mt-1">Select a document to view details</p>
@@ -265,15 +308,43 @@ export function DocumentsSidebar({ evidence, onClose, siteId }: DocumentsSidebar
     const isDraft = evidence.status === "draft";
     const isFailed = evidence.status === "failed";
     const isProcessing = evidence.status === "processing";
+    const isRejected = evidence.status === "rejected";
 
+    // Find the effective control
     const effectiveControl = localControlId
         ? controls.find((c) => c.id === localControlId)
         : null;
 
-    const hasSuggestion = !effectiveControl && evidence.classificationResult?.suggestedControlTitle;
+    // Determine if AI has a SUGGESTION (new control to create) vs a MATCH (existing control)
+    const classResult = evidence.classificationResult;
+    const isAiMatch = classResult?.type === "match" && classResult?.matchedControlId;
+    const isAiSuggestion = classResult?.type === "suggestion" && classResult?.suggestedControlTitle;
+
+    // Show suggestion card only when:
+    // - AI suggested a new control (type='suggestion')
+    // - AND user hasn't manually selected a different control
+    const showSuggestionCard = isAiSuggestion && !localControlId;
 
     return (
-        <div className="flex flex-col h-full border-l bg-card">
+        <div
+            className="flex flex-col h-full border-l bg-card relative"
+            style={{ width: `${width}px` }}
+        >
+            {/* Resize Handle */}
+            <div
+                ref={resizeRef}
+                onMouseDown={() => setIsResizing(true)}
+                className={cn(
+                    "absolute left-0 top-0 bottom-0 w-1 cursor-col-resize z-10 group",
+                    "hover:bg-primary/20 active:bg-primary/30",
+                    isResizing && "bg-primary/30"
+                )}
+            >
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <GripVertical className="h-6 w-6 text-muted-foreground" />
+                </div>
+            </div>
+
             {/* Header */}
             <div className="flex items-start justify-between gap-3 p-4 border-b">
                 <div className="flex items-start gap-3 min-w-0">
@@ -295,9 +366,9 @@ export function DocumentsSidebar({ evidence, onClose, siteId }: DocumentsSidebar
                                 <config.icon className={cn("h-3 w-3", config.iconClass)} />
                                 {config.label}
                             </span>
-                            {evidence.aiConfidence && (
+                            {classResult?.confidence && (
                                 <span className="text-[10px] text-muted-foreground">
-                                    {evidence.aiConfidence}% confidence
+                                    {classResult.confidence}% confidence
                                 </span>
                             )}
                         </div>
@@ -309,34 +380,36 @@ export function DocumentsSidebar({ evidence, onClose, siteId }: DocumentsSidebar
             </div>
 
             <ScrollArea className="flex-1">
-                <div className="p-4 space-y-6">
-                    {/* Draft Warning */}
+                <div className="p-4 space-y-5">
+                    {/* Status-specific Alerts */}
                     {isDraft && (
                         <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 flex gap-2">
                             <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                             <div className="text-xs">
                                 <p className="font-medium text-amber-800 dark:text-amber-200">Action Required</p>
                                 <p className="text-amber-700 dark:text-amber-300 mt-0.5">
-                                    Review the AI analysis and confirm or correct the control assignment before submitting.
+                                    {isAiMatch
+                                        ? "AI matched this document to a control. Confirm or change the assignment, then submit for review."
+                                        : isAiSuggestion
+                                        ? "AI couldn't find a matching control but suggests creating one. Create the control or assign manually."
+                                        : "Select a local control to assign this document, then submit for review."}
                                 </p>
                             </div>
                         </div>
                     )}
 
-                    {/* Failed Warning */}
                     {isFailed && (
                         <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg p-3 flex gap-2">
                             <AlertTriangle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
                             <div className="text-xs">
                                 <p className="font-medium text-red-800 dark:text-red-200">Processing Failed</p>
                                 <p className="text-red-700 dark:text-red-300 mt-0.5">
-                                    {evidence.classificationResult?.reasoning || "This document failed during AI processing. Delete and try uploading again."}
+                                    {classResult?.reasoning || "This document failed during AI processing. Delete and try uploading again."}
                                 </p>
                             </div>
                         </div>
                     )}
 
-                    {/* Processing Info */}
                     {isProcessing && (
                         <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 flex gap-2 items-center">
                             <Loader2 className="h-4 w-4 text-blue-600 animate-spin shrink-0" />
@@ -349,23 +422,8 @@ export function DocumentsSidebar({ evidence, onClose, siteId }: DocumentsSidebar
                         </div>
                     )}
 
-                    {/* Locked Notice */}
-                    {isLocked && (
-                        <div className="bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800 rounded-lg p-3 flex gap-2">
-                            <Eye className="h-4 w-4 text-slate-600 shrink-0 mt-0.5" />
-                            <div className="text-xs">
-                                <p className="font-medium text-slate-800 dark:text-slate-200">
-                                    {evidence.status === "approved" ? "Approved" : "Under Review"}
-                                </p>
-                                <p className="text-slate-700 dark:text-slate-300 mt-0.5">
-                                    This document cannot be edited while {evidence.status === "approved" ? "approved" : "pending review"}.
-                                </p>
-                            </div>
-                        </div>
-                    )}
-
                     {/* AI Analysis Section */}
-                    {evidence.classificationResult && (
+                    {classResult && (
                         <div className="space-y-2">
                             <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                                 <Wand2 className="h-3.5 w-3.5" />
@@ -373,216 +431,252 @@ export function DocumentsSidebar({ evidence, onClose, siteId }: DocumentsSidebar
                             </Label>
                             <div className={cn(
                                 "p-3 rounded-lg border text-sm",
-                                evidence.classificationResult.type === "match"
+                                classResult.type === "match"
                                     ? "bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800"
-                                    : evidence.classificationResult.type === "suggestion"
+                                    : classResult.type === "suggestion"
                                     ? "bg-purple-50/50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800"
                                     : "bg-slate-50/50 dark:bg-slate-950/20 border-slate-200 dark:border-slate-800"
                             )}>
                                 <div className="flex items-center gap-2 mb-2">
                                     <Badge variant="outline" className={cn(
                                         "text-[10px]",
-                                        evidence.classificationResult.type === "match"
-                                            ? "border-emerald-200 text-emerald-700"
-                                            : evidence.classificationResult.type === "suggestion"
-                                            ? "border-purple-200 text-purple-700"
-                                            : "border-slate-200 text-slate-600"
+                                        classResult.type === "match"
+                                            ? "border-emerald-300 text-emerald-700 bg-emerald-50"
+                                            : classResult.type === "suggestion"
+                                            ? "border-purple-300 text-purple-700 bg-purple-50"
+                                            : "border-slate-300 text-slate-600 bg-slate-50"
                                     )}>
-                                        {evidence.classificationResult.type === "match"
-                                            ? "Matched"
-                                            : evidence.classificationResult.type === "suggestion"
-                                            ? "Suggestion"
-                                            : "Unmatched"}
+                                        {classResult.type === "match" ? (
+                                            <><CheckCircle2 className="h-3 w-3 mr-1" /> Matched</>
+                                        ) : classResult.type === "suggestion" ? (
+                                            <><Sparkles className="h-3 w-3 mr-1" /> New Control Suggested</>
+                                        ) : (
+                                            "Unmatched"
+                                        )}
                                     </Badge>
-                                    {evidence.classificationResult.confidence && (
-                                        <span className="text-[10px] text-muted-foreground">
-                                            {evidence.classificationResult.confidence}% confidence
-                                        </span>
-                                    )}
                                 </div>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
-                                    {evidence.classificationResult.reasoning || evidence.summary || "No analysis available."}
+                                    {classResult.reasoning || evidence.summary || "No analysis available."}
                                 </p>
+                                {isAiMatch && classResult.matchedControlTitle && (
+                                    <div className="mt-2 pt-2 border-t border-emerald-200 dark:border-emerald-800">
+                                        <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                                            Matched to: {classResult.matchedControlTitle}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
 
-                    {/* Editable Fields */}
-                    <div className="space-y-4">
-                        {/* Title */}
-                        <div className="space-y-1.5">
-                            <Label htmlFor="title" className="text-xs">Title</Label>
-                            <Input
-                                id="title"
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                disabled={isLocked || isProcessing}
-                                className="h-9"
-                            />
-                        </div>
-
-                        {/* Evidence Date */}
-                        <div className="space-y-1.5">
-                            <Label htmlFor="evidenceDate" className="text-xs flex items-center gap-1.5">
-                                <Calendar className="h-3.5 w-3.5" />
-                                Evidence Date
-                            </Label>
-                            <Input
-                                id="evidenceDate"
-                                type="date"
-                                value={evidenceDate}
-                                onChange={(e) => setEvidenceDate(e.target.value)}
-                                disabled={isLocked || isProcessing}
-                                className="h-9"
-                            />
-                        </div>
-
-                        {/* Status (for demo purposes) */}
-                        <div className="space-y-1.5">
-                            <Label htmlFor="status" className="text-xs">Status</Label>
-                            <Select value={status} onValueChange={(v) => setStatus(v as EvidenceStatus)} disabled={isProcessing}>
-                                <SelectTrigger className="h-9">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="draft">Draft</SelectItem>
-                                    <SelectItem value="pending_review">Pending Review</SelectItem>
-                                    <SelectItem value="approved">Approved</SelectItem>
-                                    <SelectItem value="rejected">Rejected</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* Category */}
-                        <div className="space-y-1.5">
-                            <Label htmlFor="category" className="text-xs">Category</Label>
-                            <Select value={categoryId || "none"} onValueChange={setCategoryId} disabled={isLocked || isProcessing}>
-                                <SelectTrigger className="h-9">
-                                    <SelectValue placeholder="Select category..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="none">No category</SelectItem>
-                                    {refData?.categories?.map((c: any) => (
-                                        <SelectItem key={c.id} value={c.id}>
-                                            {c.title}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* Local Control Assignment */}
-                        <div className="space-y-1.5">
-                            <Label className="text-xs flex items-center justify-between">
-                                <span>Local Control</span>
-                                {!isLocked && !isProcessing && hasSuggestion && (
-                                    <Button
-                                        variant="link"
-                                        size="sm"
-                                        className="h-auto p-0 text-[10px] text-purple-600"
-                                        onClick={handleCreateControl}
-                                    >
-                                        <Plus className="h-3 w-3 mr-1" />
-                                        Create suggested control
-                                    </Button>
-                                )}
-                            </Label>
-
-                            {/* Suggestion Card */}
-                            {hasSuggestion && !localControlId && (
-                                <div className="p-3 rounded-lg bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-indigo-950/30 dark:via-purple-950/30 dark:to-pink-950/30 border border-purple-200/50 dark:border-purple-800/50 mb-2">
-                                    <div className="flex items-start gap-2">
-                                        <Sparkles className="h-4 w-4 text-purple-600 dark:text-purple-400 mt-0.5 shrink-0" />
-                                        <div className="flex-1 min-w-0">
-                                            <p className="font-medium text-xs text-purple-700 dark:text-purple-300">
-                                                AI Suggestion
-                                            </p>
-                                            <p className="text-[11px] text-purple-600/80 dark:text-purple-400/80 mt-0.5 truncate">
-                                                {evidence.classificationResult?.suggestedControlTitle}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <Button
-                                        variant="secondary"
-                                        size="sm"
-                                        className="w-full mt-2 h-7 text-xs bg-white/70 dark:bg-black/20"
-                                        onClick={handleCreateControl}
-                                        disabled={isLocked || isProcessing}
-                                    >
-                                        <ArrowRight className="h-3 w-3 mr-1.5" />
-                                        Create & Assign Control
-                                    </Button>
+                    {/* For LOCKED states (approved/pending_review) - Show summary only */}
+                    {isLocked ? (
+                        <div className="space-y-4">
+                            <div className="bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800 rounded-lg p-3 flex gap-2">
+                                <Eye className="h-4 w-4 text-slate-600 shrink-0 mt-0.5" />
+                                <div className="text-xs">
+                                    <p className="font-medium text-slate-800 dark:text-slate-200">
+                                        {evidence.status === "approved" ? "Approved" : "Under Review"}
+                                    </p>
+                                    <p className="text-slate-700 dark:text-slate-300 mt-0.5">
+                                        This document is {evidence.status === "approved" ? "approved and" : ""} read-only.
+                                    </p>
                                 </div>
-                            )}
+                            </div>
 
-                            <Popover open={isControlOpen} onOpenChange={setIsControlOpen}>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        role="combobox"
-                                        aria-expanded={isControlOpen}
-                                        className="w-full justify-between h-9 font-normal"
-                                        disabled={isLocked || isProcessing}
-                                    >
-                                        {effectiveControl?.title || "Select control..."}
-                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-[300px] p-0" align="start">
-                                    <Command>
-                                        <CommandInput placeholder="Search controls..." />
-                                        <CommandList>
-                                            <CommandEmpty>No control found.</CommandEmpty>
-                                            <CommandGroup>
-                                                <CommandItem
-                                                    value="none"
-                                                    onSelect={() => {
-                                                        setLocalControlId("");
-                                                        setIsControlOpen(false);
-                                                    }}
-                                                >
-                                                    <Check className={cn("mr-2 h-4 w-4", !localControlId ? "opacity-100" : "opacity-0")} />
-                                                    No control
-                                                </CommandItem>
-                                                {controls.map((control) => (
+                            {/* Summary Display */}
+                            <div className="space-y-3">
+                                <div className="space-y-1">
+                                    <Label className="text-xs text-muted-foreground">Title</Label>
+                                    <p className="text-sm font-medium">{evidence.title}</p>
+                                </div>
+
+                                {evidence.localControl && (
+                                    <div className="space-y-1">
+                                        <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                                            <Link2 className="h-3 w-3" /> Linked Control
+                                        </Label>
+                                        <p className="text-sm font-medium">{evidence.localControl.title}</p>
+                                    </div>
+                                )}
+
+                                {evidence.qs && (
+                                    <div className="space-y-1">
+                                        <Label className="text-xs text-muted-foreground">Quality Statement</Label>
+                                        <p className="text-sm">{evidence.qs.title}</p>
+                                    </div>
+                                )}
+
+                                {evidence.summary && (
+                                    <div className="space-y-1">
+                                        <Label className="text-xs text-muted-foreground">Summary</Label>
+                                        <p className="text-xs text-muted-foreground leading-relaxed">{evidence.summary}</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    ) : !isProcessing && (
+                        /* EDITABLE state (draft, rejected, failed) */
+                        <div className="space-y-4">
+                            {/* Title */}
+                            <div className="space-y-1.5">
+                                <Label htmlFor="title" className="text-xs">Title</Label>
+                                <Input
+                                    id="title"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    className="h-9"
+                                />
+                            </div>
+
+                            {/* Evidence Date */}
+                            <div className="space-y-1.5">
+                                <Label htmlFor="evidenceDate" className="text-xs flex items-center gap-1.5">
+                                    <Calendar className="h-3.5 w-3.5" />
+                                    Evidence Date
+                                </Label>
+                                <Input
+                                    id="evidenceDate"
+                                    type="date"
+                                    value={evidenceDate}
+                                    onChange={(e) => setEvidenceDate(e.target.value)}
+                                    className="h-9"
+                                />
+                            </div>
+
+                            {/* Category */}
+                            <div className="space-y-1.5">
+                                <Label htmlFor="category" className="text-xs">Category</Label>
+                                <Select value={categoryId || "none"} onValueChange={setCategoryId}>
+                                    <SelectTrigger className="h-9">
+                                        <SelectValue placeholder="Select category..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">No category</SelectItem>
+                                        {refData?.categories?.map((c: any) => (
+                                            <SelectItem key={c.id} value={c.id}>
+                                                {c.title}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* Local Control Assignment */}
+                            <div className="space-y-1.5">
+                                <Label className="text-xs flex items-center justify-between">
+                                    <span className="flex items-center gap-1">
+                                        <Link2 className="h-3.5 w-3.5" />
+                                        Local Control
+                                    </span>
+                                    {isAiMatch && localControlId === classResult?.matchedControlId && (
+                                        <Badge variant="outline" className="text-[9px] h-4 border-emerald-300 text-emerald-700 bg-emerald-50">
+                                            AI Matched
+                                        </Badge>
+                                    )}
+                                </Label>
+
+                                {/* Suggestion Card - Only for AI suggestions (new control needed) */}
+                                {showSuggestionCard && (
+                                    <div className="p-3 rounded-lg bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-indigo-950/30 dark:via-purple-950/30 dark:to-pink-950/30 border border-purple-200/50 dark:border-purple-800/50 mb-2">
+                                        <div className="flex items-start gap-2">
+                                            <Sparkles className="h-4 w-4 text-purple-600 dark:text-purple-400 mt-0.5 shrink-0" />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-medium text-xs text-purple-700 dark:text-purple-300">
+                                                    No matching control found
+                                                </p>
+                                                <p className="text-[11px] text-purple-600/80 dark:text-purple-400/80 mt-0.5">
+                                                    AI suggests creating: <span className="font-medium">{classResult?.suggestedControlTitle}</span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <Button
+                                            variant="secondary"
+                                            size="sm"
+                                            className="w-full mt-2 h-8 text-xs bg-white/70 dark:bg-black/20 hover:bg-white dark:hover:bg-black/30"
+                                            onClick={handleCreateControl}
+                                        >
+                                            <Plus className="h-3.5 w-3.5 mr-1.5" />
+                                            Create Control & Assign
+                                        </Button>
+                                    </div>
+                                )}
+
+                                <Popover open={isControlOpen} onOpenChange={setIsControlOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            aria-expanded={isControlOpen}
+                                            className={cn(
+                                                "w-full justify-between h-9 font-normal",
+                                                isAiMatch && localControlId === classResult?.matchedControlId && "border-emerald-300"
+                                            )}
+                                        >
+                                            {effectiveControl?.title || "Select control..."}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[320px] p-0" align="start">
+                                        <Command>
+                                            <CommandInput placeholder="Search controls..." />
+                                            <CommandList>
+                                                <CommandEmpty>No control found.</CommandEmpty>
+                                                <CommandGroup>
                                                     <CommandItem
-                                                        key={control.id}
-                                                        value={control.title}
+                                                        value="none"
                                                         onSelect={() => {
-                                                            setLocalControlId(control.id);
+                                                            setLocalControlId("");
                                                             setIsControlOpen(false);
                                                         }}
                                                     >
-                                                        <Check className={cn("mr-2 h-4 w-4", localControlId === control.id ? "opacity-100" : "opacity-0")} />
-                                                        {control.title}
+                                                        <Check className={cn("mr-2 h-4 w-4", !localControlId ? "opacity-100" : "opacity-0")} />
+                                                        No control
                                                     </CommandItem>
-                                                ))}
-                                            </CommandGroup>
-                                        </CommandList>
-                                    </Command>
-                                </PopoverContent>
-                            </Popover>
-                        </div>
+                                                    {controls.map((control) => (
+                                                        <CommandItem
+                                                            key={control.id}
+                                                            value={control.title}
+                                                            onSelect={() => {
+                                                                setLocalControlId(control.id);
+                                                                setIsControlOpen(false);
+                                                            }}
+                                                        >
+                                                            <Check className={cn("mr-2 h-4 w-4", localControlId === control.id ? "opacity-100" : "opacity-0")} />
+                                                            <span className="truncate">{control.title}</span>
+                                                            {classResult?.matchedControlId === control.id && (
+                                                                <Badge variant="outline" className="ml-auto text-[9px] h-4 border-emerald-300 text-emerald-600">
+                                                                    AI Match
+                                                                </Badge>
+                                                            )}
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
 
-                        {/* Summary */}
-                        <div className="space-y-1.5">
-                            <Label htmlFor="summary" className="text-xs">Summary</Label>
-                            <Textarea
-                                id="summary"
-                                value={summary}
-                                onChange={(e) => setSummary(e.target.value)}
-                                disabled={isLocked || isProcessing}
-                                className="min-h-[80px] text-sm"
-                                placeholder="AI-generated or custom summary..."
-                            />
+                            {/* Summary */}
+                            <div className="space-y-1.5">
+                                <Label htmlFor="summary" className="text-xs">Summary</Label>
+                                <Textarea
+                                    id="summary"
+                                    value={summary}
+                                    onChange={(e) => setSummary(e.target.value)}
+                                    className="min-h-[80px] text-sm"
+                                    placeholder="AI-generated or custom summary..."
+                                />
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* Content Preview */}
                     {evidence.textContent && (
                         <Collapsible open={showContentPreview} onOpenChange={setShowContentPreview}>
                             <CollapsibleTrigger asChild>
-                                <Button variant="ghost" className="w-full justify-between h-9 px-3">
+                                <Button variant="ghost" className="w-full justify-between h-9 px-3 hover:bg-muted/50">
                                     <span className="text-xs font-medium">Content Preview</span>
                                     <ChevronDown className={cn("h-4 w-4 transition-transform", showContentPreview && "rotate-180")} />
                                 </Button>
@@ -590,12 +684,12 @@ export function DocumentsSidebar({ evidence, onClose, siteId }: DocumentsSidebar
                             <CollapsibleContent>
                                 <div className="mt-2 max-h-[300px] overflow-auto rounded-lg border bg-muted/30 p-3">
                                     {evidence.mimeType?.includes("csv") || evidence.title.endsWith(".csv") ? (
-                                        <div className="rounded-md border bg-background">
+                                        <div className="rounded-md border bg-background overflow-x-auto">
                                             <Table>
                                                 <TableHeader>
                                                     <TableRow>
                                                         {parseCsv(evidence.textContent)[0]?.map((header, i) => (
-                                                            <TableHead key={i} className="text-xs">{header}</TableHead>
+                                                            <TableHead key={i} className="text-xs whitespace-nowrap">{header}</TableHead>
                                                         ))}
                                                     </TableRow>
                                                 </TableHeader>
@@ -661,25 +755,21 @@ export function DocumentsSidebar({ evidence, onClose, siteId }: DocumentsSidebar
 
             {/* Actions Footer */}
             <div className="p-4 border-t bg-muted/30 space-y-2">
-                {/* Primary Actions */}
                 {isDraft && (
-                    <div className="flex gap-2">
-                        <Button
-                            className="flex-1 bg-emerald-600 hover:bg-emerald-700"
-                            onClick={() => handleSave(true)}
-                            disabled={updateMutation.isPending || !localControlId}
-                        >
-                            {updateMutation.isPending ? (
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            ) : (
-                                <Send className="h-4 w-4 mr-2" />
-                            )}
-                            Submit for Review
-                        </Button>
-                    </div>
+                    <Button
+                        className="w-full bg-emerald-600 hover:bg-emerald-700"
+                        onClick={() => handleSave(true)}
+                        disabled={updateMutation.isPending || !localControlId}
+                    >
+                        {updateMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                            <Send className="h-4 w-4 mr-2" />
+                        )}
+                        Submit for Review
+                    </Button>
                 )}
 
-                {/* Save / Secondary Actions */}
                 <div className="flex gap-2">
                     {!isLocked && !isProcessing && (
                         <Button
@@ -708,11 +798,10 @@ export function DocumentsSidebar({ evidence, onClose, siteId }: DocumentsSidebar
                     </Button>
                 </div>
 
-                {/* Reject for drafts */}
                 {isDraft && (
                     <Button
                         variant="ghost"
-                        className="w-full text-muted-foreground hover:text-destructive"
+                        className="w-full text-muted-foreground hover:text-destructive text-xs"
                         onClick={handleReject}
                         disabled={updateMutation.isPending}
                     >
@@ -721,7 +810,6 @@ export function DocumentsSidebar({ evidence, onClose, siteId }: DocumentsSidebar
                 )}
             </div>
 
-            {/* Delete Confirmation Dialog */}
             <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
