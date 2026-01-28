@@ -1,15 +1,14 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { MainLayout } from '@/components/main-layout'
-import { EvidenceList } from '@/components/evidence/evidence-list'
 import { UploadModal } from '@/components/evidence/upload-modal'
+import { DocumentsView, EvidenceItem } from '@/components/evidence/documents-view'
+import { DocumentsSidebar } from '@/components/evidence/documents-sidebar'
 import { getEvidenceForSiteFn } from '@/core/functions/evidence'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useSite } from '@/components/site-context'
-import { useState } from 'react'
-import { EvidenceDetailDialog } from '@/components/evidence/evidence-detail-dialog'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { DraftsView } from '@/components/evidence/drafts-view'
-import { FailedEvidenceList } from '@/components/evidence/failed-evidence-list'
+import { useState, useEffect } from 'react'
+import { FileText, FileUp } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 export const Route = createFileRoute('/documents')({
     beforeLoad: ({ context }) => {
@@ -21,7 +20,6 @@ export const Route = createFileRoute('/documents')({
     },
     loader: async () => {
         // Prefetch or just rely on component suspense
-        // context.queryClient.ensureQueryData(...)
     },
     head: () => ({
         meta: [{ title: 'Documents' }],
@@ -30,99 +28,150 @@ export const Route = createFileRoute('/documents')({
 })
 
 function DocumentsPage() {
-    // 1. Use the global site context (powered by TeamSwitcher)
-    const { activeSite, isLoading: isSiteLoading } = useSite();
-    const [selectedEvidence, setSelectedEvidence] = useState<any>(null);
+    const { activeSite, isLoading: isSiteLoading } = useSite()
+    const [selectedEvidence, setSelectedEvidence] = useState<EvidenceItem | null>(null)
+    const [sidebarWidth, setSidebarWidth] = useState(420)
 
-    // 2. Fetch evidence for the active site
-    // We only fetch if activeSite is present.
+    // Fetch evidence for the active site
     const { data: evidence, isLoading: isEvidenceLoading } = useSuspenseQuery({
         queryKey: ['evidence', activeSite?.id],
         queryFn: async () => {
-            if (!activeSite?.id) return [];
-            return await getEvidenceForSiteFn({ data: { siteId: activeSite.id } });
+            if (!activeSite?.id) return []
+            return await getEvidenceForSiteFn({ data: { siteId: activeSite.id } })
         },
         refetchInterval: (query) => {
-            const data = query.state.data as any[];
+            const data = query.state.data as EvidenceItem[]
             if (data?.some(item => item.status === 'processing')) {
-                return 2000;
+                return 2000
             }
-            return false;
+            return false
         }
-    });
+    })
+
+    // Clear selection when site changes
+    useEffect(() => {
+        setSelectedEvidence(null)
+    }, [activeSite?.id])
+
+    // Keep selected evidence in sync with updated data
+    useEffect(() => {
+        if (selectedEvidence && evidence) {
+            const updated = evidence.find(e => e.id === selectedEvidence.id)
+            if (updated) {
+                setSelectedEvidence(updated as EvidenceItem)
+            } else {
+                setSelectedEvidence(null)
+            }
+        }
+    }, [evidence])
 
     if (isSiteLoading) {
-        return <MainLayout><div className="p-8">Loading site context...</div></MainLayout>;
+        return (
+            <MainLayout>
+                <div className="p-8">Loading site context...</div>
+            </MainLayout>
+        )
     }
 
     if (!activeSite) {
         return (
             <MainLayout>
-                <div className="p-8 text-center text-muted-foreground">
-                    Please select a site from the team switcher to view evidence.
+                <div className="flex flex-col items-center justify-center h-[60vh] text-center text-muted-foreground">
+                    <FileText className="h-12 w-12 mb-4 opacity-30" />
+                    <h3 className="font-medium text-foreground text-lg">No Site Selected</h3>
+                    <p className="text-sm mt-1 max-w-md">
+                        Please select a site from the team switcher to view and manage documents.
+                    </p>
                 </div>
             </MainLayout>
-        );
+        )
     }
 
-    const allEvidence = evidence || [];
-    const drafts = allEvidence.filter(e => e.status === 'draft');
-    const failed = allEvidence.filter(e => e.status === 'failed');
-    // Everything else (pending_review, approved, rejected, archived, processing)
-    const processedEvidence = allEvidence.filter(e => e.status !== 'draft' && e.status !== 'failed');
+    const allEvidence = (evidence || []) as EvidenceItem[]
+    const hasEvidence = allEvidence.length > 0
 
     return (
         <MainLayout title="Documents">
-            <div className="flex flex-col space-y-6">
-                <div className="flex items-center justify-between">
+            <div className="flex flex-col h-[calc(100vh-8rem)]">
+                {/* Header */}
+                <div className="flex items-center justify-between px-1 pb-4">
                     <div>
                         <h2 className="text-2xl font-bold tracking-tight">Evidence Library</h2>
-                        <p className="text-muted-foreground">
-                            Evidence for <span className="font-semibold">{activeSite.name}</span>
+                        <p className="text-muted-foreground text-sm">
+                            Manage documents for <span className="font-medium text-foreground">{activeSite.name}</span>
                         </p>
                     </div>
-                    {/* Pass categories to the modal */}
-                    <UploadModal
-                        siteId={activeSite.id}
-                    />
+                    <UploadModal siteId={activeSite.id} />
                 </div>
 
-                {/* Failed uploads section */}
-                <FailedEvidenceList evidence={failed as any[]} />
-
-                <Tabs defaultValue="drafts" className="space-y-4">
-                    <TabsList>
-                        <TabsTrigger value="drafts">
-                            Drafts
-                            {drafts.length > 0 && <span className="ml-2 bg-muted-foreground/20 px-1.5 py-0.5 rounded-full text-xs">{drafts.length}</span>}
-                        </TabsTrigger>
-                        <TabsTrigger value="processed">Pending Review / Approved</TabsTrigger>
-                    </TabsList>
-                    
-                    <TabsContent value="drafts" className="mt-4">
-                        <DraftsView drafts={drafts as any[]} />
-                    </TabsContent>
-                    
-                    <TabsContent value="processed" className="mt-4">
-                        <div className="rounded-lg bg-card text-card-foreground shadow-sm">
-                            {isEvidenceLoading ? (
-                                <div className="p-8 text-center text-muted-foreground">Loading evidence...</div>
-                            ) : (
-                                <EvidenceList
-                                    evidence={processedEvidence}
-                                    onSelect={setSelectedEvidence}
-                                />
-                            )}
+                {/* Main Content Area */}
+                {!hasEvidence ? (
+                    <EmptyState siteId={activeSite.id} />
+                ) : (
+                    <div className="flex-1 flex rounded-xl border bg-card overflow-hidden">
+                        {/* Documents List */}
+                        <div className="flex-1 min-w-0">
+                            <DocumentsView
+                                evidence={allEvidence}
+                                selectedId={selectedEvidence?.id || null}
+                                onSelect={(item) => setSelectedEvidence(item)}
+                                isLoading={isEvidenceLoading}
+                            />
                         </div>
-                    </TabsContent>
-                </Tabs>
 
-                <EvidenceDetailDialog
-                    open={!!selectedEvidence}
-                    onOpenChange={(open) => !open && setSelectedEvidence(null)}
-                    evidence={selectedEvidence}
-                />
+                        {/* Details Sidebar */}
+                        {selectedEvidence && (
+                            <DocumentsSidebar
+                                evidence={selectedEvidence}
+                                onClose={() => setSelectedEvidence(null)}
+                                siteId={activeSite.id}
+                                width={sidebarWidth}
+                                onWidthChange={setSidebarWidth}
+                                minWidth={700}
+                                maxWidth={1400}
+                            />
+                        )}
+                    </div>
+                )}
             </div>
         </MainLayout>
+    )
+}
+
+function EmptyState({ siteId }: { siteId: string }) {
+    return (
+        <div className="flex-1 flex flex-col items-center justify-center rounded-xl border border-dashed bg-muted/10 p-12">
+            <div className="flex items-center justify-center w-20 h-20 rounded-2xl bg-primary/10 mb-6">
+                <FileUp className="h-10 w-10 text-primary" />
+            </div>
+            <h3 className="text-xl font-semibold text-foreground mb-2">No documents yet</h3>
+            <p className="text-muted-foreground text-center max-w-md mb-6">
+                Upload your first document to get started. We'll automatically analyze it with AI
+                and match it to the appropriate compliance control.
+            </p>
+            <UploadModal
+                siteId={siteId}
+                trigger={
+                    <Button size="lg" className="gap-2">
+                        <FileUp className="h-5 w-5" />
+                        Upload Your First Document
+                    </Button>
+                }
+            />
+            <div className="mt-8 grid grid-cols-3 gap-6 text-center">
+                <div className="space-y-1">
+                    <div className="text-2xl font-bold text-primary">1</div>
+                    <p className="text-xs text-muted-foreground">Upload document</p>
+                </div>
+                <div className="space-y-1">
+                    <div className="text-2xl font-bold text-primary">2</div>
+                    <p className="text-xs text-muted-foreground">AI analyzes & matches</p>
+                </div>
+                <div className="space-y-1">
+                    <div className="text-2xl font-bold text-primary">3</div>
+                    <p className="text-xs text-muted-foreground">Confirm & submit</p>
+                </div>
+            </div>
+        </div>
     )
 }

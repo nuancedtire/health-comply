@@ -156,11 +156,10 @@ function InspectionPacksPage() {
                   <button
                     key={p.id}
                     onClick={() => setSelectedPack(p.id)}
-                    className={`w-full text-left p-3 rounded-lg border transition-all ${
-                      selectedPack === p.id
+                    className={`w-full text-left p-3 rounded-lg border transition-all ${selectedPack === p.id
                         ? 'border-primary bg-primary/5 shadow-sm'
                         : 'border-border hover:border-muted-foreground/40 hover:bg-muted/50'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="flex items-center gap-2 flex-1 min-w-0">

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import {
     Search,
     Plus,
@@ -22,22 +23,24 @@ import {
     CheckCircle,
     Heart,
     Zap,
-    Users
+    Users,
+    AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { isPast, isToday, addDays, format } from "date-fns";
 
 import { useSite } from "@/components/site-context";
 import { getChecklistDataFn } from "@/core/functions/checklist-functions";
-import { 
-    getLocalControlsFn, 
-    getQualityStatementsFn, 
+import {
+    getLocalControlsFn,
+    getQualityStatementsFn,
     deleteLocalControlFn,
     suggestLocalControlsFn,
     createLocalControlFn,
     updateLocalControlFn,
     seedLocalControlsFn
 } from "@/core/functions/local-control-functions";
+import { updateEvidenceFn } from "@/core/functions/evidence";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -95,17 +98,31 @@ function formatFrequency(type: string, days?: number | null) {
 
 // --- Main Component ---
 
-export function UnifiedControlsHub() {
+interface UnifiedControlsHubProps {
+    initialCreateControl?: boolean;
+    initialTitle?: string;
+    initialQsId?: string;
+    linkEvidenceId?: string;
+}
+
+export function UnifiedControlsHub({
+    initialCreateControl,
+    initialTitle,
+    initialQsId,
+    linkEvidenceId,
+}: UnifiedControlsHubProps = {}) {
     const { activeSite } = useSite();
     const queryClient = useQueryClient();
-    
+    const navigate = useNavigate();
+
     // State
     const [searchQuery, setSearchQuery] = useState("");
     const [activeStatusTab, setActiveStatusTab] = useState("all");
     const [editControl, setEditControl] = useState<any>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isAIOpen, setIsAIOpen] = useState(false);
-    
+    const [pendingLinkEvidenceId, setPendingLinkEvidenceId] = useState<string | null>(linkEvidenceId || null);
+
     const [activeFilters, setActiveFilters] = useState<{
         frequency: string[];
         reviewer: string[];
@@ -155,23 +172,38 @@ export function UnifiedControlsHub() {
         }
     });
 
+    // Auto-open dialog when coming from documents page with createControl param
+    useEffect(() => {
+        if (initialCreateControl && !isDialogOpen) {
+            // Set up the control with prefilled data from AI suggestion
+            setEditControl({
+                title: initialTitle || '',
+                qsId: initialQsId || '',
+                active: true,
+            });
+            setIsDialogOpen(true);
+            // Clear the URL params after opening
+            navigate({ to: '/checklist', replace: true });
+        }
+    }, [initialCreateControl, initialTitle, initialQsId]);
+
     // Computed Values
     const controls = useMemo(() => {
         if (!controlsData?.controls) return [];
-        
+
         return controlsData.controls.map(c => {
             const hasEvidence = c.lastEvidenceAt !== null;
-            
+
             // Calculate next due date from last evidence + frequency
             let nextDueAt: Date | null = null;
             if (hasEvidence && c.frequencyType === 'recurring' && c.frequencyDays) {
                 nextDueAt = addDays(new Date(c.lastEvidenceAt!), c.frequencyDays);
             }
-            
+
             const isOverdue = nextDueAt && isPast(nextDueAt) && !isToday(nextDueAt);
             const isDueSoon = nextDueAt && !isOverdue && nextDueAt < addDays(new Date(), 7);
             const isOnTrack = hasEvidence && !isOverdue;
-            
+
             let status: 'overdue' | 'due-soon' | 'on-track' | 'not-started' = 'not-started';
             if (isOverdue) status = 'overdue';
             else if (isDueSoon) status = 'due-soon';
@@ -197,8 +229,8 @@ export function UnifiedControlsHub() {
             if (activeStatusTab !== 'all' && c.computedStatus !== activeStatusTab) return false;
 
             // Search Filter
-            const matchesSearch = 
-                c.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+            const matchesSearch =
+                c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (c.qs?.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (c.description || "").toLowerCase().includes(searchQuery.toLowerCase());
             if (!matchesSearch) return false;
@@ -277,7 +309,7 @@ export function UnifiedControlsHub() {
     const toggleFilter = (type: keyof typeof activeFilters, value: string) => {
         setActiveFilters(prev => {
             const current = prev[type];
-            const updated = current.includes(value) 
+            const updated = current.includes(value)
                 ? current.filter(v => v !== value)
                 : [...current, value];
             return { ...prev, [type]: updated };
@@ -306,7 +338,7 @@ export function UnifiedControlsHub() {
                         <h1 className="text-3xl font-bold tracking-tight text-foreground">Compliance Controls Hub</h1>
                         <p className="text-muted-foreground mt-1">Manage, track, and evidence your service standards.</p>
                     </div>
-                    
+
                     <div className="bg-card p-4 rounded-xl border shadow-sm max-w-xl">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-sm font-medium">Overall Compliance Status</span>
@@ -318,7 +350,7 @@ export function UnifiedControlsHub() {
 
                 <div className="flex items-center gap-3">
                     {controls.length === 0 && (
-                        <Button 
+                        <Button
                             variant="outline"
                             onClick={() => seedMutation.mutate({ data: { siteId: activeSite?.id } })}
                             disabled={seedMutation.isPending}
@@ -328,8 +360,8 @@ export function UnifiedControlsHub() {
                             Import Starter Pack
                         </Button>
                     )}
-                    <Button 
-                        variant="outline" 
+                    <Button
+                        variant="outline"
                         onClick={() => setIsAIOpen(true)}
                         className="border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 shadow-sm"
                     >
@@ -366,38 +398,38 @@ export function UnifiedControlsHub() {
                 <div className="flex flex-col md:flex-row gap-3 items-center bg-card p-3 rounded-xl border shadow-sm">
                     <div className="relative w-full md:flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                            placeholder="Search controls..." 
+                        <Input
+                            placeholder="Search controls..."
                             className="pl-9 bg-background h-9 text-sm"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
-                    
+
                     <div className="flex flex-wrap items-center gap-2">
-                        <FilterDropdown 
-                            label="Key Question" 
-                            options={["safe", "effective", "caring", "responsive", "well_led"]} 
+                        <FilterDropdown
+                            label="Key Question"
+                            options={["safe", "effective", "caring", "responsive", "well_led"]}
                             selected={activeFilters.keyQuestion}
                             onToggle={(v) => toggleFilter('keyQuestion', v)}
                         />
-                        <FilterDropdown 
-                            label="Frequency" 
-                            options={["Weekly", "Monthly", "Quarterly", "Annually"]} 
+                        <FilterDropdown
+                            label="Frequency"
+                            options={["Weekly", "Monthly", "Quarterly", "Annually"]}
                             selected={activeFilters.frequency}
                             onToggle={(v) => toggleFilter('frequency', v)}
                         />
-                        <FilterDropdown 
-                            label="Reviewer" 
-                            options={["Practice Manager", "Nurse Lead", "GP Partner", "Trainee"]} 
+                        <FilterDropdown
+                            label="Reviewer"
+                            options={["Practice Manager", "Nurse Lead", "GP Partner", "Trainee"]}
                             selected={activeFilters.reviewer}
                             onToggle={(v) => toggleFilter('reviewer', v)}
                         />
-                        
+
                         {(searchQuery || activeFilters.frequency.length > 0 || activeFilters.reviewer.length > 0 || activeFilters.keyQuestion.length > 0) && (
-                            <Button 
-                                variant="ghost" 
-                                size="sm" 
+                            <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => {
                                     setSearchQuery("");
                                     setActiveFilters({ frequency: [], reviewer: [], keyQuestion: [] });
@@ -501,11 +533,20 @@ export function UnifiedControlsHub() {
                 onOpenChange={setIsDialogOpen}
                 control={editControl}
                 siteId={activeSite?.id}
-                onClose={() => { setIsDialogOpen(false); setEditControl(null); }}
+                onClose={() => {
+                    setIsDialogOpen(false);
+                    setEditControl(null);
+                    setPendingLinkEvidenceId(null);
+                }}
                 qsList={qsData?.qualityStatements || []}
+                linkEvidenceId={pendingLinkEvidenceId}
+                onControlCreated={(controlId: string) => {
+                    // Clear the pending evidence ID after linking
+                    setPendingLinkEvidenceId(null);
+                }}
             />
 
-            <SuggestControlsDialog 
+            <SuggestControlsDialog
                 open={isAIOpen}
                 onOpenChange={setIsAIOpen}
                 qsList={qsData?.qualityStatements || []}
@@ -899,8 +940,8 @@ function InlineAISuggestion({ qsId, siteId, onSelectSuggestion }: { qsId: string
                                     <span className={cn(
                                         "text-[9px] font-medium uppercase px-1.5 py-0.5 rounded",
                                         s.priority === 'high' ? "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-400" :
-                                        s.priority === 'medium' ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400" :
-                                        "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                                            s.priority === 'medium' ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400" :
+                                                "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
                                     )}>
                                         {s.priority}
                                     </span>
@@ -970,11 +1011,12 @@ function FilterDropdown({ label, options, selected, onToggle }: { label: string,
 }
 
 // Reuse/Refactor these from LocalControlsManager or similar
-function ControlDialog({ open, onOpenChange, control, siteId, onClose, qsList }: any) {
+function ControlDialog({ open, onOpenChange, control, siteId, onClose, qsList, linkEvidenceId, onControlCreated }: any) {
     const queryClient = useQueryClient();
+    const navigate = useNavigate();
     const isEdit = !!control?.id;
     const [activeTab, setActiveTab] = useState("basic");
-    
+
     const [formData, setFormData] = useState({
         qsId: '',
         title: '',
@@ -1000,7 +1042,7 @@ function ControlDialog({ open, onOpenChange, control, siteId, onClose, qsList }:
                         good = parsed.good?.join('\n') || '';
                         bad = parsed.bad?.join('\n') || '';
                     }
-                } catch (e) {}
+                } catch (e) { }
 
                 setFormData({
                     qsId: control.qsId || (qsList[0]?.id || ''),
@@ -1037,10 +1079,34 @@ function ControlDialog({ open, onOpenChange, control, siteId, onClose, qsList }:
 
     const createMutation = useMutation({
         mutationFn: createLocalControlFn,
-        onSuccess: () => {
+        onSuccess: async (result) => {
             toast.success("Control created");
             queryClient.invalidateQueries({ queryKey: ["local-controls"] });
             queryClient.invalidateQueries({ queryKey: ["checklist-data"] });
+
+            // If we have a pending evidence to link, do it now
+            if (linkEvidenceId && result?.id) {
+                try {
+                    await updateEvidenceFn({
+                        data: {
+                            evidenceId: linkEvidenceId,
+                            updates: {
+                                localControlId: result.id,
+                                status: 'pending_review',
+                                reviewNotes: "Control created from AI suggestion and linked by user.",
+                            },
+                        },
+                    });
+                    queryClient.invalidateQueries({ queryKey: ["evidence"] });
+                    toast.success("Evidence linked to the new control and submitted for review");
+                    onControlCreated?.(result.id);
+                    // Navigate back to documents page
+                    navigate({ to: '/documents' });
+                } catch (err: any) {
+                    toast.error("Control created but failed to link evidence: " + err.message);
+                }
+            }
+
             onClose();
         },
         onError: (e) => toast.error(e.message)
@@ -1091,93 +1157,149 @@ function ControlDialog({ open, onOpenChange, control, siteId, onClose, qsList }:
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[640px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>{isEdit ? 'Edit Control' : 'Add New Control'}</DialogTitle>
-                    <DialogDescription>Define the requirements for this compliance check.</DialogDescription>
+                    <DialogTitle className="flex items-center gap-2">
+                        {linkEvidenceId ? (
+                            <>
+                                <Sparkles className="h-5 w-5 text-purple-600" />
+                                Create Control from AI Suggestion
+                            </>
+                        ) : isEdit ? 'Edit Control' : (
+                            <>
+                                <Plus className="h-5 w-5" />
+                                Add New Control
+                            </>
+                        )}
+                    </DialogTitle>
+                    <DialogDescription>
+                        {linkEvidenceId
+                            ? "AI suggested a new control for your document. Customize it below and save to automatically link the document."
+                            : "Define the requirements for this compliance check."
+                        }
+                    </DialogDescription>
                 </DialogHeader>
-                
+
+                {linkEvidenceId && (
+                    <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30 border border-purple-200 dark:border-purple-800 rounded-lg p-3 flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center shrink-0">
+                            <FileText className="h-4 w-4 text-purple-600" />
+                        </div>
+                        <div className="text-xs">
+                            <p className="font-medium text-purple-800 dark:text-purple-200">Document will be linked automatically</p>
+                            <p className="text-purple-600 dark:text-purple-400">After saving, the document will be assigned to this control and submitted for review.</p>
+                        </div>
+                    </div>
+                )}
+
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="py-2">
-                    <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="basic">Basic Info</TabsTrigger>
-                        <TabsTrigger value="schedule">Schedule</TabsTrigger>
-                        <TabsTrigger value="evidence">Evidence</TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-3 h-10">
+                        <TabsTrigger value="basic" className="text-xs">Basic Info</TabsTrigger>
+                        <TabsTrigger value="schedule" className="text-xs">Schedule</TabsTrigger>
+                        <TabsTrigger value="evidence" className="text-xs">Evidence</TabsTrigger>
                     </TabsList>
-                    
+
                     <div className="py-4 space-y-4">
                         <TabsContent value="basic" className="space-y-4 mt-0">
                             <div className="grid gap-2">
-                                <Label>Title <span className="text-red-500">*</span></Label>
-                                <Input value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} placeholder="e.g. Hand Hygiene Audit" />
+                                <Label className="text-xs">Title <span className="text-red-500">*</span></Label>
+                                <Input
+                                    value={formData.title}
+                                    onChange={e => setFormData({ ...formData, title: e.target.value })}
+                                    placeholder="e.g. Hand Hygiene Audit"
+                                    className="h-10"
+                                />
                             </div>
                             <div className="grid gap-2">
-                                <Label>Description</Label>
-                                <Textarea value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} placeholder="Optional details..." className="h-20" />
+                                <Label className="text-xs">Description</Label>
+                                <Textarea
+                                    value={formData.description}
+                                    onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                    placeholder="What does this control check for? What evidence is typically required?"
+                                    className="min-h-[80px] text-sm"
+                                />
                             </div>
                             <div className="grid gap-2">
-                                <Label>Area of Focus (Quality Statement) <span className="text-red-500">*</span></Label>
+                                <Label className="text-xs">Area of Focus (Quality Statement) <span className="text-red-500">*</span></Label>
                                 <Select value={formData.qsId} onValueChange={v => setFormData({ ...formData, qsId: v })}>
-                                    <SelectTrigger><SelectValue placeholder="Select Area" /></SelectTrigger>
-                                    <SelectContent className="max-h-[200px]">
+                                    <SelectTrigger className="h-10"><SelectValue placeholder="Select Area" /></SelectTrigger>
+                                    <SelectContent className="max-h-[250px]">
                                         {qsList.map((qs: any) => (
-                                            <SelectItem key={qs.id} value={qs.id}>
-                                                {qs.title} <span className="text-muted-foreground text-[10px]">({qs.keyQuestionTitle})</span>
+                                            <SelectItem key={qs.id} value={qs.id} className="text-xs">
+                                                <span className="font-medium">{qs.title}</span>
+                                                <span className="text-muted-foreground ml-2">({qs.keyQuestionTitle})</span>
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="flex items-center justify-between border p-3 rounded-lg">
+                            <div className="flex items-center justify-between border p-3 rounded-lg bg-muted/30">
                                 <div className="space-y-0.5">
-                                    <Label>Active Status</Label>
-                                    <p className="text-[10px] text-muted-foreground">Inactive controls won't generate tasks</p>
+                                    <Label className="text-xs">Active Status</Label>
+                                    <p className="text-[10px] text-muted-foreground">Inactive controls won't appear in checklists</p>
                                 </div>
-                                <Switch checked={formData.active} onCheckedChange={c => setFormData({...formData, active: c})} />
+                                <Switch checked={formData.active} onCheckedChange={c => setFormData({ ...formData, active: c })} />
                             </div>
                         </TabsContent>
 
                         <TabsContent value="schedule" className="space-y-4 mt-0">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="grid gap-2">
-                                    <Label>Type</Label>
+                                    <Label className="text-xs">Frequency Type</Label>
                                     <Select value={formData.frequencyType} onValueChange={v => setFormData({ ...formData, frequencyType: v })}>
-                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="recurring">Recurring</SelectItem>
-                                            <SelectItem value="one-off">One-off</SelectItem>
-                                            <SelectItem value="observation">Observation</SelectItem>
-                                            <SelectItem value="feedback">Feedback</SelectItem>
-                                            <SelectItem value="process">Process</SelectItem>
+                                            <SelectItem value="recurring">Recurring (Regular checks)</SelectItem>
+                                            <SelectItem value="one-off">One-off (Single event)</SelectItem>
+                                            <SelectItem value="observation">Observation (As observed)</SelectItem>
+                                            <SelectItem value="feedback">Feedback (Collected feedback)</SelectItem>
+                                            <SelectItem value="process">Process (Ongoing process)</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 {formData.frequencyType === 'recurring' && (
                                     <div className="grid gap-2">
-                                        <Label>Frequency (Days)</Label>
-                                        <Input type="number" value={formData.frequencyDays} onChange={e => setFormData({ ...formData, frequencyDays: parseInt(e.target.value) || 0 })} />
+                                        <Label className="text-xs">Frequency</Label>
+                                        <Select
+                                            value={String(formData.frequencyDays)}
+                                            onValueChange={v => setFormData({ ...formData, frequencyDays: parseInt(v) })}
+                                        >
+                                            <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="7">Weekly</SelectItem>
+                                                <SelectItem value="14">Fortnightly</SelectItem>
+                                                <SelectItem value="30">Monthly</SelectItem>
+                                                <SelectItem value="90">Quarterly</SelectItem>
+                                                <SelectItem value="180">Bi-Annually</SelectItem>
+                                                <SelectItem value="365">Annually</SelectItem>
+                                                <SelectItem value="730">Every 2 Years</SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                     </div>
                                 )}
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="grid gap-2">
-                                    <Label>Default Reviewer</Label>
+                                    <Label className="text-xs">Default Reviewer</Label>
                                     <Select value={formData.defaultReviewerRole} onValueChange={v => setFormData({ ...formData, defaultReviewerRole: v })}>
-                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="Practice Manager">Practice Manager</SelectItem>
+                                            <SelectItem value="Compliance Officer">Compliance Officer</SelectItem>
                                             <SelectItem value="Nurse Lead">Nurse Lead</SelectItem>
                                             <SelectItem value="GP Partner">GP Partner</SelectItem>
-                                            <SelectItem value="Trainee">Trainee</SelectItem>
+                                            <SelectItem value="Safeguarding Lead">Safeguarding Lead</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label>Fallback Reviewer</Label>
+                                    <Label className="text-xs">Fallback Reviewer</Label>
                                     <Select value={formData.fallbackReviewerRole || "none"} onValueChange={v => setFormData({ ...formData, fallbackReviewerRole: v === "none" ? "" : v })}>
-                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="none">None</SelectItem>
+                                            <SelectItem value="none">None (No fallback)</SelectItem>
                                             <SelectItem value="Practice Manager">Practice Manager</SelectItem>
+                                            <SelectItem value="Compliance Officer">Compliance Officer</SelectItem>
                                             <SelectItem value="Nurse Lead">Nurse Lead</SelectItem>
                                             <SelectItem value="GP Partner">GP Partner</SelectItem>
                                         </SelectContent>
@@ -1188,30 +1310,63 @@ function ControlDialog({ open, onOpenChange, control, siteId, onClose, qsList }:
 
                         <TabsContent value="evidence" className="space-y-4 mt-0">
                             <div className="grid gap-2">
-                                <Label>Evidence Hint</Label>
-                                <Textarea value={formData.evidenceHint} onChange={e => setFormData({ ...formData, evidenceHint: e.target.value })} placeholder="What should be uploaded?" />
+                                <Label className="text-xs">Evidence Hint</Label>
+                                <Textarea
+                                    value={formData.evidenceHint}
+                                    onChange={e => setFormData({ ...formData, evidenceHint: e.target.value })}
+                                    placeholder="Describe what type of evidence should be uploaded for this control..."
+                                    className="min-h-[80px] text-sm"
+                                />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="grid gap-2">
-                                    <Label className="text-emerald-600">Good Examples</Label>
-                                    <Textarea className="min-h-[100px] text-xs" value={formData.goodExamples} onChange={e => setFormData({...formData, goodExamples: e.target.value})} placeholder="One per line..." />
+                                    <Label className="text-xs flex items-center gap-1.5">
+                                        <CheckCircle className="h-3.5 w-3.5 text-emerald-600" />
+                                        Good Evidence Examples
+                                    </Label>
+                                    <Textarea
+                                        className="min-h-[100px] text-xs border-emerald-200 focus-visible:ring-emerald-500"
+                                        value={formData.goodExamples}
+                                        onChange={e => setFormData({ ...formData, goodExamples: e.target.value })}
+                                        placeholder="One example per line..."
+                                    />
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label className="text-rose-600">Poor Examples</Label>
-                                    <Textarea className="min-h-[100px] text-xs" value={formData.badExamples} onChange={e => setFormData({...formData, badExamples: e.target.value})} placeholder="One per line..." />
+                                    <Label className="text-xs flex items-center gap-1.5">
+                                        <AlertTriangle className="h-3.5 w-3.5 text-rose-600" />
+                                        Poor Evidence Examples
+                                    </Label>
+                                    <Textarea
+                                        className="min-h-[100px] text-xs border-rose-200 focus-visible:ring-rose-500"
+                                        value={formData.badExamples}
+                                        onChange={e => setFormData({ ...formData, badExamples: e.target.value })}
+                                        placeholder="One example per line..."
+                                    />
                                 </div>
                             </div>
                             <div className="grid gap-2">
-                                <Label>CQC Mythbuster URL</Label>
-                                <Input value={formData.cqcMythbusterUrl} onChange={e => setFormData({ ...formData, cqcMythbusterUrl: e.target.value })} placeholder="https://www.cqc.org.uk/..." />
+                                <Label className="text-xs">CQC Mythbuster URL (Optional)</Label>
+                                <Input
+                                    value={formData.cqcMythbusterUrl}
+                                    onChange={e => setFormData({ ...formData, cqcMythbusterUrl: e.target.value })}
+                                    placeholder="https://www.cqc.org.uk/guidance-providers/..."
+                                    className="h-10 text-sm"
+                                />
                             </div>
                         </TabsContent>
                     </div>
                 </Tabs>
 
-                <DialogFooter>
+                <DialogFooter className="gap-2 sm:gap-0">
                     <Button variant="outline" onClick={onClose}>Cancel</Button>
-                    <Button onClick={handleSubmit} disabled={isPending}>{isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save Control</Button>
+                    <Button
+                        onClick={handleSubmit}
+                        disabled={isPending}
+                        className={linkEvidenceId ? "bg-purple-600 hover:bg-purple-700" : ""}
+                    >
+                        {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {linkEvidenceId ? "Create & Link Document" : "Save Control"}
+                    </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -1278,7 +1433,7 @@ function SuggestControlsDialog({ open, onOpenChange, qsList, onSelectSuggestion 
                             <p>Analyzing your compliance gaps...</p>
                         </div>
                     )}
-                    
+
                     {!suggestMutation.data && !suggestMutation.isPending && (
                         <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-60 py-20">
                             <Sparkles className="h-12 w-12 mb-2" />
