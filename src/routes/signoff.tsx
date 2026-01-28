@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { MainLayout } from "@/components/main-layout";
 import { useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getEvidenceForSiteFn, updateEvidenceFn } from "@/core/functions/evidence";
+import { getEvidenceForReviewFn, getEvidenceForSiteFn, updateEvidenceFn } from "@/core/functions/evidence";
 import { useSite } from "@/components/site-context";
 import { useState } from "react";
 import { format } from "date-fns";
@@ -66,7 +66,17 @@ function SignoffPage() {
     const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
     const [approveDialogOpen, setApproveDialogOpen] = useState(false);
 
-    const { data: evidence } = useSuspenseQuery({
+    // Fetch evidence pending review that the current user is authorized to review
+    const { data: pendingEvidence } = useSuspenseQuery({
+        queryKey: ["evidence-for-review", activeSite?.id],
+        queryFn: async () => {
+            if (!activeSite?.id) return [];
+            return await getEvidenceForReviewFn({ data: { siteId: activeSite.id } });
+        },
+    });
+
+    // Fetch all evidence for the recently reviewed section
+    const { data: allEvidence } = useSuspenseQuery({
         queryKey: ["evidence", activeSite?.id],
         queryFn: async () => {
             if (!activeSite?.id) return [];
@@ -89,6 +99,7 @@ function SignoffPage() {
         onSuccess: () => {
             toast.success("Evidence approved successfully");
             queryClient.invalidateQueries({ queryKey: ["evidence"] });
+            queryClient.invalidateQueries({ queryKey: ["evidence-for-review"] });
             queryClient.invalidateQueries({ queryKey: ["checklist-data"] });
             setSelectedEvidence(null);
             setApproveDialogOpen(false);
@@ -117,6 +128,7 @@ function SignoffPage() {
         onSuccess: () => {
             toast.success("Evidence rejected");
             queryClient.invalidateQueries({ queryKey: ["evidence"] });
+            queryClient.invalidateQueries({ queryKey: ["evidence-for-review"] });
             setSelectedEvidence(null);
             setRejectDialogOpen(false);
             setReviewNotes("");
@@ -140,9 +152,11 @@ function SignoffPage() {
         );
     }
 
-    // Filter for items pending review
-    const pendingReview = (evidence || []).filter((e) => e.status === "pending_review");
-    const recentlyReviewed = (evidence || [])
+    // Pending evidence is already filtered by user role from the server
+    const pendingReview = pendingEvidence || [];
+
+    // Recently reviewed from all evidence
+    const recentlyReviewed = (allEvidence || [])
         .filter((e) => e.status === "approved" || e.status === "rejected")
         .slice(0, 10);
 
