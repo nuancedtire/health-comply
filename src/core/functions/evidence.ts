@@ -34,6 +34,139 @@ export const getUserSitesFn = createServerFn({ method: "GET" })
         return sites;
     });
 
+// Get evidence pending review that the current user is authorized to review
+// Based on their role matching the control's defaultReviewerRole or fallbackReviewerRole
+export const getEvidenceForReviewFn = createServerFn({ method: "GET" })
+    .middleware([authMiddleware])
+    .inputValidator((data: unknown) => z.object({ siteId: z.string() }).parse(data))
+    .handler(async ({ context, data }) => {
+        const { db, user } = context;
+        const tenantId = (user as any).tenantId;
+        const siteId = data.siteId;
+
+        if (!tenantId) {
+            return [];
+        }
+
+        // Get user's roles (both tenant-scoped and site-scoped)
+        const userRolesResult = await db.select({
+            role: schema.userRoles.role,
+            siteId: schema.userRoles.siteId
+        })
+            .from(schema.userRoles)
+            .where(eq(schema.userRoles.userId, user.id));
+
+        const userRoleIds = userRolesResult.map(r => r.role);
+        const isSystemAdmin = (user as any).isSystemAdmin;
+
+        // Practice Manager and Admin can see all pending evidence
+        const canSeeAll = isSystemAdmin || userRoleIds.includes('Practice Manager') || userRoleIds.includes('Admin');
+
+        const suggestedControls = alias(schema.localControls, 'suggested_controls');
+
+        // Fetch all pending_review evidence for the site
+        const rawEvidence = await db.select({
+            id: schema.evidenceItems.id,
+            siteId: schema.evidenceItems.siteId,
+            title: schema.evidenceItems.title,
+            qsId: schema.evidenceItems.qsId,
+            evidenceCategoryId: schema.evidenceItems.evidenceCategoryId,
+            localControlId: schema.evidenceItems.localControlId,
+            status: schema.evidenceItems.status,
+            uploadedAt: schema.evidenceItems.uploadedAt,
+            evidenceDate: schema.evidenceItems.evidenceDate,
+            sizeBytes: schema.evidenceItems.sizeBytes,
+            mimeType: schema.evidenceItems.mimeType,
+            summary: schema.evidenceItems.summary,
+            aiConfidence: schema.evidenceItems.aiConfidence,
+            textContent: schema.evidenceItems.textContent,
+            validUntil: schema.evidenceItems.validUntil,
+            createdAt: schema.evidenceItems.createdAt,
+            classificationResult: schema.evidenceItems.classificationResult,
+            suggestedControlId: schema.evidenceItems.suggestedControlId,
+            reviewNotes: schema.evidenceItems.reviewNotes,
+            reviewedBy: schema.evidenceItems.reviewedBy,
+            reviewedAt: schema.evidenceItems.reviewedAt,
+
+            // Control reviewer roles for filtering
+            controlDefaultReviewer: schema.localControls.defaultReviewerRole,
+            controlFallbackReviewer: schema.localControls.fallbackReviewerRole,
+
+            // Flat joined fields
+            localControlTitle: schema.localControls.title,
+            suggestedControlTitle: suggestedControls.title,
+            qsTitle: schema.cqcQualityStatements.title,
+            kqTitle: schema.cqcKeyQuestions.title,
+            uploaderName: schema.users.name
+        })
+            .from(schema.evidenceItems)
+            .leftJoin(schema.users, eq(schema.evidenceItems.uploadedBy, schema.users.id))
+            .leftJoin(schema.localControls, eq(schema.evidenceItems.localControlId, schema.localControls.id))
+            .leftJoin(suggestedControls, eq(schema.evidenceItems.suggestedControlId, suggestedControls.id))
+            .leftJoin(schema.cqcQualityStatements, eq(schema.evidenceItems.qsId, schema.cqcQualityStatements.id))
+            .leftJoin(schema.cqcKeyQuestions, eq(schema.cqcQualityStatements.keyQuestionId, schema.cqcKeyQuestions.id))
+            .where(
+                and(
+                    eq(schema.evidenceItems.tenantId, tenantId),
+                    eq(schema.evidenceItems.siteId, siteId),
+                    eq(schema.evidenceItems.status, 'pending_review')
+                )
+            )
+            .orderBy(desc(schema.evidenceItems.uploadedAt));
+
+        // Filter based on user's roles
+        const filteredEvidence = rawEvidence.filter(item => {
+            // Admin/Practice Manager sees everything
+            if (canSeeAll) return true;
+
+            // If no control assigned, only Practice Manager sees it (already handled above)
+            if (!item.localControlId) return false;
+
+            // Check if user's role matches the control's reviewer roles
+            const defaultReviewer = item.controlDefaultReviewer;
+            const fallbackReviewer = item.controlFallbackReviewer;
+
+            // If control has no reviewer role assigned, only Practice Manager sees it
+            if (!defaultReviewer && !fallbackReviewer) return false;
+
+            // Check if any of the user's roles matches
+            return userRoleIds.includes(defaultReviewer || '') || userRoleIds.includes(fallbackReviewer || '');
+        });
+
+        // Transform to nested structure expected by UI
+        return filteredEvidence.map(item => ({
+            id: item.id,
+            siteId: item.siteId,
+            title: item.title,
+            qsId: item.qsId,
+            evidenceCategoryId: item.evidenceCategoryId,
+            localControlId: item.localControlId,
+            status: item.status,
+            uploadedAt: item.uploadedAt,
+            evidenceDate: item.evidenceDate,
+            sizeBytes: item.sizeBytes,
+            mimeType: item.mimeType,
+            summary: item.summary,
+            aiConfidence: item.aiConfidence,
+            textContent: item.textContent,
+            validUntil: item.validUntil,
+            createdAt: item.createdAt,
+            uploaderName: item.uploaderName,
+            classificationResult: item.classificationResult as any,
+            suggestedControlId: item.suggestedControlId,
+            reviewNotes: item.reviewNotes,
+            reviewedAt: item.reviewedAt,
+            reviewedBy: item.reviewedBy,
+
+            localControl: item.localControlTitle ? { title: item.localControlTitle } : null,
+            suggestedControl: item.suggestedControlTitle ? { title: item.suggestedControlTitle } : null,
+            qs: item.qsTitle ? {
+                title: item.qsTitle,
+                keyQuestion: item.kqTitle ? { title: item.kqTitle } : null
+            } : null
+        }));
+    });
+
 export const getEvidenceForSiteFn = createServerFn({ method: "GET" })
     .middleware([authMiddleware])
     .inputValidator((data: unknown) => z.object({ siteId: z.string() }).parse(data))

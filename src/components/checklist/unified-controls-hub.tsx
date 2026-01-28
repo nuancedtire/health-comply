@@ -1,22 +1,28 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
-import { 
-    Search, 
-    Plus, 
-    ChevronDown, 
-    MoreHorizontal, 
-    Pencil, 
-    Trash2, 
-    Upload, 
-    Clock, 
-    User, 
-    Sparkles, 
-    CheckCircle2, 
+import {
+    Search,
+    Plus,
+    ChevronDown,
+    ChevronRight,
+    MoreHorizontal,
+    Pencil,
+    Trash2,
+    Upload,
+    Clock,
+    User,
+    Sparkles,
+    CheckCircle2,
     Loader2,
     Wand2,
     FileText,
     ArrowRight,
-    PackagePlus
+    PackagePlus,
+    Shield,
+    CheckCircle,
+    Heart,
+    Zap,
+    Users
 } from "lucide-react";
 import { toast } from "sonner";
 import { isPast, isToday, addDays, format } from "date-fns";
@@ -55,6 +61,11 @@ import {
     DialogTitle,
     DialogFooter
 } from "@/components/ui/dialog";
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger
+} from "@/components/ui/collapsible";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -211,18 +222,55 @@ export function UnifiedControlsHub() {
         });
     }, [controls, searchQuery, activeStatusTab, activeFilters]);
 
-    const groupedControls = useMemo(() => {
-        const groups: Record<string, { qsId: string, controls: any[] }> = {};
-        
+    // Key Question icons and display info
+    const keyQuestionMeta: Record<string, { icon: typeof Shield, color: string, order: number }> = {
+        'safe': { icon: Shield, color: 'text-blue-600', order: 1 },
+        'effective': { icon: CheckCircle, color: 'text-green-600', order: 2 },
+        'caring': { icon: Heart, color: 'text-pink-600', order: 3 },
+        'responsive': { icon: Zap, color: 'text-amber-600', order: 4 },
+        'well_led': { icon: Users, color: 'text-purple-600', order: 5 },
+    };
+
+    // Group controls by Key Question -> Quality Statement
+    const groupedByKeyQuestion = useMemo(() => {
+        const kqGroups: Record<string, {
+            kqId: string,
+            kqTitle: string,
+            qualityStatements: Record<string, { qsId: string, qsTitle: string, controls: any[] }>
+        }> = {};
+
         filteredControls.forEach(control => {
-            const groupName = control.qs?.title || control.qsId || "General Controls";
-            if (!groups[groupName]) {
-                groups[groupName] = { qsId: control.qsId, controls: [] };
+            // Extract Key Question from qsId (format: "safe.learning_culture")
+            const kqId = control.qsId?.split('.')[0] || 'unknown';
+            const kqTitle = kqId.replace('_', '-').split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+            const qsTitle = control.qs?.title || control.qsId || "General Controls";
+            const qsId = control.qsId || 'general';
+
+            if (!kqGroups[kqId]) {
+                kqGroups[kqId] = {
+                    kqId,
+                    kqTitle,
+                    qualityStatements: {}
+                };
             }
-            groups[groupName].controls.push(control);
+
+            if (!kqGroups[kqId].qualityStatements[qsTitle]) {
+                kqGroups[kqId].qualityStatements[qsTitle] = {
+                    qsId,
+                    qsTitle,
+                    controls: []
+                };
+            }
+
+            kqGroups[kqId].qualityStatements[qsTitle].controls.push(control);
         });
 
-        return groups;
+        // Sort by Key Question order
+        return Object.values(kqGroups).sort((a, b) => {
+            const orderA = keyQuestionMeta[a.kqId]?.order || 99;
+            const orderB = keyQuestionMeta[b.kqId]?.order || 99;
+            return orderA - orderB;
+        });
     }, [filteredControls]);
 
     const toggleFilter = (type: keyof typeof activeFilters, value: string) => {
@@ -362,9 +410,9 @@ export function UnifiedControlsHub() {
                 </div>
             </div>
 
-            {/* Grouped Controls List */}
-            <div className="space-y-10">
-                {Object.keys(groupedControls).length === 0 ? (
+            {/* Grouped Controls List - Hierarchical by Key Question */}
+            <div className="space-y-6">
+                {groupedByKeyQuestion.length === 0 ? (
                     <div className="text-center py-20 bg-card rounded-2xl border border-dashed border-muted-foreground/20">
                         <div className="bg-muted w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                             <CheckCircle2 className="h-8 w-8 text-muted-foreground opacity-20" />
@@ -376,7 +424,7 @@ export function UnifiedControlsHub() {
                                     Get started quickly with our curated starter pack, or add controls manually.
                                 </p>
                                 <div className="flex items-center justify-center gap-3 mt-4">
-                                    <Button 
+                                    <Button
                                         onClick={() => seedMutation.mutate({ data: { siteId: activeSite?.id } })}
                                         disabled={seedMutation.isPending}
                                         className="gap-2"
@@ -384,7 +432,7 @@ export function UnifiedControlsHub() {
                                         {seedMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <PackagePlus className="h-4 w-4" />}
                                         Import Starter Pack
                                     </Button>
-                                    <Button 
+                                    <Button
                                         variant="outline"
                                         onClick={() => { setEditControl(null); setIsDialogOpen(true); }}
                                     >
@@ -396,8 +444,8 @@ export function UnifiedControlsHub() {
                             <>
                                 <h3 className="text-lg font-medium text-foreground">No controls found</h3>
                                 <p className="text-muted-foreground text-sm mt-1">Try adjusting your filters or search query.</p>
-                                <Button 
-                                    variant="link" 
+                                <Button
+                                    variant="link"
                                     className="mt-2"
                                     onClick={() => {
                                         setActiveStatusTab("all");
@@ -411,47 +459,36 @@ export function UnifiedControlsHub() {
                         )}
                     </div>
                 ) : (
-                    <div className="space-y-8">
-                        {Object.entries(groupedControls).map(([groupName, { qsId, controls }]) => (
-                            <div key={groupName} className="space-y-4">
-                                <div className="flex items-center gap-3 px-1">
-                                    <h4 className="font-bold text-foreground tracking-tight">
-                                        {groupName}
-                                    </h4>
-                                    <Badge variant="secondary" className="bg-muted text-muted-foreground font-medium rounded-full h-5 px-2 text-[10px]">
-                                        {controls.length}
-                                    </Badge>
-                                    <div className="h-px bg-border flex-1" />
-                                </div>
+                    <div className="space-y-4">
+                        {groupedByKeyQuestion.map((kqGroup) => {
+                            const meta = keyQuestionMeta[kqGroup.kqId] || { icon: CheckCircle2, color: 'text-muted-foreground', order: 99 };
+                            const KqIcon = meta.icon;
+                            const totalControls = Object.values(kqGroup.qualityStatements).reduce((sum, qs) => sum + qs.controls.length, 0);
 
-                                <div className="grid gap-3">
-                                    {controls.map((control) => (
-                                        <ControlHubRow 
-                                            key={control.id} 
-                                            control={control}
-                                            siteId={activeSite?.id || ''}
-                                            onEdit={() => { setEditControl(control); setIsDialogOpen(true); }}
-                                            onDelete={() => deleteMutation.mutate({ data: { id: control.id } })}
-                                        />
-                                    ))}
-                                </div>
-
-                                <InlineAISuggestion 
-                                    qsId={qsId} 
-                                    siteId={activeSite?.id || ''} 
-                                    onSelectSuggestion={(s) => {
+                            return (
+                                <KeyQuestionSection
+                                    key={kqGroup.kqId}
+                                    kqId={kqGroup.kqId}
+                                    kqTitle={kqGroup.kqTitle}
+                                    KqIcon={KqIcon}
+                                    iconColor={meta.color}
+                                    totalControls={totalControls}
+                                    qualityStatements={kqGroup.qualityStatements}
+                                    siteId={activeSite?.id || ''}
+                                    onEditControl={(control: any) => { setEditControl(control); setIsDialogOpen(true); }}
+                                    onDeleteControl={(id: string) => deleteMutation.mutate({ data: { id } })}
+                                    onSelectSuggestion={(s: any, qsId: string) => {
                                         setEditControl({
                                             ...s,
                                             qsId,
                                             active: true,
-                                            // Format evidence examples for ControlDialog
                                             evidenceExamples: JSON.stringify(s.evidenceExamples || { good: [], bad: [] })
                                         });
                                         setIsDialogOpen(true);
                                     }}
                                 />
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </div>
@@ -484,6 +521,139 @@ export function UnifiedControlsHub() {
 }
 
 // --- Sub-components ---
+
+function KeyQuestionSection({
+    kqId,
+    kqTitle,
+    KqIcon,
+    iconColor,
+    totalControls,
+    qualityStatements,
+    siteId,
+    onEditControl,
+    onDeleteControl,
+    onSelectSuggestion
+}: {
+    kqId: string,
+    kqTitle: string,
+    KqIcon: any,
+    iconColor: string,
+    totalControls: number,
+    qualityStatements: Record<string, { qsId: string, qsTitle: string, controls: any[] }>,
+    siteId: string,
+    onEditControl: (control: any) => void,
+    onDeleteControl: (id: string) => void,
+    onSelectSuggestion: (s: any, qsId: string) => void
+}) {
+    const [isOpen, setIsOpen] = useState(true);
+
+    return (
+        <Collapsible open={isOpen} onOpenChange={setIsOpen} className="border rounded-xl bg-card shadow-sm overflow-hidden">
+            <CollapsibleTrigger asChild>
+                <button className="w-full px-5 py-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-3">
+                        <div className={cn("p-2 rounded-lg bg-muted", iconColor)}>
+                            <KqIcon className="h-5 w-5" />
+                        </div>
+                        <div className="text-left">
+                            <h3 className="font-bold text-lg text-foreground">{kqTitle}</h3>
+                            <p className="text-xs text-muted-foreground">
+                                {Object.keys(qualityStatements).length} quality statement{Object.keys(qualityStatements).length !== 1 ? 's' : ''} &middot; {totalControls} control{totalControls !== 1 ? 's' : ''}
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="bg-muted font-medium">
+                            {totalControls}
+                        </Badge>
+                        {isOpen ? (
+                            <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform" />
+                        ) : (
+                            <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform" />
+                        )}
+                    </div>
+                </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+                <div className="px-5 pb-5 space-y-4">
+                    {Object.entries(qualityStatements).map(([qsTitle, { qsId, controls }]) => (
+                        <QualityStatementSection
+                            key={qsId}
+                            qsId={qsId}
+                            qsTitle={qsTitle}
+                            controls={controls}
+                            siteId={siteId}
+                            onEditControl={onEditControl}
+                            onDeleteControl={onDeleteControl}
+                            onSelectSuggestion={(s) => onSelectSuggestion(s, qsId)}
+                        />
+                    ))}
+                </div>
+            </CollapsibleContent>
+        </Collapsible>
+    );
+}
+
+function QualityStatementSection({
+    qsId,
+    qsTitle,
+    controls,
+    siteId,
+    onEditControl,
+    onDeleteControl,
+    onSelectSuggestion
+}: {
+    qsId: string,
+    qsTitle: string,
+    controls: any[],
+    siteId: string,
+    onEditControl: (control: any) => void,
+    onDeleteControl: (id: string) => void,
+    onSelectSuggestion: (s: any) => void
+}) {
+    const [isOpen, setIsOpen] = useState(true);
+
+    return (
+        <Collapsible open={isOpen} onOpenChange={setIsOpen} className="border rounded-lg bg-background">
+            <CollapsibleTrigger asChild>
+                <button className="w-full px-4 py-3 flex items-center justify-between hover:bg-muted/30 transition-colors rounded-lg">
+                    <div className="flex items-center gap-2">
+                        {isOpen ? (
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        )}
+                        <h4 className="font-semibold text-sm text-foreground">{qsTitle}</h4>
+                        <Badge variant="outline" className="h-5 px-1.5 text-[10px] font-medium">
+                            {controls.length}
+                        </Badge>
+                    </div>
+                </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+                <div className="px-4 pb-4 space-y-3">
+                    <div className="grid gap-2">
+                        {controls.map((control) => (
+                            <ControlHubRow
+                                key={control.id}
+                                control={control}
+                                siteId={siteId}
+                                onEdit={() => onEditControl(control)}
+                                onDelete={() => onDeleteControl(control.id)}
+                            />
+                        ))}
+                    </div>
+
+                    <InlineAISuggestion
+                        qsId={qsId}
+                        siteId={siteId}
+                        onSelectSuggestion={onSelectSuggestion}
+                    />
+                </div>
+            </CollapsibleContent>
+        </Collapsible>
+    );
+}
 
 function ControlHubRow({ control, siteId, onEdit, onDelete }: { control: any, siteId: string, onEdit: () => void, onDelete: () => void }) {
     const [isExpanded, setIsExpanded] = useState(false);
