@@ -338,14 +338,14 @@ function OnboardingPage() {
                                         variant="outline"
                                         size="lg"
                                         className="w-full sm:w-auto px-10 py-7 text-lg"
-                                        onClick={() => navigate({ to: '/checklist', search: { siteId } })}
+                                        onClick={() => navigate({ to: '/checklist' })}
                                     >
                                         View Checklist
                                     </Button>
                                     <Button
                                         size="lg"
                                         className="w-full sm:w-auto px-10 py-7 text-lg shadow-lg shadow-primary/20"
-                                        onClick={() => navigate({ to: '/dashboard', search: { siteId } })}
+                                        onClick={() => navigate({ to: '/dashboard' })}
                                     >
                                         Go to Dashboard
                                         <ArrowRight className="ml-2 w-5 h-5" />

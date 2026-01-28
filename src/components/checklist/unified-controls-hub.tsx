@@ -25,6 +25,7 @@ import {
     Zap,
     Users,
     AlertTriangle,
+    Calendar
 } from "lucide-react";
 import { toast } from "sonner";
 import { isPast, isToday, addDays, format } from "date-fns";
@@ -540,7 +541,7 @@ export function UnifiedControlsHub({
                 }}
                 qsList={qsData?.qualityStatements || []}
                 linkEvidenceId={pendingLinkEvidenceId}
-                onControlCreated={(controlId: string) => {
+                onControlCreated={(_controlId: string) => {
                     // Clear the pending evidence ID after linking
                     setPendingLinkEvidenceId(null);
                 }}
@@ -638,12 +639,10 @@ function StatusDotGrid({ controls, max = 12 }: { controls: any[], max?: number }
 }
 
 function KeyQuestionSection({
-    kqId,
     kqTitle,
     KqIcon,
     iconColor,
     bgColor,
-    totalControls,
     qualityStatements,
     siteId,
     onEditControl,
@@ -805,7 +804,7 @@ function ControlHubRow({ control, siteId, onEdit, onDelete }: { control: any, si
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                         <button
-                            className="font-medium text-[13px] text-foreground hover:text-primary transition-colors text-left truncate"
+                            className="font-medium text-[13px] text-foreground hover:text-primary transition-colors text-left truncate hover:underline"
                             onClick={() => setIsExpanded(!isExpanded)}
                         >
                             {control.title}
@@ -817,13 +816,14 @@ function ControlHubRow({ control, siteId, onEdit, onDelete }: { control: any, si
                         )}
                     </div>
 
-                    <div className="flex items-center gap-3 mt-0.5 text-[11px] text-muted-foreground">
+                    <div className="flex items-center gap-1 mt-0.5 text-[11px] text-muted-foreground">
+                        <Calendar className="w-3 h-3" />
                         <span>{formatFrequency(control.frequencyType, control.frequencyDays)}</span>
-                        <span className="text-border">·</span>
+                        <User className="w-3 h-3 ml-3" />
                         <span>{control.defaultReviewerRole || 'Unassigned'}</span>
                         {nextDueLabel && (
                             <>
-                                <span className="text-border">·</span>
+                                <Clock className="w-3 h-3 ml-3" />
                                 <span className={cn(status === 'overdue' && config.text, "font-medium")}>
                                     {nextDueLabel}
                                 </span>
@@ -840,7 +840,6 @@ function ControlHubRow({ control, siteId, onEdit, onDelete }: { control: any, si
                         trigger={
                             <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground">
                                 <Upload className="w-3.5 h-3.5 mr-1" />
-                                Upload
                             </Button>
                         }
                     />
@@ -1191,7 +1190,6 @@ function ControlDialog({ open, onOpenChange, control, siteId, onClose, qsList, l
                         </div>
                     </div>
                 )}
-
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="py-2">
                     <TabsList className="grid w-full grid-cols-3 h-10">
                         <TabsTrigger value="basic" className="text-xs">Basic Info</TabsTrigger>
