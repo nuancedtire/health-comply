@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { useMutation } from '@tanstack/react-query'
-import { seedDatabaseFn, resetDatabaseFn, seedCqcTaxonomyFn, resetCqcTaxonomyFn } from '@/core/functions/seed-functions'
+import { seedDatabaseFn, resetDatabaseFn } from '@/core/functions/seed-functions'
 import { useState } from 'react'
 import { Loader2 } from 'lucide-react'
 
@@ -31,23 +31,6 @@ function AdminDebugComponent() {
     const [resetDialogOpen, setResetDialogOpen] = useState(false);
     const [resetConfirmation, setResetConfirmation] = useState("");
 
-    const seedCqcMutation = useMutation({
-        mutationFn: () => seedCqcTaxonomyFn(),
-        onSuccess: (data: any) => {
-            const { summary } = data;
-            setResult({
-                type: 'success',
-                message: `CQC Taxonomy seeded successfully! (${summary.evidenceCategories} categories, ${summary.keyQuestions} key questions, ${summary.qualityStatements} quality statements)`,
-                details: data.results
-            });
-            toast.success("CQC Taxonomy seeded successfully");
-        },
-        onError: (err) => {
-            setResult({ type: 'error', message: err.message });
-            toast.error("Failed to seed CQC taxonomy");
-        }
-    });
-
     const seedMutation = useMutation({
         mutationFn: () => seedDatabaseFn(),
         onSuccess: (data: any) => {
@@ -57,18 +40,6 @@ function AdminDebugComponent() {
         onError: (err) => {
             setResult({ type: 'error', message: err.message });
             toast.error("Failed to seed database");
-        }
-    });
-
-    const resetCqcMutation = useMutation({
-        mutationFn: () => resetCqcTaxonomyFn(),
-        onSuccess: (data: any) => {
-            setResult({ type: 'success', message: data.message });
-            toast.success("CQC Taxonomy reset successfully");
-        },
-        onError: (err) => {
-            setResult({ type: 'error', message: err.message });
-            toast.error("Failed to reset CQC taxonomy");
         }
     });
 
@@ -155,25 +126,8 @@ function AdminDebugComponent() {
                         <CardContent className="flex flex-col gap-4">
                             <div className="flex gap-4 flex-wrap">
                                 <Button
-                                    onClick={() => seedCqcMutation.mutate()}
-                                    disabled={seedCqcMutation.isPending || seedMutation.isPending || resetMutation.isPending}
-                                    variant="outline"
-                                >
-                                    {seedCqcMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Seed CQC Taxonomy
-                                </Button>
-                                <Button
-                                    onClick={() => resetCqcMutation.mutate()}
-                                    disabled={seedCqcMutation.isPending || seedMutation.isPending || resetMutation.isPending || resetCqcMutation.isPending}
-                                    variant="outline"
-                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                >
-                                    {resetCqcMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Reset CQC
-                                </Button>
-                                <Button
                                     onClick={() => seedMutation.mutate()}
-                                    disabled={seedCqcMutation.isPending || seedMutation.isPending || resetMutation.isPending}
+                                    disabled={seedMutation.isPending || resetMutation.isPending}
                                 >
                                     {seedMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     Seed Database
@@ -181,7 +135,7 @@ function AdminDebugComponent() {
                                 <Button
                                     variant="destructive"
                                     onClick={() => setResetDialogOpen(true)}
-                                    disabled={seedCqcMutation.isPending || seedMutation.isPending || resetMutation.isPending}
+                                    disabled={seedMutation.isPending || resetMutation.isPending}
                                 >
                                     {resetMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     Reset Database
