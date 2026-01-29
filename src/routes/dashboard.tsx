@@ -35,6 +35,13 @@ function DashboardPage() {
       summary: 'Audit completed across all clinical areas. Improvement actions recorded.',
       aiConfidence: 87,
       localControl: { title: 'Hand hygiene audit' },
+      qs: {
+        title: 'Infection prevention and control',
+        keyQuestion: {
+          title: 'Safe',
+        },
+      },
+      reviewerName: 'Dr. Sarah Smith',
     },
     {
       id: 'ev-002',
@@ -50,13 +57,20 @@ function DashboardPage() {
       summary: 'Evacuation completed in 3m20s, learning points noted.',
       aiConfidence: 74,
       localControl: { title: 'Fire drill' },
+      qs: {
+        title: 'Safe environments',
+        keyQuestion: {
+          title: 'Safe',
+        },
+      },
+      assigneeRole: 'Practice Manager',
     },
     {
       id: 'ev-003',
       siteId: 's_1',
       title: 'Patient feedback summary - Q4 2025',
-      qsId: 'caring.patient_experience',
-      evidenceCategoryId: 'service_user_feedback',
+      qsId: 'caring.kindness_compassion_dignity',
+      evidenceCategoryId: 'peoples_experience',
       status: 'approved',
       uploadedAt: new Date(),
       evidenceDate: new Date(),
@@ -65,23 +79,109 @@ function DashboardPage() {
       summary: 'Overall satisfaction score 4.7/5. Key feedback themes compiled.',
       aiConfidence: 91,
       localControl: { title: 'Patient experience monitoring' },
+      qs: {
+        title: 'Kindness, compassion and dignity',
+        keyQuestion: {
+          title: 'Caring',
+        },
+      },
+      reviewerName: 'Charlie Nurse',
     },
   ]
 
-  const [samplePacks, setSamplePacks] = useState<any[]>([])
-
-  useEffect(() => {
-    import('@/core/data/extended_controls.json')
-      .then((m: any) => {
-        const arr = m?.default || m || []
-        const map = new Map()
-        for (const p of arr) {
-          if (!map.has(p.packId)) map.set(p.packId, p)
-        }
-        setSamplePacks(Array.from(map.values()).slice(0, 6))
-      })
-      .catch(() => setSamplePacks([]))
-  }, [])
+  // Reference packs with realistic placeholder data
+  const samplePacks = [
+    {
+      id: 'pack_safe_ipc',
+      packName: 'Infection Prevention',
+      keyQuestion: 'Safe',
+      title: 'Infection Prevention & Control',
+      description: 'Comprehensive guidance on maintaining infection control standards, hand hygiene compliance, and environmental cleanliness across all clinical areas.',
+      evidenceCount: 12,
+      lastUpdated: 'Jan 2026',
+      completionRate: 85,
+      examples: [
+        'Hand hygiene audit results',
+        'Environmental cleaning schedules',
+        'PPE stock monitoring logs',
+      ],
+    },
+    {
+      id: 'pack_safe_safeguarding',
+      packName: 'Safeguarding',
+      keyQuestion: 'Safe',
+      title: 'Safeguarding Adults & Children',
+      description: 'Essential controls for safeguarding vulnerable patients, maintaining risk registers, and ensuring staff training compliance.',
+      evidenceCount: 18,
+      lastUpdated: 'Feb 2026',
+      completionRate: 92,
+      examples: [
+        'Safeguarding policy reviews',
+        'Staff training certificates',
+        'Risk assessment documentation',
+      ],
+    },
+    {
+      id: 'pack_effective_outcomes',
+      packName: 'Clinical Outcomes',
+      keyQuestion: 'Effective',
+      title: 'Monitoring & Improving Outcomes',
+      description: 'Track clinical effectiveness through audits, patient outcome measures, and quality improvement initiatives.',
+      evidenceCount: 15,
+      lastUpdated: 'Jan 2026',
+      completionRate: 78,
+      examples: [
+        'Clinical audit reports',
+        'QI project documentation',
+        'Patient outcome tracking',
+      ],
+    },
+    {
+      id: 'pack_caring_dignity',
+      packName: 'Patient Experience',
+      keyQuestion: 'Caring',
+      title: 'Kindness, Compassion & Dignity',
+      description: 'Demonstrate patient-centered care through feedback, complaints handling, and evidence of dignity in care delivery.',
+      evidenceCount: 10,
+      lastUpdated: 'Feb 2026',
+      completionRate: 88,
+      examples: [
+        'Patient satisfaction surveys',
+        'Complaints and resolutions log',
+        'Thank you cards and feedback',
+      ],
+    },
+    {
+      id: 'pack_responsive_access',
+      packName: 'Access & Flow',
+      keyQuestion: 'Responsive',
+      title: 'Person-Centred Care',
+      description: 'Evidence of responsive services including appointment access, reasonable adjustments, and care coordination.',
+      evidenceCount: 14,
+      lastUpdated: 'Jan 2026',
+      completionRate: 81,
+      examples: [
+        'Access audit results',
+        'Reasonable adjustments register',
+        'Appointment waiting times',
+      ],
+    },
+    {
+      id: 'pack_wellled_governance',
+      packName: 'Governance',
+      keyQuestion: 'Well-led',
+      title: 'Governance & Risk Management',
+      description: 'Leadership evidence including meeting minutes, risk registers, incident reporting, and continuous improvement plans.',
+      evidenceCount: 20,
+      lastUpdated: 'Feb 2026',
+      completionRate: 90,
+      examples: [
+        'Clinical governance meetings',
+        'Risk register reviews',
+        'Incident investigation reports',
+      ],
+    },
+  ]
 
   const handleSelectEvidence = (_item: any) => {
     // placeholder click handler
@@ -208,50 +308,43 @@ function DashboardPage() {
         <div className="space-y-4">
           <div>
             <h2 className="text-lg font-semibold mb-3">Quality Statement Reference Packs</h2>
-            <p className="text-sm text-muted-foreground mb-4">Use these packs as templates when gathering evidence. Each includes best-practice examples.</p>
+            <p className="text-sm text-muted-foreground mb-4">Organized guidance for each CQC quality statement with evidence examples and completion tracking.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {samplePacks.length === 0 ? (
-              <div className="col-span-full text-center py-8 text-muted-foreground">Loading reference packs...</div>
-            ) : (
-              samplePacks.map((pack: any, idx: number) => (
-                <Card key={`${pack.packId}-${idx}`} className="shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-                  <CardHeader>
-                    <div>
-                      <Badge className="mb-2 w-fit">{pack.packName}</Badge>
-                      <CardTitle className="text-base">{pack.title}</CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <p className="text-sm text-muted-foreground">{pack.description}</p>
+            {samplePacks.map((pack: any) => (
+              <Card key={pack.id} className="shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                <CardHeader>
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <Badge variant="outline" className="text-xs">{pack.keyQuestion}</Badge>
+                    <Badge variant="secondary" className="text-xs">{pack.completionRate}%</Badge>
+                  </div>
+                  <CardTitle className="text-base">{pack.title}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-sm text-muted-foreground">{pack.description}</p>
 
-                    {pack.evidenceExamples?.good?.length ? (
-                      <div>
-                        <div className="text-xs font-semibold mb-2 flex items-center gap-1">
-                          <CheckCircle className="w-3 h-3 text-green-600" />
-                          Good Evidence Examples
-                        </div>
-                        <ul className="space-y-1">
-                          {pack.evidenceExamples.good.slice(0, 2).map((ex: string, i: number) => (
-                            <li key={i} className="text-xs text-muted-foreground flex gap-2">
-                              <span className="text-green-600 flex-shrink-0">•</span>
-                              <span>{ex}</span>
-                            </li>
-                          ))}
-                          {pack.evidenceExamples.good.length > 2 && (
-                            <li className="text-xs text-muted-foreground italic">+{pack.evidenceExamples.good.length - 2} more examples</li>
-                          )}
-                        </ul>
-                      </div>
-                    ) : null}
-
-                    <div className="pt-2 border-t">
-                      <p className="text-xs text-muted-foreground">View full pack for complete guidance and examples.</p>
+                  <div>
+                    <div className="text-xs font-semibold mb-2 flex items-center gap-1">
+                      <CheckCircle className="w-3 h-3 text-green-600" />
+                      Example Evidence Types
                     </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
+                    <ul className="space-y-1">
+                      {pack.examples.map((example: string, i: number) => (
+                        <li key={i} className="text-xs text-muted-foreground flex gap-2">
+                          <span className="text-green-600 flex-shrink-0">•</span>
+                          <span>{example}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="pt-2 border-t flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">{pack.evidenceCount} controls</span>
+                    <span className="text-muted-foreground">Updated {pack.lastUpdated}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </div>

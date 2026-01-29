@@ -65,6 +65,8 @@ import {
     GripVertical,
     CheckCircle2,
     Link2,
+    User,
+    UserCheck,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -484,6 +486,66 @@ export function DocumentsSidebar({
                                     </p>
                                 </div>
                             </div>
+
+                            {/* Reviewer Information */}
+                            {(evidence.status === 'pending_review' ||
+                              evidence.status === 'approved' ||
+                              evidence.status === 'rejected') && (
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                                        {evidence.status === 'pending_review' ? (
+                                            <User className="h-3.5 w-3.5" />
+                                        ) : (
+                                            <UserCheck className="h-3.5 w-3.5" />
+                                        )}
+                                        Reviewer Information
+                                    </Label>
+
+                                    <div className="grid grid-cols-2 gap-2 text-xs">
+                                        {evidence.status === 'pending_review' ? (
+                                            // Show expected reviewer role
+                                            <>
+                                                <div className="p-2 rounded bg-muted/50">
+                                                    <p className="text-muted-foreground">Status</p>
+                                                    <p className="font-medium">Awaiting Review</p>
+                                                </div>
+                                                <div className="p-2 rounded bg-muted/50">
+                                                    <p className="text-muted-foreground">Assigned To</p>
+                                                    <p className="font-medium">{evidence.assigneeRole || 'Practice Manager'}</p>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            // Show actual reviewer for approved/rejected
+                                            <>
+                                                <div className="p-2 rounded bg-muted/50">
+                                                    <p className="text-muted-foreground">Reviewer</p>
+                                                    <p className="font-medium">
+                                                        {evidence.reviewerName || 'Unknown'}
+                                                    </p>
+                                                </div>
+                                                {evidence.reviewedAt && (
+                                                    <div className="p-2 rounded bg-muted/50">
+                                                        <p className="text-muted-foreground">Reviewed</p>
+                                                        <p className="font-medium">
+                                                            {format(new Date(evidence.reviewedAt), "MMM d, yyyy")}
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
+
+                                    {/* Review Notes - Show for approved/rejected if present */}
+                                    {evidence.reviewNotes && evidence.status !== 'pending_review' && (
+                                        <div className="p-2 rounded bg-muted/50 text-xs">
+                                            <p className="text-muted-foreground mb-1">Review Notes</p>
+                                            <p className="text-foreground leading-relaxed">
+                                                {evidence.reviewNotes}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             {/* Summary Display */}
                             {evidence.summary && (
