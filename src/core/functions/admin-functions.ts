@@ -472,7 +472,7 @@ export const generatePasswordResetLinkFn = createServerFn({ method: "POST" })
     .inputValidator((data: z.infer<typeof GenerateResetLinkSchema>) => GenerateResetLinkSchema.parse(data))
     .handler(async (ctx) => {
         const { userId } = ctx.data;
-        const { db } = ctx.context;
+        const { db, env } = ctx.context;
 
         // 1. Get user email
         const user = await db.select({ email: schema.users.email }).from(schema.users as any).where(eq(schema.users.id, userId)).get();
@@ -486,7 +486,7 @@ export const generatePasswordResetLinkFn = createServerFn({ method: "POST" })
         let capturedToken: string | undefined;
 
         // Create a local auth instance that captures the token
-        const auth = createAuth(db, {
+        const auth = createAuth(db, env, {
             sendResetPassword: async (data: any) => {
                 capturedToken = data.token;
             }

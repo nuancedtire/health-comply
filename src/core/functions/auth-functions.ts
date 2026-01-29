@@ -112,7 +112,7 @@ export const createSystemAdminFn = createServerFn({ method: "POST" })
 
         // Initialize Auth locally just for this operation to use built-in signup
         const { createAuth } = await import("@/lib/auth");
-        const auth = createAuth(db);
+        const auth = createAuth(db, env);
 
         // Create the user via Better Auth to handle password hashing etc.
         const user = await auth.api.signUpEmail({
@@ -177,9 +177,10 @@ export const requestPasswordResetFn = createServerFn({ method: "POST" })
     .inputValidator((data: z.infer<typeof RequestPasswordResetSchema>) => RequestPasswordResetSchema.parse(data))
     .handler(async (ctx) => {
         const { email } = ctx.data;
-        const db = getDb((ctx.context as any).env) as any;
+        const env = (ctx.context as any).env;
+        const db = getDb(env) as any;
         const { createAuth } = await import("@/lib/auth");
-        const auth = createAuth(db);
+        const auth = createAuth(db, env);
 
         // 1. Trigger Better Auth's forget password
         // This usually sends an email. 
@@ -220,9 +221,10 @@ export const resetPasswordFn = createServerFn({ method: "POST" })
     .inputValidator((data: z.infer<typeof ResetPasswordSchema>) => ResetPasswordSchema.parse(data))
     .handler(async (ctx) => {
         const { token, newPassword } = ctx.data;
-        const db = getDb((ctx.context as any).env) as any;
+        const env = (ctx.context as any).env;
+        const db = getDb(env) as any;
         const { createAuth } = await import("@/lib/auth");
-        const auth = createAuth(db);
+        const auth = createAuth(db, env);
 
         const res = await (auth.api as any).resetPassword({
             body: {
