@@ -68,6 +68,16 @@ export const seedDatabaseFn = createServerFn({ method: "POST" })
 
         const now = new Date();
 
+        // Check for existing tenants by name to make the function idempotent
+        const tenantNames = tenantsData.map(t => t.name);
+        const existingTenants = await db
+            .select({ id: schema.tenants.id, name: schema.tenants.name })
+            .from(schema.tenants as any);
+
+        const existingTenantMap = new Map(
+            existingTenants.map((t: any) => [t.name, t.id])
+        );
+
         // Prepare all data for batch inserts
         const allTenants: any[] = [];
         const allSites: any[] = [];
@@ -79,29 +89,53 @@ export const seedDatabaseFn = createServerFn({ method: "POST" })
         const tenantIdMap = new Map<string, string>();
         const siteIdMap = new Map<string, Map<number, string>>();
 
-        // Step 1: Prepare all tenants
+        // Step 1: Prepare all tenants (or reuse existing ones)
         for (const tenantData of tenantsData) {
-            const tenantId = `t_${crypto.randomUUID().split('-')[0]}`;
-            tenantIdMap.set(tenantData.name, tenantId);
+            let tenantId: string;
 
-            allTenants.push({
-                id: tenantId,
-                name: tenantData.name,
-                createdAt: now,
-            });
-
-            // Step 2: Prepare all sites for this tenant
-            const sitesForTenant = new Map<number, string>();
-            for (let i = 0; i < tenantData.sites.length; i++) {
-                const sId = `s_${crypto.randomUUID().split('-')[0]}`;
-                sitesForTenant.set(i, sId);
-
-                allSites.push({
-                    id: sId,
-                    tenantId,
-                    name: tenantData.sites[i],
+            // Check if tenant already exists
+            if (existingTenantMap.has(tenantData.name)) {
+                tenantId = existingTenantMap.get(tenantData.name)!;
+            } else {
+                tenantId = `t_${crypto.randomUUID().split('-')[0]}`;
+                allTenants.push({
+                    id: tenantId,
+                    name: tenantData.name,
                     createdAt: now,
                 });
+            }
+
+            tenantIdMap.set(tenantData.name, tenantId);
+
+            // Step 2: Check for existing sites for this tenant
+            const existingSitesForTenant = await db
+                .select({ id: schema.sites.id, name: schema.sites.name })
+                .from(schema.sites as any)
+                .where(eq(schema.sites.tenantId, tenantId) as any);
+
+            const existingSiteMap = new Map(
+                existingSitesForTenant.map((s: any) => [s.name, s.id])
+            );
+
+            // Prepare all sites for this tenant (or reuse existing ones)
+            const sitesForTenant = new Map<number, string>();
+            for (let i = 0; i < tenantData.sites.length; i++) {
+                const siteName = tenantData.sites[i];
+                let sId: string;
+
+                if (existingSiteMap.has(siteName)) {
+                    sId = existingSiteMap.get(siteName)!;
+                } else {
+                    sId = `s_${crypto.randomUUID().split('-')[0]}`;
+                    allSites.push({
+                        id: sId,
+                        tenantId,
+                        name: siteName,
+                        createdAt: now,
+                    });
+                }
+
+                sitesForTenant.set(i, sId);
             }
             siteIdMap.set(tenantData.name, sitesForTenant);
 
@@ -117,6 +151,7 @@ export const seedDatabaseFn = createServerFn({ method: "POST" })
                     emailVerified: 1,
                     name: u.name,
                     tenantId,
+                    isSystemAdmin: 0,
                     createdAt: now,
                     updatedAt: now,
                 });
@@ -181,44 +216,49 @@ export const seedDatabaseFn = createServerFn({ method: "POST" })
             allUserRoles.push(...filteredUserRoles);
         }
 
-        // Step 4: Batch insert all data
+        // Step 4: Batch insert all data with error handling
         const results = [];
 
-        if (allTenants.length > 0) {
-            await db.insert(schema.tenants as any).values(allTenants);
-            results.push(`Created ${allTenants.length} tenants`);
-        }
+        try {
+            if (allTenants.length > 0) {
+                await db.insert(schema.tenants as any).values(allTenants);
+                results.push(`Created ${allTenants.length} tenants`);
+            }
 
-        if (allSites.length > 0) {
-            await db.insert(schema.sites as any).values(allSites);
-            results.push(`Created ${allSites.length} sites`);
-        }
+            if (allSites.length > 0) {
+                await db.insert(schema.sites as any).values(allSites);
+                results.push(`Created ${allSites.length} sites`);
+            }
 
-        if (allUsers.length > 0) {
-            // Create accounts table entries for password auth
-            const allAccounts = allUsers.map(u => ({
-                id: `acc_${crypto.randomUUID()}`,
-                userId: u.id,
-                accountId: u.email,
-                providerId: 'credential',
-                password: hashedPassword,
-                createdAt: now,
-                updatedAt: now,
-            }));
+            if (allUsers.length > 0) {
+                // Create accounts table entries for password auth
+                const allAccounts = allUsers.map(u => ({
+                    id: `acc_${crypto.randomUUID()}`,
+                    userId: u.id,
+                    accountId: u.email,
+                    providerId: 'credential',
+                    password: hashedPassword,
+                    createdAt: now,
+                    updatedAt: now,
+                }));
 
-            await db.insert(schema.users as any).values(allUsers);
-            await db.insert(schema.accounts as any).values(allAccounts);
-            results.push(`Created ${allUsers.length} users with credentials`);
-        }
+                await db.insert(schema.users as any).values(allUsers);
+                await db.insert(schema.accounts as any).values(allAccounts);
+                results.push(`Created ${allUsers.length} users with credentials`);
+            }
 
-        if (allInvitations.length > 0) {
-            await db.insert(schema.invitations as any).values(allInvitations);
-            results.push(`Created ${allInvitations.length} invitations`);
-        }
+            if (allInvitations.length > 0) {
+                await db.insert(schema.invitations as any).values(allInvitations);
+                results.push(`Created ${allInvitations.length} invitations`);
+            }
 
-        if (allUserRoles.length > 0) {
-            await db.insert(schema.userRoles as any).values(allUserRoles);
-            results.push(`Created ${allUserRoles.length} user role assignments`);
+            if (allUserRoles.length > 0) {
+                await db.insert(schema.userRoles as any).values(allUserRoles);
+                results.push(`Created ${allUserRoles.length} user role assignments`);
+            }
+        } catch (error: any) {
+            console.error("Seed database error:", error);
+            throw new Error(`Failed to seed database: ${error.message || String(error)}`);
         }
 
         return {
