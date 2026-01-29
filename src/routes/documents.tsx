@@ -127,7 +127,7 @@ function DocumentsPage() {
                                 siteId={activeSite.id}
                                 width={sidebarWidth}
                                 onWidthChange={setSidebarWidth}
-                                minWidth={700}
+                                minWidth={400}
                                 maxWidth={1400}
                             />
                         )}
