@@ -13,13 +13,10 @@ export const seedDatabaseFn = createServerFn({ method: "POST" })
             throw new Error("Unauthorized: Only System Admins can seed the database.");
         }
 
-        const { createAuth } = await import("@/lib/auth");
-        // We need 'request' to pass to auth, but usually signUpEmail doesn't need headers if we don't care about session creation for the new user in this context.
-        // However, better-auth might need it for some checks. passing empty object might work or ctx.request if available.
-        // authMiddleware doesn't pass 'request' in context, but we can access it if we added it.
-        // authMiddleware source: "const request = (context as any).request;" but it returns "db, user, session".
-        // I can just pass a dummy request or try without.
-        const auth = createAuth(db, env);
+        // Import Better Auth's password hashing utility
+        const { hashPassword } = await import("better-auth/crypto");
+        const DEFAULT_PASSWORD = "Password123!";
+        const hashedPassword = await hashPassword(DEFAULT_PASSWORD);
 
         const tenantsData = [
             {
@@ -69,101 +66,171 @@ export const seedDatabaseFn = createServerFn({ method: "POST" })
             }
         ];
 
-        const results = [];
+        const now = new Date();
 
+        // Prepare all data for batch inserts
+        const allTenants: any[] = [];
+        const allSites: any[] = [];
+        const allUsers: any[] = [];
+        const allInvitations: any[] = [];
+        const allUserRoles: any[] = [];
+
+        // Map to track tenant and site IDs
+        const tenantIdMap = new Map<string, string>();
+        const siteIdMap = new Map<string, Map<number, string>>();
+
+        // Step 1: Prepare all tenants
         for (const tenantData of tenantsData) {
-            // 1. Create Tenant
             const tenantId = `t_${crypto.randomUUID().split('-')[0]}`;
-            await db.insert(schema.tenants as any).values({
+            tenantIdMap.set(tenantData.name, tenantId);
+
+            allTenants.push({
                 id: tenantId,
                 name: tenantData.name,
-                createdAt: new Date(),
+                createdAt: now,
             });
 
-            // 2. Create Roles - SKIPPED (Static Config)
-            // const rolesMap = new Map<string, string>(); // Name -> ID
-            // for (const rName of roleNames) { ... }
-
-            // 3. Create Sites
-            const sitesMap = new Map<number, string>(); // Index -> ID
+            // Step 2: Prepare all sites for this tenant
+            const sitesForTenant = new Map<number, string>();
             for (let i = 0; i < tenantData.sites.length; i++) {
-                const sName = tenantData.sites[i];
                 const sId = `s_${crypto.randomUUID().split('-')[0]}`;
-                await db.insert(schema.sites as any).values({
+                sitesForTenant.set(i, sId);
+
+                allSites.push({
                     id: sId,
                     tenantId,
-                    name: sName,
-                    createdAt: new Date(),
+                    name: tenantData.sites[i],
+                    createdAt: now,
                 });
-                sitesMap.set(i, sId);
             }
+            siteIdMap.set(tenantData.name, sitesForTenant);
 
-            // 4. Create Users
+            // Step 3: Prepare all users for this tenant
             for (const u of tenantData.users) {
-                // const roleId = rolesMap.get(u.role);
-                // if (!roleId) continue;
-                const role = u.role;
-
-                const siteId = u.siteIndex !== undefined ? sitesMap.get(u.siteIndex) : undefined;
-
-                // Check if user already exists to avoid errors
-                const existingUser = await db.select({ id: schema.users.id }).from(schema.users as any).where(eq(schema.users.email, u.email) as any).get();
-                if (existingUser) {
-                    results.push(`User ${u.email} already exists. Skipping.`);
-                    continue;
-                }
-
-                // Cleanup any existing pending invites for this email to ensure clean state
-                await db.delete(schema.invitations as any).where(eq(schema.invitations.email, u.email) as any);
-
-                // Create User Manually to bypass invite check and ensure correct setup
-                const now = new Date();
-
-                // 1. Create User
-                // Note: Password123! hashing is complex without the auth lib's internals easily accessible or exposed
-                // But better-auth uses scrypt or argon2 usually.
-                // Since this is a SEED function for DEV, we can just use the auth client to create the user if we disable the hook check?
-                // OR we can rely on the fact that we just created the invitation above!
-                // The hook in auth.ts checks for a PENDING invitation.
-
-                // Let's create the invitation first, and ensure it IS pending.
-                const inviteToken = crypto.randomUUID();
+                const userId = `u_${crypto.randomUUID()}`;
+                const siteId = u.siteIndex !== undefined ? sitesForTenant.get(u.siteIndex) : undefined;
                 const inviteId = `inv_${crypto.randomUUID()}`;
-                await db.insert(schema.invitations as any).values({
+
+                allUsers.push({
+                    id: userId,
+                    email: u.email,
+                    emailVerified: 1,
+                    name: u.name,
+                    tenantId,
+                    createdAt: now,
+                    updatedAt: now,
+                });
+
+                // Create invitation record (will be marked as accepted)
+                allInvitations.push({
                     id: inviteId,
                     email: u.email,
                     tenantId,
                     siteId,
-                    role,
-                    token: inviteToken,
+                    role: u.role,
+                    token: crypto.randomUUID(),
                     expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
-                    status: 'pending',
+                    status: 'accepted',
                     invitedBy: user.id,
+                    acceptedAt: now,
                     createdAt: now,
                 });
 
-                // 2. Use auth.api.signUpEmail
-                // This triggers the 'before' hook which CHECKS for the invitation we just created.
-                // Then triggers 'after' hook which assigns roles and marks invite accepted.
-                try {
-                    await auth.api.signUpEmail({
-                        body: {
-                            email: u.email,
-                            password: "Password123!",
-                            name: u.name,
-                        }
-                    });
-                    results.push(`Created user ${u.email} (Invitation Accepted)`);
-                } catch (e: any) {
-                    console.error(`Failed to seed user ${u.email}:`, e);
-                    // If it failed, maybe the hook didn't find the invite?
-                    // Better debugging:
-                    results.push(`Failed to create user ${u.email}: ${e.message}`);
-                }
+                // Create user role assignment
+                allUserRoles.push({
+                    id: `ur_${crypto.randomUUID()}`,
+                    userId,
+                    tenantId,
+                    siteId,
+                    role: u.role,
+                    createdAt: now,
+                });
             }
         }
 
-        return { success: true, results };
+        // Check for existing users to avoid duplicates
+        const allEmails = allUsers.map(u => u.email);
+        const existingUsers = await db
+            .select({ email: schema.users.email })
+            .from(schema.users as any)
+            .where(inArray(schema.users.email, allEmails) as any);
+
+        const existingEmails = new Set(existingUsers.map((u: any) => u.email));
+
+        if (existingEmails.size > 0) {
+            // Filter out existing users
+            const filteredUsers = allUsers.filter(u => !existingEmails.has(u.email));
+            const filteredUserIds = new Set(filteredUsers.map(u => u.id));
+            const filteredInvitations = allInvitations.filter(inv =>
+                filteredUsers.some(u => u.email === inv.email)
+            );
+            const filteredUserRoles = allUserRoles.filter(ur => filteredUserIds.has(ur.userId));
+
+            // Delete existing invitations for these emails to avoid conflicts
+            if (allEmails.length > 0) {
+                await db.delete(schema.invitations as any)
+                    .where(inArray(schema.invitations.email, allEmails) as any);
+            }
+
+            // Use filtered arrays
+            allUsers.length = 0;
+            allUsers.push(...filteredUsers);
+            allInvitations.length = 0;
+            allInvitations.push(...filteredInvitations);
+            allUserRoles.length = 0;
+            allUserRoles.push(...filteredUserRoles);
+        }
+
+        // Step 4: Batch insert all data
+        const results = [];
+
+        if (allTenants.length > 0) {
+            await db.insert(schema.tenants as any).values(allTenants);
+            results.push(`Created ${allTenants.length} tenants`);
+        }
+
+        if (allSites.length > 0) {
+            await db.insert(schema.sites as any).values(allSites);
+            results.push(`Created ${allSites.length} sites`);
+        }
+
+        if (allUsers.length > 0) {
+            // Create accounts table entries for password auth
+            const allAccounts = allUsers.map(u => ({
+                id: `acc_${crypto.randomUUID()}`,
+                userId: u.id,
+                accountId: u.email,
+                providerId: 'credential',
+                password: hashedPassword,
+                createdAt: now,
+                updatedAt: now,
+            }));
+
+            await db.insert(schema.users as any).values(allUsers);
+            await db.insert(schema.accounts as any).values(allAccounts);
+            results.push(`Created ${allUsers.length} users with credentials`);
+        }
+
+        if (allInvitations.length > 0) {
+            await db.insert(schema.invitations as any).values(allInvitations);
+            results.push(`Created ${allInvitations.length} invitations`);
+        }
+
+        if (allUserRoles.length > 0) {
+            await db.insert(schema.userRoles as any).values(allUserRoles);
+            results.push(`Created ${allUserRoles.length} user role assignments`);
+        }
+
+        return {
+            success: true,
+            results,
+            summary: {
+                tenants: allTenants.length,
+                sites: allSites.length,
+                users: allUsers.length,
+                skippedExisting: existingEmails.size
+            }
+        };
     });
 
 export const resetDatabaseFn = createServerFn({ method: "POST" })
