@@ -10,6 +10,7 @@
     "cf-typegen": "wrangler types --env-interface Env",
     "db:generate": "drizzle-kit generate",
     "db:local": "wrangler d1 migrations apply DB --local",
+    "db:remote": "wrangler d1 migrations apply DB --remote",
     "test": "vitest"
   },
   "dependencies": {
