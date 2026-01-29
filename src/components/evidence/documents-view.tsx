@@ -138,6 +138,8 @@ export interface EvidenceItem {
     } | null;
     reviewerName?: string | null;
     assigneeRole?: string | null;
+    reviewedAt?: Date | null;
+    reviewNotes?: string | null;
 }
 
 interface DocumentsViewProps {
@@ -283,6 +285,12 @@ function DocumentListItem({
                                     <>
                                         <UserCheck className="h-3 w-3" />
                                         <span>Reviewed by {item.reviewerName}</span>
+                                        {item.reviewedAt && (
+                                            <>
+                                                <span className="text-border">·</span>
+                                                <span className="text-xs">{format(new Date(item.reviewedAt), "MMM d")}</span>
+                                            </>
+                                        )}
                                     </>
                                 ) : null}
                             </span>
