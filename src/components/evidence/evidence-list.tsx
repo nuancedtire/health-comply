@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { FileText, Loader2 } from "lucide-react";
+import { FileText, Loader2, User, UserCheck } from "lucide-react";
 import {
     Table,
     TableBody,
@@ -33,6 +33,8 @@ type EvidenceItem = {
             title: string;
         } | null;
     } | null;
+    reviewerName?: string | null;
+    assigneeRole?: string | null;
 };
 
 export function EvidenceList({ evidence, onSelect }: { evidence: EvidenceItem[], onSelect: (item: EvidenceItem) => void }) {
@@ -72,11 +74,12 @@ export function EvidenceList({ evidence, onSelect }: { evidence: EvidenceItem[],
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead className="w-[30%]">Title & AI Analysis</TableHead>
-                            <TableHead className="w-[15%]">Local Control</TableHead>
-                            <TableHead className="w-[20%]">Quality Statement</TableHead>
-                            <TableHead className="w-[10%]">Category</TableHead>
-                            <TableHead className="w-[10%]">Status</TableHead>
+                            <TableHead className="w-[25%]">Title & AI Analysis</TableHead>
+                            <TableHead className="w-[12%]">Local Control</TableHead>
+                            <TableHead className="w-[18%]">Quality Statement</TableHead>
+                            <TableHead className="w-[8%]">Category</TableHead>
+                            <TableHead className="w-[8%]">Status</TableHead>
+                            <TableHead className="w-[14%]">Reviewer</TableHead>
                             <TableHead className="w-[15%]">Dates</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -144,6 +147,21 @@ export function EvidenceList({ evidence, onSelect }: { evidence: EvidenceItem[],
                                     {item.status === 'approved' && <Badge className="bg-green-500 text-[10px]">Approved</Badge>}
                                     {item.status === 'pending_review' && <Badge className="bg-orange-500 text-[10px]">Review</Badge>}
                                     {item.status === 'rejected' && <Badge variant="destructive" className="text-[10px]">Rejected</Badge>}
+                                </TableCell>
+                                <TableCell className="align-top text-xs">
+                                    {item.status === 'pending_review' && item.assigneeRole ? (
+                                        <div className="flex items-center gap-1 text-muted-foreground">
+                                            <User className="h-3 w-3" />
+                                            <span className="truncate">{item.assigneeRole}</span>
+                                        </div>
+                                    ) : (item.status === 'approved' || item.status === 'rejected') && item.reviewerName ? (
+                                        <div className="flex items-center gap-1 text-muted-foreground">
+                                            <UserCheck className="h-3 w-3" />
+                                            <span className="truncate">{item.reviewerName}</span>
+                                        </div>
+                                    ) : (
+                                        <span className="text-muted-foreground">-</span>
+                                    )}
                                 </TableCell>
                                 <TableCell className="text-muted-foreground align-top text-xs whitespace-nowrap">
                                     <div className="flex flex-col">
