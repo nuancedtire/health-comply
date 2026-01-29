@@ -16,7 +16,7 @@ export const sessionMiddleware = createMiddleware({
     }
 
     const db = drizzle(env.DB, { schema: schema as any });
-    const auth = createAuth(db);
+    const auth = createAuth(db, env);
 
     // Validate session using the request headers
     const sessionData = await auth.api.getSession({

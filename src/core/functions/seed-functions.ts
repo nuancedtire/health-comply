@@ -7,19 +7,19 @@ import { authMiddleware } from "@/core/middleware/auth-middleware";
 export const seedDatabaseFn = createServerFn({ method: "POST" })
     .middleware([authMiddleware])
     .handler(async (ctx) => {
-        const { db, user } = ctx.context;
+        const { db, user, env } = ctx.context;
 
         if (!(user as any).isSystemAdmin) {
             throw new Error("Unauthorized: Only System Admins can seed the database.");
         }
 
         const { createAuth } = await import("@/lib/auth");
-        // We need 'request' to pass to auth, but usually signUpEmail doesn't need headers if we don't care about session creation for the new user in this context. 
-        // However, better-auth might need it for some checks. passing empty object might work or ctx.request if available. 
-        // authMiddleware doesn't pass 'request' in context, but we can access it if we added it. 
-        // authMiddleware source: "const request = (context as any).request;" but it returns "db, user, session". 
-        // I can just pass a dummy request or try without. 
-        const auth = createAuth(db);
+        // We need 'request' to pass to auth, but usually signUpEmail doesn't need headers if we don't care about session creation for the new user in this context.
+        // However, better-auth might need it for some checks. passing empty object might work or ctx.request if available.
+        // authMiddleware doesn't pass 'request' in context, but we can access it if we added it.
+        // authMiddleware source: "const request = (context as any).request;" but it returns "db, user, session".
+        // I can just pass a dummy request or try without.
+        const auth = createAuth(db, env);
 
         const tenantsData = [
             {

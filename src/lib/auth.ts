@@ -3,11 +3,21 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import * as schema from '@/db/schema';
 import { eq } from "drizzle-orm";
 import { APIError } from "better-auth/api";
+import type { Env } from "@/utils/env";
 
 
-export const createAuth = (db: any, options?: {
+export const createAuth = (db: any, env: Env, options?: {
     sendResetPassword?: (data: any, request: any) => Promise<void>
-}) => betterAuth({
+}) => {
+    // Parse trusted origins from environment variable (comma-separated)
+    const trustedOrigins = env.BETTER_AUTH_TRUSTED_ORIGINS
+        ? env.BETTER_AUTH_TRUSTED_ORIGINS.split(',').map(origin => origin.trim())
+        : [];
+
+    return betterAuth({
+    secret: env.BETTER_AUTH_SECRET,
+    baseURL: env.BETTER_AUTH_URL,
+    trustedOrigins: trustedOrigins.length > 0 ? trustedOrigins : undefined,
     database: drizzleAdapter(db, {
         provider: "sqlite",
         schema: {
@@ -121,5 +131,6 @@ export const createAuth = (db: any, options?: {
         }
     }
 });
+};
 
 export type Auth = ReturnType<typeof createAuth>;

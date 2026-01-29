@@ -13,7 +13,7 @@ export const Route = createFileRoute("/api/auth/$")({
                     return new Response("Database binding missing", { status: 500 });
                 }
                 const db = drizzle(env.DB, { schema });
-                const auth = createAuth(db);
+                const auth = createAuth(db, env);
                 return auth.handler(request);
             },
             POST: async ({ request, context }: { request: Request; context: any }) => {
@@ -22,7 +22,7 @@ export const Route = createFileRoute("/api/auth/$")({
                     return new Response("Database binding missing", { status: 500 });
                 }
                 const db = drizzle(env.DB, { schema });
-                const auth = createAuth(db);
+                const auth = createAuth(db, env);
                 return auth.handler(request);
             },
         },
