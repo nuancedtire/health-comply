@@ -4,6 +4,23 @@ import * as schema from "@/db/schema";
 import { eq, inArray } from "drizzle-orm";
 import { authMiddleware } from "@/core/middleware/auth-middleware";
 
+// Batch size for inserts to avoid SQLite's "too many SQL variables" error
+// SQLite has a limit of ~999 host parameters; with ~10 columns per record,
+// batching at 10 records keeps us well under the limit
+const BATCH_SIZE = 10;
+
+// Helper to insert records in batches
+async function batchInsert<T>(
+    db: any,
+    table: any,
+    records: T[]
+): Promise<void> {
+    for (let i = 0; i < records.length; i += BATCH_SIZE) {
+        const batch = records.slice(i, i + BATCH_SIZE);
+        await db.insert(table).values(batch);
+    }
+}
+
 export const seedDatabaseFn = createServerFn({ method: "POST" })
     .middleware([authMiddleware])
     .handler(async (ctx) => {
@@ -68,15 +85,32 @@ export const seedDatabaseFn = createServerFn({ method: "POST" })
 
         const now = new Date();
 
-        // Check for existing tenants by name to make the function idempotent
-        const tenantNames = tenantsData.map(t => t.name);
-        const existingTenants = await db
-            .select({ id: schema.tenants.id, name: schema.tenants.name })
-            .from(schema.tenants as any);
+        // Check for existing tenants and sites upfront to minimize DB queries
+        // This is critical for Cloudflare Workers to avoid resource exceeded errors
+        const [existingTenants, existingSites, existingUsersCheck] = await Promise.all([
+            db.select({ id: schema.tenants.id, name: schema.tenants.name })
+                .from(schema.tenants as any),
+            db.select({ id: schema.sites.id, name: schema.sites.name, tenantId: schema.sites.tenantId })
+                .from(schema.sites as any),
+            db.select({ email: schema.users.email })
+                .from(schema.users as any)
+        ]);
 
         const existingTenantMap = new Map(
             existingTenants.map((t: any) => [t.name, t.id])
         );
+
+        // Group existing sites by tenant ID for quick lookup
+        const existingSitesByTenant = new Map<string, Map<string, string>>();
+        for (const site of existingSites as any[]) {
+            if (!existingSitesByTenant.has(site.tenantId)) {
+                existingSitesByTenant.set(site.tenantId, new Map());
+            }
+            existingSitesByTenant.get(site.tenantId)!.set(site.name, site.id);
+        }
+
+        // Pre-compute existing emails for filtering
+        const existingEmails = new Set((existingUsersCheck as any[]).map(u => u.email));
 
         // Prepare all data for batch inserts
         const allTenants: any[] = [];
@@ -107,15 +141,8 @@ export const seedDatabaseFn = createServerFn({ method: "POST" })
 
             tenantIdMap.set(tenantData.name, tenantId);
 
-            // Step 2: Check for existing sites for this tenant
-            const existingSitesForTenant = await db
-                .select({ id: schema.sites.id, name: schema.sites.name })
-                .from(schema.sites as any)
-                .where(eq(schema.sites.tenantId, tenantId) as any);
-
-            const existingSiteMap = new Map(
-                existingSitesForTenant.map((s: any) => [s.name, s.id])
-            );
+            // Step 2: Use pre-fetched site data (no DB query needed here)
+            const existingSiteMap = existingSitesByTenant.get(tenantId) || new Map<string, string>();
 
             // Prepare all sites for this tenant (or reuse existing ones)
             const sitesForTenant = new Map<number, string>();
@@ -183,16 +210,11 @@ export const seedDatabaseFn = createServerFn({ method: "POST" })
             }
         }
 
-        // Check for existing users to avoid duplicates
+        // Filter out existing users using pre-fetched data (no additional DB query needed)
         const allEmails = allUsers.map(u => u.email);
-        const existingUsers = await db
-            .select({ email: schema.users.email })
-            .from(schema.users as any)
-            .where(inArray(schema.users.email, allEmails) as any);
+        const emailsToSkip = allEmails.filter(email => existingEmails.has(email));
 
-        const existingEmails = new Set(existingUsers.map((u: any) => u.email));
-
-        if (existingEmails.size > 0) {
+        if (emailsToSkip.length > 0) {
             // Filter out existing users
             const filteredUsers = allUsers.filter(u => !existingEmails.has(u.email));
             const filteredUserIds = new Set(filteredUsers.map(u => u.id));
@@ -221,12 +243,12 @@ export const seedDatabaseFn = createServerFn({ method: "POST" })
 
         try {
             if (allTenants.length > 0) {
-                await db.insert(schema.tenants as any).values(allTenants);
+                await batchInsert(db, schema.tenants, allTenants);
                 results.push(`Created ${allTenants.length} tenants`);
             }
 
             if (allSites.length > 0) {
-                await db.insert(schema.sites as any).values(allSites);
+                await batchInsert(db, schema.sites, allSites);
                 results.push(`Created ${allSites.length} sites`);
             }
 
@@ -242,18 +264,18 @@ export const seedDatabaseFn = createServerFn({ method: "POST" })
                     updatedAt: now,
                 }));
 
-                await db.insert(schema.users as any).values(allUsers);
-                await db.insert(schema.accounts as any).values(allAccounts);
+                await batchInsert(db, schema.users, allUsers);
+                await batchInsert(db, schema.accounts, allAccounts);
                 results.push(`Created ${allUsers.length} users with credentials`);
             }
 
             if (allInvitations.length > 0) {
-                await db.insert(schema.invitations as any).values(allInvitations);
+                await batchInsert(db, schema.invitations, allInvitations);
                 results.push(`Created ${allInvitations.length} invitations`);
             }
 
             if (allUserRoles.length > 0) {
-                await db.insert(schema.userRoles as any).values(allUserRoles);
+                await batchInsert(db, schema.userRoles, allUserRoles);
                 results.push(`Created ${allUserRoles.length} user role assignments`);
             }
         } catch (error: any) {
@@ -268,7 +290,7 @@ export const seedDatabaseFn = createServerFn({ method: "POST" })
                 tenants: allTenants.length,
                 sites: allSites.length,
                 users: allUsers.length,
-                skippedExisting: existingEmails.size
+                skippedExisting: emailsToSkip.length
             }
         };
     });
