@@ -70,6 +70,9 @@ export interface AuditDetails {
   // Generic
   reason?: string;
   metadata?: Record<string, unknown>;
+
+  // For bulk operations
+  bulkDelete?: boolean;
 }
 
 /**

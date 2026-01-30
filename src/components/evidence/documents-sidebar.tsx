@@ -569,37 +569,38 @@ export function DocumentsSidebar({
                                 />
                             </div>
 
-                            {/* Evidence Date */}
-                            <div className="space-y-1.5">
-                                <Label htmlFor="evidenceDate" className="text-xs flex items-center gap-1.5">
-                                    <Calendar className="h-3.5 w-3.5" />
-                                    Evidence Date
-                                </Label>
-                                <Input
-                                    id="evidenceDate"
-                                    type="date"
-                                    value={evidenceDate}
-                                    onChange={(e) => setEvidenceDate(e.target.value)}
-                                    className="h-9"
-                                />
-                            </div>
+                            {/* Evidence Date & Category - Side by Side */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="evidenceDate" className="text-xs flex items-center gap-1.5">
+                                        <Calendar className="h-3.5 w-3.5" />
+                                        Evidence Date
+                                    </Label>
+                                    <Input
+                                        id="evidenceDate"
+                                        type="date"
+                                        value={evidenceDate}
+                                        onChange={(e) => setEvidenceDate(e.target.value)}
+                                        className="h-9"
+                                    />
+                                </div>
 
-                            {/* Category */}
-                            <div className="space-y-1.5">
-                                <Label htmlFor="category" className="text-xs">Category</Label>
-                                <Select value={categoryId || "none"} onValueChange={setCategoryId}>
-                                    <SelectTrigger className="h-9">
-                                        <SelectValue placeholder="Select category..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">No category</SelectItem>
-                                        {refData?.categories?.map((c: any) => (
-                                            <SelectItem key={c.id} value={c.id}>
-                                                {c.title}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="category" className="text-xs">Category</Label>
+                                    <Select value={categoryId || "none"} onValueChange={setCategoryId}>
+                                        <SelectTrigger className="h-9">
+                                            <SelectValue placeholder="Select category..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">No category</SelectItem>
+                                            {refData?.categories?.map((c: any) => (
+                                                <SelectItem key={c.id} value={c.id}>
+                                                    {c.title}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
 
                             {/* Local Control Assignment */}
@@ -696,6 +697,25 @@ export function DocumentsSidebar({
                                         </Command>
                                     </PopoverContent>
                                 </Popover>
+
+                                {/* Reviewer Info - Based on selected control */}
+                                {effectiveControl && (
+                                    <div className="mt-2 p-2.5 rounded-lg bg-muted/40 border border-border/50">
+                                        <div className="flex items-center gap-2 text-xs">
+                                            <User className="h-3.5 w-3.5 text-muted-foreground" />
+                                            <span className="text-muted-foreground">Will be sent to:</span>
+                                            <span className="font-medium text-foreground">
+                                                {effectiveControl.defaultReviewerRole || 'Practice Manager'}
+                                            </span>
+                                        </div>
+                                        {effectiveControl.fallbackReviewerRole && (
+                                            <div className="flex items-center gap-2 text-[11px] mt-1 ml-5 text-muted-foreground">
+                                                <span>Fallback:</span>
+                                                <span>{effectiveControl.fallbackReviewerRole}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Summary */}

@@ -19,6 +19,30 @@ type EvidenceIngestParams = {
     }
 };
 
+async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 6): Promise<Response> {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        const response = await fetch(url, options);
+
+        if (response.ok) return response;
+
+        // Retry on rate limit (429) or server errors (5xx)
+        if (response.status === 429 || response.status >= 500) {
+            // Exponential backoff with jitter: (2^attempt * 2s) + random(0-2s)
+            // Attempt 0: ~2-4s, Attempt 1: ~4-6s, Attempt 2: ~8-10s, Attempt 3: ~16-18s...
+            const jitter = Math.random() * 2000;
+            const delay = Math.pow(2, attempt) * 2000 + jitter;
+
+            console.log(`Cerebras rate limit or server error (status: ${response.status}). Attempt ${attempt + 1}/${maxRetries}. Retrying in ${Math.round(delay)}ms (jitter: ${Math.round(jitter)}ms)...`);
+            await new Promise(r => setTimeout(r, delay));
+            continue;
+        }
+
+        // Non-retryable error
+        return response;
+    }
+    throw new Error(`Max retries (${maxRetries}) exceeded for external API call`);
+}
+
 export class EvidenceIngestWorkflow extends WorkflowEntrypoint<Env, EvidenceIngestParams> {
     async run(event: WorkflowEvent<EvidenceIngestParams>, step: WorkflowStep) {
         console.log("Workflow Event Received:", JSON.stringify(event));
@@ -160,14 +184,14 @@ export class EvidenceIngestWorkflow extends WorkflowEntrypoint<Env, EvidenceInge
                 const apiKey = this.env.CEREBRAS_API_KEY;
                 if (!apiKey) throw new Error("CEREBRAS_API_KEY is missing");
 
-                const response = await fetch("https://api.cerebras.ai/v1/chat/completions", {
+                const response = await fetchWithRetry("https://gateway.ai.cloudflare.com/v1/151e582b06846b3de11ef19dede88cc0/default/compat/chat/completions", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
                         "Authorization": `Bearer ${apiKey}`
                     },
                     body: JSON.stringify({
-                        model: "zai-glm-4.7",
+                        model: "cerebras/zai-glm-4.7",
                         messages: [
                             { role: "system", content: systemPrompt },
                             { role: "user", content: userMessage }
@@ -207,7 +231,7 @@ export class EvidenceIngestWorkflow extends WorkflowEntrypoint<Env, EvidenceInge
 
                 if (!response.ok) {
                     const err = await response.text();
-                    throw new Error(`Cerebras API Error: ${err}`);
+                    throw new Error(`Cerebras API Error after retries: ${err}`);
                 }
 
                 const json: any = await response.json();

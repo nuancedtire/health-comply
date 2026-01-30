@@ -96,33 +96,59 @@ export function UploadModal({ siteId, initialQsId, initialControlId, trigger, on
 
             let successCount = 0;
             let failCount = 0;
+            const allResults: { success: boolean; fileName: string; error?: string }[] = [];
 
-            const uploadPromises = files.map(async (file) => {
-                const formData = new FormData();
-                formData.append("file", file);
-                formData.append("siteId", siteId);
-                if (initialQsId) formData.append("qsId", initialQsId);
-                if (initialControlId) formData.append("localControlId", initialControlId);
+            // Process in batches of 3 to avoid rate limits
+            const BATCH_SIZE = 3;
+            const batches: File[][] = [];
+            for (let i = 0; i < files.length; i += BATCH_SIZE) {
+                batches.push(files.slice(i, i + BATCH_SIZE));
+            }
 
-                try {
-                    await uploadEvidenceFn({ data: formData });
-                    return { success: true, fileName: file.name };
-                } catch (error: any) {
-                    console.error(`Failed to upload ${file.name}`, error);
-                    return { success: false, fileName: file.name, error: error.message };
+            for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+                const batch = batches[batchIndex];
+
+                // Show progress for large uploads
+                if (batches.length > 1) {
+                    toast.info(`Uploading batch ${batchIndex + 1} of ${batches.length}...`, {
+                        id: 'upload-progress',
+                        duration: 2000,
+                    });
                 }
-            });
 
-            const results = await Promise.all(uploadPromises);
+                const batchPromises = batch.map(async (file) => {
+                    const formData = new FormData();
+                    formData.append("file", file);
+                    formData.append("siteId", siteId);
+                    if (initialQsId) formData.append("qsId", initialQsId);
+                    if (initialControlId) formData.append("localControlId", initialControlId);
 
-            successCount = results.filter(r => r.success).length;
-            failCount = results.length - successCount;
+                    try {
+                        await uploadEvidenceFn({ data: formData });
+                        return { success: true, fileName: file.name };
+                    } catch (error: any) {
+                        console.error(`Failed to upload ${file.name}`, error);
+                        return { success: false, fileName: file.name, error: error.message };
+                    }
+                });
+
+                const batchResults = await Promise.all(batchPromises);
+                allResults.push(...batchResults);
+
+                // Add a small delay between batches to avoid rate limiting
+                if (batchIndex < batches.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+            }
+
+            successCount = allResults.filter(r => r.success).length;
+            failCount = allResults.length - successCount;
 
             if (successCount > 0) {
                 toast.success(`Successfully uploaded ${successCount} file(s)`);
                 queryClient.invalidateQueries({ queryKey: ["evidence"] });
                 queryClient.invalidateQueries({ queryKey: ["checklist-data"] });
-                onSuccess?.(results);
+                onSuccess?.(allResults);
             }
 
             if (failCount > 0) {
@@ -134,7 +160,7 @@ export function UploadModal({ siteId, initialQsId, initialControlId, trigger, on
                 setOpen(false);
                 setFiles([]);
             } else {
-                const failedFilesNames = new Set(results.filter(r => !r.success).map(r => r.fileName));
+                const failedFilesNames = new Set(allResults.filter(r => !r.success).map(r => r.fileName));
                 setFiles(prev => prev.filter(f => failedFilesNames.has(f.name)));
             }
 

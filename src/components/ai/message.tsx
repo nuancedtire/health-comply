@@ -307,22 +307,26 @@ export const MessageBranchPage = ({
   );
 };
 
-export type MessageResponseProps = ComponentProps<typeof ReactMarkdown>;
+export type MessageResponseProps = ComponentProps<typeof ReactMarkdown> & {
+  className?: string;
+};
 
 export const MessageResponse = memo(
   ({ className, children, ...props }: MessageResponseProps) => (
-    <ReactMarkdown
+    <div
       className={cn(
         "prose prose-sm dark:prose-invert max-w-none size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
         className
       )}
-      remarkPlugins={[remarkGfm]}
-      {...props}
     >
-      {children}
-    </ReactMarkdown>
+      <ReactMarkdown remarkPlugins={[remarkGfm]} {...props}>
+        {children}
+      </ReactMarkdown>
+    </div>
   ),
-  (prevProps, nextProps) => prevProps.children === nextProps.children
+  (prevProps, nextProps) =>
+    prevProps.children === nextProps.children &&
+    prevProps.className === nextProps.className
 );
 
 MessageResponse.displayName = "MessageResponse";
