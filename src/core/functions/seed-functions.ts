@@ -30,8 +30,9 @@ export const seedDatabaseFn = createServerFn({ method: "POST" })
             throw new Error("Unauthorized: Only System Admins can seed the database.");
         }
 
-        // Import Better Auth's password hashing utility
-        const { hashPassword } = await import("better-auth/crypto");
+        // Use custom PBKDF2 hasher optimized for Cloudflare Workers
+        // (Better Auth's default scrypt exceeds Workers CPU limits)
+        const { hashPassword } = await import("@/lib/password");
         const DEFAULT_PASSWORD = "Password123!";
         const hashedPassword = await hashPassword(DEFAULT_PASSWORD);
 

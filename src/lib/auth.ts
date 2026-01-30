@@ -1,9 +1,11 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { tanstackStartCookies } from "better-auth/tanstack-start";
 import * as schema from '@/db/schema';
 import { eq } from "drizzle-orm";
 import { APIError } from "better-auth/api";
 import type { Env } from "@/utils/env";
+import { hashPassword, verifyPassword } from "@/lib/password";
 
 
 export const createAuth = (db: any, env: Env, options?: {
@@ -31,6 +33,12 @@ export const createAuth = (db: any, env: Env, options?: {
     }),
     emailAndPassword: {
         enabled: true,
+        // Use PBKDF2 instead of scrypt to stay within Cloudflare Workers CPU limits
+        // Default scrypt takes ~80ms, PBKDF2 takes ~5-10ms
+        password: {
+            hash: hashPassword,
+            verify: verifyPassword,
+        },
         async sendResetPassword(data, request) {
             if (options?.sendResetPassword) {
                 await options.sendResetPassword(data, request);
@@ -46,7 +54,8 @@ export const createAuth = (db: any, env: Env, options?: {
             console.log("----------------------------------------");
         }
     },
-    plugins: [],
+    // tanstackStartCookies must be the last plugin for proper cookie handling
+    plugins: [tanstackStartCookies()],
     user: {
         fields: {
             isSystemAdmin: "is_system_admin",
