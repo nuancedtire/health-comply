@@ -155,6 +155,8 @@ interface DocumentsViewProps {
     onSelectionChange?: (ids: Set<string>) => void;
     onBulkDelete?: (ids: string[]) => void;
     isBulkDeleting?: boolean;
+    onDeleteAllFailed?: () => void;
+    isDeletingAllFailed?: boolean;
 }
 
 type ViewMode = "list" | "icon";
@@ -393,6 +395,8 @@ function DocumentSection({
     selectedIds,
     onCheckChange,
     showCheckboxes,
+    onDeleteAllFailed,
+    isDeletingAllFailed,
 }: {
     status: EvidenceStatus;
     items: EvidenceItem[];
@@ -403,6 +407,8 @@ function DocumentSection({
     selectedIds?: Set<string>;
     onCheckChange?: (id: string, checked: boolean) => void;
     showCheckboxes?: boolean;
+    onDeleteAllFailed?: () => void;
+    isDeletingAllFailed?: boolean;
 }) {
     const [isOpen, setIsOpen] = useState(defaultOpen);
     const config = STATUS_CONFIG[status];
@@ -435,6 +441,25 @@ function DocumentSection({
                                 <Badge variant="default" className="h-5 px-1.5 text-[10px] font-bold bg-primary">
                                     {selectedInSection} selected
                                 </Badge>
+                            )}
+                            {status === "failed" && onDeleteAllFailed && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 px-2 text-[10px] font-bold text-red-600 hover:text-red-700 hover:bg-red-50 ml-auto mr-1 opacity-0 group-hover/section:opacity-100 transition-opacity"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onDeleteAllFailed();
+                                    }}
+                                    disabled={isDeletingAllFailed}
+                                >
+                                    {isDeletingAllFailed ? (
+                                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                    ) : (
+                                        <Trash2 className="h-3 w-3 mr-1" />
+                                    )}
+                                    Delete All
+                                </Button>
                             )}
                         </div>
                         {isOpen && (
@@ -488,7 +513,9 @@ export function DocumentsView({
     selectedIds,
     onSelectionChange,
     onBulkDelete,
-    isBulkDeleting
+    isBulkDeleting,
+    onDeleteAllFailed,
+    isDeletingAllFailed
 }: DocumentsViewProps) {
     const [viewMode, setViewMode] = useState<ViewMode>("list");
     const [searchQuery, setSearchQuery] = useState("");
@@ -756,6 +783,8 @@ export function DocumentsView({
                                 selectedIds={effectiveSelectedIds}
                                 onCheckChange={handleCheckChange}
                                 showCheckboxes={isSelectMode && viewMode === "list"}
+                                onDeleteAllFailed={onDeleteAllFailed}
+                                isDeletingAllFailed={isDeletingAllFailed}
                             />
                         ))
                     )}

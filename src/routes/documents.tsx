@@ -3,7 +3,7 @@ import { MainLayout } from '@/components/main-layout'
 import { UploadModal } from '@/components/evidence/upload-modal'
 import { DocumentsView, EvidenceItem } from '@/components/evidence/documents-view'
 import { DocumentsSidebar } from '@/components/evidence/documents-sidebar'
-import { getEvidenceForSiteFn, bulkDeleteEvidenceFn } from '@/core/functions/evidence'
+import { getEvidenceForSiteFn, bulkDeleteEvidenceFn, deleteAllFailedEvidenceFn } from '@/core/functions/evidence'
 import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSite } from '@/components/site-context'
 import { useState, useEffect } from 'react'
@@ -49,6 +49,22 @@ function DocumentsPage() {
             queryClient.invalidateQueries({ queryKey: ['checklist-data'] })
             setSelectedIds(new Set())
             setSelectedEvidence(null)
+        },
+        onError: (err) => {
+            toast.error(`Delete failed: ${err.message}`)
+        }
+    })
+
+    // New: Delete All Failed mutation
+    const deleteAllFailedMutation = useMutation({
+        mutationFn: deleteAllFailedEvidenceFn,
+        onSuccess: (result) => {
+            if (result.deletedCount > 0) {
+                toast.success(`Deleted ${result.deletedCount} failed document(s)`)
+            } else {
+                toast.info("No failed documents found to delete")
+            }
+            queryClient.invalidateQueries({ queryKey: ['evidence'] })
         },
         onError: (err) => {
             toast.error(`Delete failed: ${err.message}`)
@@ -148,6 +164,12 @@ function DocumentsPage() {
                                 onSelectionChange={setSelectedIds}
                                 onBulkDelete={handleBulkDelete}
                                 isBulkDeleting={bulkDeleteMutation.isPending}
+                                onDeleteAllFailed={() => {
+                                    if (activeSite?.id) {
+                                        deleteAllFailedMutation.mutate({ data: { siteId: activeSite.id } })
+                                    }
+                                }}
+                                isDeletingAllFailed={deleteAllFailedMutation.isPending}
                             />
                         </div>
 

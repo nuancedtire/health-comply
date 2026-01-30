@@ -1217,7 +1217,7 @@ function ControlDialog({ open, onOpenChange, control, siteId, onClose, qsList, l
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[640px] max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[850px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         {linkEvidenceId ? (
@@ -1288,7 +1288,7 @@ function ControlDialog({ open, onOpenChange, control, siteId, onClose, qsList, l
                                     value={formData.description}
                                     onChange={e => setFormData({ ...formData, description: e.target.value })}
                                     placeholder="What does this control check for? What evidence is typically required?"
-                                    className="min-h-[80px] text-sm"
+                                    className="min-h-[200px] text-sm"
                                 />
                             </div>
                             <div className="grid gap-2">
@@ -1387,7 +1387,7 @@ function ControlDialog({ open, onOpenChange, control, siteId, onClose, qsList, l
                                     value={formData.evidenceHint}
                                     onChange={e => setFormData({ ...formData, evidenceHint: e.target.value })}
                                     placeholder="Describe what type of evidence should be uploaded for this control..."
-                                    className="min-h-[80px] text-sm"
+                                    className="min-h-[100px] text-sm"
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
@@ -1397,7 +1397,7 @@ function ControlDialog({ open, onOpenChange, control, siteId, onClose, qsList, l
                                         Good Evidence Examples
                                     </Label>
                                     <Textarea
-                                        className="min-h-[100px] text-xs border-emerald-200 focus-visible:ring-emerald-500"
+                                        className="min-h-[200px] text-xs border-emerald-200 focus-visible:ring-emerald-500"
                                         value={formData.goodExamples}
                                         onChange={e => setFormData({ ...formData, goodExamples: e.target.value })}
                                         placeholder="One example per line..."
@@ -1409,7 +1409,7 @@ function ControlDialog({ open, onOpenChange, control, siteId, onClose, qsList, l
                                         Poor Evidence Examples
                                     </Label>
                                     <Textarea
-                                        className="min-h-[100px] text-xs border-rose-200 focus-visible:ring-rose-500"
+                                        className="min-h-[200px] text-xs border-rose-200 focus-visible:ring-rose-500"
                                         value={formData.badExamples}
                                         onChange={e => setFormData({ ...formData, badExamples: e.target.value })}
                                         placeholder="One example per line..."
@@ -1429,7 +1429,7 @@ function ControlDialog({ open, onOpenChange, control, siteId, onClose, qsList, l
                     </div>
                 </Tabs>
 
-                <DialogFooter className="gap-2 sm:gap-0">
+                <DialogFooter className="gap-2">
                     <Button variant="outline" onClick={onClose}>Cancel</Button>
                     <Button
                         onClick={handleSubmit}
@@ -1459,7 +1459,7 @@ function SuggestControlsDialog({ open, onOpenChange, qsList, onSelectSuggestion 
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[700px] max-h-[90vh] flex flex-col">
+            <DialogContent className="sm:max-w-[850px] max-h-[90vh] flex flex-col">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Sparkles className="h-5 w-5 text-primary" />
@@ -1498,7 +1498,7 @@ function SuggestControlsDialog({ open, onOpenChange, qsList, onSelectSuggestion 
                     </Button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto min-h-[300px] pr-2 space-y-4">
+                <div className="flex-1 overflow-y-auto min-h-[80vh] pr-2 space-y-4">
                     {suggestMutation.isPending && (
                         <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-20 gap-3">
                             <Loader2 className="h-10 w-10 animate-spin text-primary opacity-50" />

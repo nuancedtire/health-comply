@@ -630,6 +630,67 @@ export const bulkDeleteEvidenceFn = createServerFn({ method: "POST" })
         };
     });
 
+export const deleteAllFailedEvidenceFn = createServerFn({ method: "POST" })
+    .middleware([authMiddleware])
+    .inputValidator((data: unknown) => z.object({ siteId: z.string() }).parse(data))
+    .handler(async ({ context, data }) => {
+        const { db, env, user } = context;
+        const tenantId = (user as any).tenantId;
+        const { siteId } = data;
+
+        // 1. Find all failed evidence for site
+        const failedItems = await db.select({
+            id: schema.evidenceItems.id,
+            r2Key: schema.evidenceItems.r2Key,
+            title: schema.evidenceItems.title,
+            status: schema.evidenceItems.status,
+        })
+            .from(schema.evidenceItems)
+            .where(
+                and(
+                    eq(schema.evidenceItems.tenantId, tenantId),
+                    eq(schema.evidenceItems.siteId, siteId),
+                    eq(schema.evidenceItems.status, 'failed')
+                )
+            );
+
+        if (failedItems.length === 0) {
+            return { success: true, deletedCount: 0 };
+        }
+
+        // 2. Audit log and Delete from R2 for each item
+        for (const item of failedItems) {
+            await logEvidenceEvent(db, {
+                tenantId,
+                actorUserId: user.id,
+                evidenceId: item.id,
+                action: AUDIT_ACTIONS.EVIDENCE_DELETED,
+                details: {
+                    fileName: item.title,
+                    previousStatus: item.status,
+                    bulkDelete: true,
+                    reason: "User deleted all failed items"
+                },
+            });
+
+            if (env.R2 && item.r2Key) {
+                await env.R2.delete(item.r2Key);
+            }
+        }
+
+        // 3. Delete the evidence items from DB
+        await db.delete(schema.evidenceItems)
+            .where(
+                and(
+                    eq(schema.evidenceItems.tenantId, tenantId),
+                    eq(schema.evidenceItems.siteId, siteId),
+                    eq(schema.evidenceItems.status, 'failed')
+                )
+            );
+
+        return { success: true, deletedCount: failedItems.length };
+    });
+
 export const downloadEvidenceFileFn = createServerFn({ method: "GET" })
     .middleware([authMiddleware])
     .inputValidator((data: unknown) => z.object({ evidenceId: z.string() }).parse(data))
