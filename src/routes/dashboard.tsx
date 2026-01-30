@@ -1,5 +1,4 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { createFileRoute, redirect, Link } from '@tanstack/react-router'
 import { MainLayout } from '@/components/main-layout'
 import { KPICard } from '@/components/dashboard/kpi-card'
 import { ComplianceProgress } from '@/components/dashboard/compliance-progress'
@@ -7,7 +6,8 @@ import { AlertsList } from '@/components/dashboard/alerts-list'
 import { EvidenceList } from '@/components/evidence/evidence-list'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Users, FileText, ShieldCheck, TrendingUp, Calendar, CheckCircle, AlertCircle } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Users, FileText, ShieldCheck, TrendingUp, Calendar, CheckCircle, AlertCircle, Upload, ClipboardList, Settings, UserPlus, Activity } from 'lucide-react'
 
 export const Route = createFileRoute('/dashboard')({
   beforeLoad: ({ context }) => {
@@ -89,97 +89,47 @@ function DashboardPage() {
     },
   ]
 
-  // Reference packs with realistic placeholder data
-  const samplePacks = [
+  // Team activity feed
+  const teamActivity = [
     {
-      id: 'pack_safe_ipc',
-      packName: 'Infection Prevention',
-      keyQuestion: 'Safe',
-      title: 'Infection Prevention & Control',
-      description: 'Comprehensive guidance on maintaining infection control standards, hand hygiene compliance, and environmental cleanliness across all clinical areas.',
-      evidenceCount: 12,
-      lastUpdated: 'Jan 2026',
-      completionRate: 85,
-      examples: [
-        'Hand hygiene audit results',
-        'Environmental cleaning schedules',
-        'PPE stock monitoring logs',
-      ],
+      id: 'act-1',
+      user: 'Dr. Sarah Smith',
+      action: 'approved evidence',
+      target: 'Hand hygiene audit - Jan 2026',
+      time: '2 hours ago',
+      type: 'approval',
     },
     {
-      id: 'pack_safe_safeguarding',
-      packName: 'Safeguarding',
-      keyQuestion: 'Safe',
-      title: 'Safeguarding Adults & Children',
-      description: 'Essential controls for safeguarding vulnerable patients, maintaining risk registers, and ensuring staff training compliance.',
-      evidenceCount: 18,
-      lastUpdated: 'Feb 2026',
-      completionRate: 92,
-      examples: [
-        'Safeguarding policy reviews',
-        'Staff training certificates',
-        'Risk assessment documentation',
-      ],
+      id: 'act-2',
+      user: 'Charlie Nurse',
+      action: 'uploaded evidence',
+      target: 'Fire drill documentation',
+      time: '4 hours ago',
+      type: 'upload',
     },
     {
-      id: 'pack_effective_outcomes',
-      packName: 'Clinical Outcomes',
-      keyQuestion: 'Effective',
-      title: 'Monitoring & Improving Outcomes',
-      description: 'Track clinical effectiveness through audits, patient outcome measures, and quality improvement initiatives.',
-      evidenceCount: 15,
-      lastUpdated: 'Jan 2026',
-      completionRate: 78,
-      examples: [
-        'Clinical audit reports',
-        'QI project documentation',
-        'Patient outcome tracking',
-      ],
+      id: 'act-3',
+      user: 'Admin User',
+      action: 'completed action',
+      target: 'Update safeguarding policy',
+      time: 'Yesterday',
+      type: 'action',
     },
     {
-      id: 'pack_caring_dignity',
-      packName: 'Patient Experience',
-      keyQuestion: 'Caring',
-      title: 'Kindness, Compassion & Dignity',
-      description: 'Demonstrate patient-centered care through feedback, complaints handling, and evidence of dignity in care delivery.',
-      evidenceCount: 10,
-      lastUpdated: 'Feb 2026',
-      completionRate: 88,
-      examples: [
-        'Patient satisfaction surveys',
-        'Complaints and resolutions log',
-        'Thank you cards and feedback',
-      ],
+      id: 'act-4',
+      user: 'Dr. James Wilson',
+      action: 'assigned control to',
+      target: 'Nurse Lead',
+      time: 'Yesterday',
+      type: 'assignment',
     },
     {
-      id: 'pack_responsive_access',
-      packName: 'Access & Flow',
-      keyQuestion: 'Responsive',
-      title: 'Person-Centred Care',
-      description: 'Evidence of responsive services including appointment access, reasonable adjustments, and care coordination.',
-      evidenceCount: 14,
-      lastUpdated: 'Jan 2026',
-      completionRate: 81,
-      examples: [
-        'Access audit results',
-        'Reasonable adjustments register',
-        'Appointment waiting times',
-      ],
-    },
-    {
-      id: 'pack_wellled_governance',
-      packName: 'Governance',
-      keyQuestion: 'Well-led',
-      title: 'Governance & Risk Management',
-      description: 'Leadership evidence including meeting minutes, risk registers, incident reporting, and continuous improvement plans.',
-      evidenceCount: 20,
-      lastUpdated: 'Feb 2026',
-      completionRate: 90,
-      examples: [
-        'Clinical governance meetings',
-        'Risk register reviews',
-        'Incident investigation reports',
-      ],
+      id: 'act-5',
+      user: 'Practice Manager',
+      action: 'created inspection pack',
+      target: 'Q1 2026 CQC Review',
+      time: '2 days ago',
+      type: 'pack',
     },
   ]
 
@@ -305,46 +255,75 @@ function DashboardPage() {
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div>
-            <h2 className="text-lg font-semibold mb-3">Quality Statement Reference Packs</h2>
-            <p className="text-sm text-muted-foreground mb-4">Organized guidance for each CQC quality statement with evidence examples and completion tracking.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {samplePacks.map((pack: any) => (
-              <Card key={pack.id} className="shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <Badge variant="outline" className="text-xs">{pack.keyQuestion}</Badge>
-                    <Badge variant="secondary" className="text-xs">{pack.completionRate}%</Badge>
-                  </div>
-                  <CardTitle className="text-base">{pack.title}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <p className="text-sm text-muted-foreground">{pack.description}</p>
-
-                  <div>
-                    <div className="text-xs font-semibold mb-2 flex items-center gap-1">
-                      <CheckCircle className="w-3 h-3 text-green-600" />
-                      Example Evidence Types
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="md:col-span-2">
+            <Card className="shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Activity className="w-5 h-5" />
+                  Team Activity
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {teamActivity.map((activity) => (
+                    <div key={activity.id} className="flex items-start gap-3 text-sm">
+                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                        <Users className="w-4 h-4 text-muted-foreground" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p>
+                          <span className="font-medium">{activity.user}</span>
+                          {' '}<span className="text-muted-foreground">{activity.action}</span>{' '}
+                          <span className="font-medium">{activity.target}</span>
+                        </p>
+                        <p className="text-xs text-muted-foreground">{activity.time}</p>
+                      </div>
                     </div>
-                    <ul className="space-y-1">
-                      {pack.examples.map((example: string, i: number) => (
-                        <li key={i} className="text-xs text-muted-foreground flex gap-2">
-                          <span className="text-green-600 flex-shrink-0">•</span>
-                          <span>{example}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-                  <div className="pt-2 border-t flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">{pack.evidenceCount} controls</span>
-                    <span className="text-muted-foreground">Updated {pack.lastUpdated}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          <div>
+            <Card className="shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-base">Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Button variant="outline" className="w-full justify-start gap-2" asChild>
+                  <Link to="/evidence">
+                    <Upload className="w-4 h-4" />
+                    Upload Evidence
+                  </Link>
+                </Button>
+                <Button variant="outline" className="w-full justify-start gap-2" asChild>
+                  <Link to="/controls">
+                    <ClipboardList className="w-4 h-4" />
+                    View Controls
+                  </Link>
+                </Button>
+                <Button variant="outline" className="w-full justify-start gap-2" asChild>
+                  <Link to="/actions">
+                    <CheckCircle className="w-4 h-4" />
+                    Manage Actions
+                  </Link>
+                </Button>
+                <Button variant="outline" className="w-full justify-start gap-2" asChild>
+                  <Link to="/admin/users">
+                    <UserPlus className="w-4 h-4" />
+                    Invite Team Member
+                  </Link>
+                </Button>
+                <Button variant="outline" className="w-full justify-start gap-2" asChild>
+                  <Link to="/settings">
+                    <Settings className="w-4 h-4" />
+                    Settings
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
