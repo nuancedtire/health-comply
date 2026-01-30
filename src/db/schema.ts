@@ -345,6 +345,14 @@ export const inspectionPackOutputs = sqliteTable('inspection_pack_outputs', {
     index('idx_pack_outputs_pack').on(table.packId),
 ]);
 
+// ===== USER PREFERENCES =====
+
+export const userPreferences = sqliteTable('user_preferences', {
+    userId: text('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+    aiModel: text('ai_model').notNull().default('cerebras/zai-glm-4.7'),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+});
+
 // ===== AUDIT LOG =====
 
 export const auditLog = sqliteTable('audit_log', {
