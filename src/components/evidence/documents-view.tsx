@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -37,6 +38,8 @@ import {
     Filter,
     UserCheck,
     User,
+    Trash2,
+    X,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { ClassificationResult } from "@/types/classification";
@@ -147,6 +150,11 @@ interface DocumentsViewProps {
     selectedId: string | null;
     onSelect: (item: EvidenceItem) => void;
     isLoading?: boolean;
+    // Bulk selection
+    selectedIds?: Set<string>;
+    onSelectionChange?: (ids: Set<string>) => void;
+    onBulkDelete?: (ids: string[]) => void;
+    isBulkDeleting?: boolean;
 }
 
 type ViewMode = "list" | "icon";
@@ -217,11 +225,17 @@ function ConfidenceBadge({ confidence, type }: { confidence?: number | null; typ
 function DocumentListItem({
     item,
     isSelected,
-    onSelect
+    onSelect,
+    isChecked,
+    onCheckChange,
+    showCheckbox
 }: {
     item: EvidenceItem;
     isSelected: boolean;
     onSelect: () => void;
+    isChecked?: boolean;
+    onCheckChange?: (checked: boolean) => void;
+    showCheckbox?: boolean;
 }) {
     const FileIcon = getFileIcon(item.mimeType);
     const isProcessing = item.status === "processing";
@@ -236,9 +250,22 @@ function DocumentListItem({
                     : "cursor-pointer hover:bg-accent/50",
                 isSelected
                     ? "bg-primary/5 border-primary/30 shadow-sm"
-                    : "border-transparent hover:border-border"
+                    : "border-transparent hover:border-border",
+                isChecked && "bg-primary/5 border-primary/20"
             )}
         >
+            {/* Checkbox */}
+            {showCheckbox && (
+                <Checkbox
+                    checked={isChecked}
+                    onCheckedChange={(checked) => {
+                        onCheckChange?.(!!checked);
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="shrink-0"
+                />
+            )}
+
             <div className={cn(
                 "flex items-center justify-center w-10 h-10 rounded-lg shrink-0 transition-colors",
                 isSelected ? "bg-primary/10" : "bg-muted/60 group-hover:bg-muted"
@@ -363,6 +390,9 @@ function DocumentSection({
     selectedId,
     onSelect,
     defaultOpen = true,
+    selectedIds,
+    onCheckChange,
+    showCheckboxes,
 }: {
     status: EvidenceStatus;
     items: EvidenceItem[];
@@ -370,12 +400,18 @@ function DocumentSection({
     selectedId: string | null;
     onSelect: (item: EvidenceItem) => void;
     defaultOpen?: boolean;
+    selectedIds?: Set<string>;
+    onCheckChange?: (id: string, checked: boolean) => void;
+    showCheckboxes?: boolean;
 }) {
     const [isOpen, setIsOpen] = useState(defaultOpen);
     const config = STATUS_CONFIG[status];
     const info = SECTION_INFO[status];
 
     if (items.length === 0) return null;
+
+    // Count how many items in this section are selected
+    const selectedInSection = items.filter(item => selectedIds?.has(item.id)).length;
 
     return (
         <Collapsible open={isOpen} onOpenChange={setIsOpen} className="group/section">
@@ -395,6 +431,11 @@ function DocumentSection({
                             <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-bold">
                                 {items.length}
                             </Badge>
+                            {selectedInSection > 0 && (
+                                <Badge variant="default" className="h-5 px-1.5 text-[10px] font-bold bg-primary">
+                                    {selectedInSection} selected
+                                </Badge>
+                            )}
                         </div>
                         {isOpen && (
                             <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -420,6 +461,9 @@ function DocumentSection({
                                 item={item}
                                 isSelected={selectedId === item.id}
                                 onSelect={() => onSelect(item)}
+                                isChecked={selectedIds?.has(item.id)}
+                                onCheckChange={(checked) => onCheckChange?.(item.id, checked)}
+                                showCheckbox={showCheckboxes}
                             />
                         ) : (
                             <DocumentIconItem
@@ -436,10 +480,51 @@ function DocumentSection({
     );
 }
 
-export function DocumentsView({ evidence, selectedId, onSelect, isLoading }: DocumentsViewProps) {
+export function DocumentsView({
+    evidence,
+    selectedId,
+    onSelect,
+    isLoading,
+    selectedIds,
+    onSelectionChange,
+    onBulkDelete,
+    isBulkDeleting
+}: DocumentsViewProps) {
     const [viewMode, setViewMode] = useState<ViewMode>("list");
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState<EvidenceStatus[]>([]);
+    const [isSelectMode, setIsSelectMode] = useState(false);
+
+    // Local selection state if not controlled
+    const [localSelectedIds, setLocalSelectedIds] = useState<Set<string>>(new Set());
+    const effectiveSelectedIds = selectedIds ?? localSelectedIds;
+    const effectiveOnSelectionChange = onSelectionChange ?? setLocalSelectedIds;
+
+    const handleCheckChange = (id: string, checked: boolean) => {
+        const newSet = new Set(effectiveSelectedIds);
+        if (checked) {
+            newSet.add(id);
+        } else {
+            newSet.delete(id);
+        }
+        effectiveOnSelectionChange(newSet);
+    };
+
+    const handleSelectAll = () => {
+        const allIds = Object.values(filteredAndGrouped).flat().map(item => item.id);
+        effectiveOnSelectionChange(new Set(allIds));
+    };
+
+    const handleClearSelection = () => {
+        effectiveOnSelectionChange(new Set());
+        setIsSelectMode(false);
+    };
+
+    const handleBulkDelete = () => {
+        if (onBulkDelete && effectiveSelectedIds.size > 0) {
+            onBulkDelete(Array.from(effectiveSelectedIds));
+        }
+    };
 
     // Filter and group evidence
     const filteredAndGrouped = useMemo(() => {
@@ -582,8 +667,68 @@ export function DocumentsView({ evidence, selectedId, onSelect, isLoading }: Doc
                             <LayoutGrid className="h-4 w-4" />
                         </Button>
                     </div>
+
+                    {/* Select Mode Toggle - only in list view */}
+                    {viewMode === "list" && (
+                        <Button
+                            variant={isSelectMode ? "default" : "outline"}
+                            size="sm"
+                            className="h-9"
+                            onClick={() => {
+                                if (isSelectMode) {
+                                    handleClearSelection();
+                                } else {
+                                    setIsSelectMode(true);
+                                }
+                            }}
+                        >
+                            {isSelectMode ? "Cancel" : "Select"}
+                        </Button>
+                    )}
                 </div>
             </div>
+
+            {/* Bulk Actions Bar */}
+            {isSelectMode && effectiveSelectedIds.size > 0 && (
+                <div className="flex items-center justify-between px-3 py-2 bg-primary/5 border-b">
+                    <div className="flex items-center gap-3">
+                        <span className="text-sm font-medium">
+                            {effectiveSelectedIds.size} selected
+                        </span>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={handleSelectAll}
+                        >
+                            Select All ({totalFiltered})
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={handleClearSelection}
+                        >
+                            <X className="h-3 w-3 mr-1" />
+                            Clear
+                        </Button>
+                    </div>
+                    <Button
+                        variant="destructive"
+                        size="sm"
+                        className="h-8"
+                        onClick={handleBulkDelete}
+                        disabled={isBulkDeleting}
+                    >
+                        {isBulkDeleting ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                            <Trash2 className="h-4 w-4 mr-2" />
+                        )}
+                        Delete {effectiveSelectedIds.size}
+                    </Button>
+                </div>
+            )}
 
             {/* Document List */}
             <ScrollArea className="flex-1">
@@ -608,6 +753,9 @@ export function DocumentsView({ evidence, selectedId, onSelect, isLoading }: Doc
                                 selectedId={selectedId}
                                 onSelect={onSelect}
                                 defaultOpen={status === "failed" || status === "draft" || status === "processing"}
+                                selectedIds={effectiveSelectedIds}
+                                onCheckChange={handleCheckChange}
+                                showCheckboxes={isSelectMode && viewMode === "list"}
                             />
                         ))
                     )}

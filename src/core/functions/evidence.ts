@@ -520,6 +520,116 @@ export const deleteEvidenceFn = createServerFn({ method: "POST" })
         return { success: true };
     });
 
+export const bulkDeleteEvidenceFn = createServerFn({ method: "POST" })
+    .middleware([authMiddleware])
+    .inputValidator((data: unknown) => z.object({ evidenceIds: z.array(z.string()) }).parse(data))
+    .handler(async ({ context, data }) => {
+        const { db, env, user } = context;
+        const tenantId = (user as any).tenantId;
+        const { evidenceIds } = data;
+
+        if (evidenceIds.length === 0) {
+            return { success: true, deletedCount: 0 };
+        }
+
+        let deletedCount = 0;
+        const errors: string[] = [];
+
+        // Process deletions one by one to handle authorization and cleanup properly
+        for (const evidenceId of evidenceIds) {
+            try {
+                // 1. Authorization check
+                const authCheck = await canUserDeleteEvidence(db, {
+                    userId: user.id,
+                    evidenceId,
+                    tenantId,
+                });
+
+                if (!authCheck.allowed) {
+                    errors.push(`${evidenceId}: ${authCheck.reason}`);
+                    continue;
+                }
+
+                // 2. Get the item details before deletion
+                const item = await db.query.evidenceItems.findFirst({
+                    where: and(
+                        eq(schema.evidenceItems.id, evidenceId),
+                        eq(schema.evidenceItems.tenantId, tenantId)
+                    ),
+                    columns: {
+                        r2Key: true,
+                        localControlId: true,
+                        status: true,
+                        title: true,
+                    }
+                });
+
+                if (!item) {
+                    errors.push(`${evidenceId}: Item not found`);
+                    continue;
+                }
+
+                // 3. Audit log BEFORE deletion
+                await logEvidenceEvent(db, {
+                    tenantId,
+                    actorUserId: user.id,
+                    evidenceId,
+                    action: AUDIT_ACTIONS.EVIDENCE_DELETED,
+                    details: {
+                        fileName: item.title,
+                        previousStatus: item.status,
+                        controlId: item.localControlId || undefined,
+                        bulkDelete: true,
+                    },
+                });
+
+                // 4. Delete from R2
+                if (env.R2 && item.r2Key) {
+                    await env.R2.delete(item.r2Key);
+                }
+
+                // 5. Delete the evidence
+                await db.delete(schema.evidenceItems)
+                    .where(
+                        and(
+                            eq(schema.evidenceItems.id, evidenceId),
+                            eq(schema.evidenceItems.tenantId, tenantId)
+                        )
+                    );
+
+                // 6. Recalculate lastEvidenceAt for the affected control
+                if (item.localControlId) {
+                    const latestEvidence = await db.query.evidenceItems.findFirst({
+                        where: and(
+                            eq(schema.evidenceItems.localControlId, item.localControlId),
+                            eq(schema.evidenceItems.status, 'approved')
+                        ),
+                        orderBy: [desc(schema.evidenceItems.evidenceDate), desc(schema.evidenceItems.uploadedAt)],
+                        columns: { evidenceDate: true, uploadedAt: true }
+                    });
+
+                    const newLastEvidenceAt = latestEvidence
+                        ? (latestEvidence.evidenceDate || latestEvidence.uploadedAt)
+                        : null;
+
+                    await db.update(schema.localControls)
+                        .set({ lastEvidenceAt: newLastEvidenceAt })
+                        .where(eq(schema.localControls.id, item.localControlId));
+                }
+
+                deletedCount++;
+            } catch (err: any) {
+                errors.push(`${evidenceId}: ${err.message}`);
+            }
+        }
+
+        return {
+            success: errors.length === 0,
+            deletedCount,
+            errors: errors.length > 0 ? errors : undefined
+        };
+    });
+
 export const downloadEvidenceFileFn = createServerFn({ method: "GET" })
     .middleware([authMiddleware])
     .inputValidator((data: unknown) => z.object({ evidenceId: z.string() }).parse(data))

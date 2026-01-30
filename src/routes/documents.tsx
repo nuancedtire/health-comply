@@ -3,12 +3,13 @@ import { MainLayout } from '@/components/main-layout'
 import { UploadModal } from '@/components/evidence/upload-modal'
 import { DocumentsView, EvidenceItem } from '@/components/evidence/documents-view'
 import { DocumentsSidebar } from '@/components/evidence/documents-sidebar'
-import { getEvidenceForSiteFn } from '@/core/functions/evidence'
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { getEvidenceForSiteFn, bulkDeleteEvidenceFn } from '@/core/functions/evidence'
+import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSite } from '@/components/site-context'
 import { useState, useEffect } from 'react'
 import { FileText, FileUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
 
 export const Route = createFileRoute('/documents')({
     beforeLoad: ({ context }) => {
@@ -31,6 +32,33 @@ function DocumentsPage() {
     const { activeSite, isLoading: isSiteLoading } = useSite()
     const [selectedEvidence, setSelectedEvidence] = useState<EvidenceItem | null>(null)
     const [sidebarWidth, setSidebarWidth] = useState(420)
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+    const queryClient = useQueryClient()
+
+    // Bulk delete mutation
+    const bulkDeleteMutation = useMutation({
+        mutationFn: bulkDeleteEvidenceFn,
+        onSuccess: (result) => {
+            if (result.deletedCount > 0) {
+                toast.success(`Deleted ${result.deletedCount} document(s)`)
+            }
+            if (result.errors && result.errors.length > 0) {
+                toast.error(`Failed to delete some documents: ${result.errors.length} error(s)`)
+            }
+            queryClient.invalidateQueries({ queryKey: ['evidence'] })
+            queryClient.invalidateQueries({ queryKey: ['checklist-data'] })
+            setSelectedIds(new Set())
+            setSelectedEvidence(null)
+        },
+        onError: (err) => {
+            toast.error(`Delete failed: ${err.message}`)
+        }
+    })
+
+    const handleBulkDelete = (ids: string[]) => {
+        if (ids.length === 0) return
+        bulkDeleteMutation.mutate({ data: { evidenceIds: ids } })
+    }
 
     // Fetch evidence for the active site
     const { data: evidence, isLoading: isEvidenceLoading } = useSuspenseQuery({
@@ -116,6 +144,10 @@ function DocumentsPage() {
                                 selectedId={selectedEvidence?.id || null}
                                 onSelect={(item) => setSelectedEvidence(item)}
                                 isLoading={isEvidenceLoading}
+                                selectedIds={selectedIds}
+                                onSelectionChange={setSelectedIds}
+                                onBulkDelete={handleBulkDelete}
+                                isBulkDeleting={bulkDeleteMutation.isPending}
                             />
                         </div>
 

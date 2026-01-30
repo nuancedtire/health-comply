@@ -627,6 +627,187 @@ export const deleteLocalControlFn = createServerFn({ method: "POST" })
         return { success: true };
     });
 
+export const generateControlDetailsFn = createServerFn({ method: "POST" })
+    .middleware([authMiddleware])
+    .inputValidator((data: unknown) => z.object({
+        suggestedTitle: z.string(),
+        qsId: z.string(),
+        documentContext: z.string().optional(), // Optional: document text that triggered the suggestion
+    }).parse(data))
+    .handler(async (ctx) => {
+        const { env, db } = ctx.context;
+        const { suggestedTitle, qsId, documentContext } = ctx.data;
+
+        const apiKey = (env as any).CEREBRAS_API_KEY;
+
+        if (!apiKey) {
+            // Return sensible defaults if no API key
+            return {
+                title: suggestedTitle,
+                description: `Control for ${suggestedTitle}`,
+                frequencyType: 'recurring' as const,
+                frequencyDays: 90,
+                evidenceHint: 'Upload relevant documentation',
+                defaultReviewerRole: 'Practice Manager',
+                fallbackReviewerRole: 'Admin',
+                evidenceExamples: {
+                    good: ['Completed audit form with date and signature'],
+                    bad: ['Undated or unsigned documents']
+                }
+            };
+        }
+
+        // Fetch QS title for context
+        const qs = await db.query.cqcQualityStatements.findFirst({
+            where: eq(schema.cqcQualityStatements.id, qsId),
+            with: { keyQuestion: true }
+        });
+
+        const systemPrompt = `You are an expert UK CQC (Care Quality Commission) Consultant specialising in GP Practice compliance.
+
+Your task is to generate complete details for a new Local Control based on a suggested title.
+
+CONTEXT:
+- Local Controls are recurring audits, risk assessments, checks, or evidence collection tasks
+- Each control should map to specific, uploadable evidence
+- Focus on practical, actionable items that a UK GP practice can realistically maintain
+- Consider CQC inspection requirements and "mythbuster" guidance
+
+QUALITY STATEMENT CONTEXT:
+- QS ID: ${qsId}
+- QS Title: ${qs?.title || 'Unknown'}
+- Key Question: ${(qs as any)?.keyQuestion?.title || 'Unknown'}
+
+ROLES FOR ASSIGNMENT:
+- "Practice Manager" - Administrative, governance, HR, facilities
+- "Nurse Lead" - Clinical audits, IPC, medicines, patient safety
+- "GP Partner" - Clinical governance, safeguarding, significant events
+
+FREQUENCY TYPES:
+- "recurring" - Regular schedule (specify frequencyDays: 7=weekly, 30=monthly, 90=quarterly, 365=annually)
+- "one-off" - Single task
+- "observation" - Ongoing observation-based
+- "feedback" - Based on patient/staff feedback collection
+
+Generate complete control details for the suggested title. Make them specific, actionable, and aligned with CQC requirements.`;
+
+        const userMessage = `Generate complete details for this control:
+Title: "${suggestedTitle}"
+
+${documentContext ? `DOCUMENT CONTEXT (evidence that triggered this suggestion):\n${documentContext.slice(0, 2000)}\n` : ''}
+
+Generate all fields needed for a complete control definition.`;
+
+        try {
+            const response = await fetch("https://api.cerebras.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                    model: "zai-glm-4.7",
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: userMessage }
+                    ],
+                    response_format: {
+                        type: "json_schema",
+                        json_schema: {
+                            name: "control_details",
+                            strict: true,
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    title: { type: "string", description: "Refined control title (keep similar to suggested)" },
+                                    description: { type: "string", description: "Detailed description of what this control involves" },
+                                    frequencyType: {
+                                        type: "string",
+                                        enum: ["recurring", "one-off", "observation", "feedback"],
+                                        description: "How often this should occur"
+                                    },
+                                    frequencyDays: { type: "number", description: "Days between occurrences (for recurring)" },
+                                    evidenceHint: { type: "string", description: "What document/evidence to upload" },
+                                    defaultReviewerRole: {
+                                        type: "string",
+                                        enum: ["Practice Manager", "Nurse Lead", "GP Partner"],
+                                        description: "Who should own this control"
+                                    },
+                                    fallbackReviewerRole: {
+                                        type: "string",
+                                        enum: ["Practice Manager", "Nurse Lead", "GP Partner"],
+                                        description: "Backup reviewer if primary unavailable"
+                                    },
+                                    evidenceExamples: {
+                                        type: "object",
+                                        properties: {
+                                            good: {
+                                                type: "array",
+                                                items: { type: "string" },
+                                                description: "Examples of good/acceptable evidence"
+                                            },
+                                            bad: {
+                                                type: "array",
+                                                items: { type: "string" },
+                                                description: "Examples of poor/unacceptable evidence"
+                                            }
+                                        },
+                                        required: ["good", "bad"],
+                                        additionalProperties: false
+                                    }
+                                },
+                                required: [
+                                    "title",
+                                    "description",
+                                    "frequencyType",
+                                    "frequencyDays",
+                                    "evidenceHint",
+                                    "defaultReviewerRole",
+                                    "fallbackReviewerRole",
+                                    "evidenceExamples"
+                                ],
+                                additionalProperties: false
+                            }
+                        }
+                    },
+                    temperature: 0.2
+                })
+            });
+
+            if (!response.ok) {
+                const err = await response.text();
+                throw new Error(`Cerebras API Error: ${err}`);
+            }
+
+            const json: any = await response.json();
+            const content = json.choices?.[0]?.message?.content;
+            let result = content;
+
+            if (typeof result === 'string') {
+                try { result = JSON.parse(result); } catch (e) { }
+            }
+
+            return result;
+
+        } catch (e: any) {
+            console.error("AI Control generation failed", e);
+            // Return defaults on error
+            return {
+                title: suggestedTitle,
+                description: `Control for ${suggestedTitle}`,
+                frequencyType: 'recurring' as const,
+                frequencyDays: 90,
+                evidenceHint: 'Upload relevant documentation',
+                defaultReviewerRole: 'Practice Manager',
+                fallbackReviewerRole: 'Admin',
+                evidenceExamples: {
+                    good: ['Completed audit form with date and signature'],
+                    bad: ['Undated or unsigned documents']
+                }
+            };
+        }
+    });
+
 export const getQualityStatementsFn = createServerFn({ method: "GET" })
     .middleware([authMiddleware])
     .handler(async (ctx) => {

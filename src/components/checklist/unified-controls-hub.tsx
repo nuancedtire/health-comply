@@ -39,7 +39,8 @@ import {
     suggestLocalControlsFn,
     createLocalControlFn,
     updateLocalControlFn,
-    seedLocalControlsFn
+    seedLocalControlsFn,
+    generateControlDetailsFn
 } from "@/core/functions/local-control-functions";
 import { updateEvidenceFn } from "@/core/functions/evidence";
 
@@ -1015,6 +1016,7 @@ function ControlDialog({ open, onOpenChange, control, siteId, onClose, qsList, l
     const navigate = useNavigate();
     const isEdit = !!control?.id;
     const [activeTab, setActiveTab] = useState("basic");
+    const [isGeneratingDetails, setIsGeneratingDetails] = useState(false);
 
     const [formData, setFormData] = useState({
         qsId: '',
@@ -1030,6 +1032,9 @@ function ControlDialog({ open, onOpenChange, control, siteId, onClose, qsList, l
         goodExamples: '',
         badExamples: ''
     });
+
+    // Track if we've already generated details for this session
+    const [hasGeneratedDetails, setHasGeneratedDetails] = useState(false);
 
     useMemo(() => {
         if (open) {
@@ -1073,8 +1078,64 @@ function ControlDialog({ open, onOpenChange, control, siteId, onClose, qsList, l
                     badExamples: ''
                 });
             }
+            // Reset generation flag when dialog opens fresh
+            setHasGeneratedDetails(false);
         }
     }, [open, control, qsList]);
+
+    // Generate complete control details when opening with AI suggestion
+    useEffect(() => {
+        const generateDetails = async () => {
+            // Only run if:
+            // 1. Dialog is open
+            // 2. We have a linkEvidenceId (coming from AI suggestion)
+            // 3. We have a title but no description (incomplete suggestion)
+            // 4. We haven't already generated details
+            if (
+                open &&
+                linkEvidenceId &&
+                control?.title &&
+                !control?.description &&
+                !hasGeneratedDetails
+            ) {
+                setIsGeneratingDetails(true);
+                setHasGeneratedDetails(true);
+
+                try {
+                    const details = await generateControlDetailsFn({
+                        data: {
+                            suggestedTitle: control.title,
+                            qsId: control.qsId || qsList[0]?.id || '',
+                            documentContext: control.documentContext // Optional context from the document
+                        }
+                    });
+
+                    if (details) {
+                        setFormData(prev => ({
+                            ...prev,
+                            title: details.title || prev.title,
+                            description: details.description || prev.description,
+                            frequencyType: details.frequencyType || prev.frequencyType,
+                            frequencyDays: details.frequencyDays || prev.frequencyDays,
+                            evidenceHint: details.evidenceHint || prev.evidenceHint,
+                            defaultReviewerRole: details.defaultReviewerRole || prev.defaultReviewerRole,
+                            fallbackReviewerRole: details.fallbackReviewerRole || prev.fallbackReviewerRole,
+                            goodExamples: details.evidenceExamples?.good?.join('\n') || prev.goodExamples,
+                            badExamples: details.evidenceExamples?.bad?.join('\n') || prev.badExamples,
+                        }));
+                        toast.success("AI generated control details");
+                    }
+                } catch (err) {
+                    console.error("Failed to generate control details:", err);
+                    toast.error("Failed to generate details, using defaults");
+                } finally {
+                    setIsGeneratingDetails(false);
+                }
+            }
+        };
+
+        generateDetails();
+    }, [open, linkEvidenceId, control, hasGeneratedDetails, qsList]);
 
     const createMutation = useMutation({
         mutationFn: createLocalControlFn,
@@ -1122,7 +1183,7 @@ function ControlDialog({ open, onOpenChange, control, siteId, onClose, qsList, l
         onError: (e) => toast.error(e.message)
     });
 
-    const isPending = createMutation.isPending || updateMutation.isPending;
+    const isPending = createMutation.isPending || updateMutation.isPending || isGeneratingDetails;
 
     const handleSubmit = () => {
         if (!formData.title) return toast.error("Title is required");
@@ -1179,7 +1240,20 @@ function ControlDialog({ open, onOpenChange, control, siteId, onClose, qsList, l
                     </DialogDescription>
                 </DialogHeader>
 
-                {linkEvidenceId && (
+                {/* AI Generation Loading State */}
+                {isGeneratingDetails && (
+                    <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30 border border-purple-200 dark:border-purple-800 rounded-lg p-4 flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center shrink-0">
+                            <Loader2 className="h-5 w-5 text-purple-600 animate-spin" />
+                        </div>
+                        <div className="text-sm">
+                            <p className="font-medium text-purple-800 dark:text-purple-200">AI is generating control details...</p>
+                            <p className="text-purple-600 dark:text-purple-400 text-xs mt-0.5">This will pre-fill description, schedule, reviewers, and evidence hints.</p>
+                        </div>
+                    </div>
+                )}
+
+                {linkEvidenceId && !isGeneratingDetails && (
                     <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30 border border-purple-200 dark:border-purple-800 rounded-lg p-3 flex items-center gap-3">
                         <div className="h-8 w-8 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center shrink-0">
                             <FileText className="h-4 w-4 text-purple-600" />
