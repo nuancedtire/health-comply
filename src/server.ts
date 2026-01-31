@@ -7,10 +7,11 @@ import { Env } from "./utils/env";
 console.log("[server-entry]: using custom server entry in 'src/server.ts'");
 
 import { EvidenceIngestWorkflow } from "./core/workflows/evidence-ingest";
+import { InspectionPackWorkflow } from "./core/workflows/inspection-pack-workflow";
 
 import { ChatAgent } from "./agent/ChatAgent";
 
-export { EvidenceIngestWorkflow, ChatAgent };
+export { EvidenceIngestWorkflow, InspectionPackWorkflow, ChatAgent };
 
 export default {
   fetch(request: Request, env: Env) {

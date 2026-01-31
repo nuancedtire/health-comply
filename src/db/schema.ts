@@ -428,3 +428,15 @@ export const cqcQualityStatementRelations = relations(cqcQualityStatements, ({ o
 export const cqcKeyQuestionRelations = relations(cqcKeyQuestions, ({ many }) => ({
     qualityStatements: many(cqcQualityStatements),
 }));
+
+export const inspectionPackRelations = relations(inspectionPacks, ({ one, many }) => ({
+    tenant: one(tenants, { fields: [inspectionPacks.tenantId], references: [tenants.id] }),
+    site: one(sites, { fields: [inspectionPacks.siteId], references: [sites.id] }),
+    createdByUser: one(users, { fields: [inspectionPacks.createdBy], references: [users.id] }),
+    outputs: many(inspectionPackOutputs),
+}));
+
+export const inspectionPackOutputRelations = relations(inspectionPackOutputs, ({ one }) => ({
+    tenant: one(tenants, { fields: [inspectionPackOutputs.tenantId], references: [tenants.id] }),
+    pack: one(inspectionPacks, { fields: [inspectionPackOutputs.packId], references: [inspectionPacks.id] }),
+}));

@@ -29,6 +29,11 @@ export const AUDIT_ACTIONS = {
   POLICY_CREATED: "policy.created",
   POLICY_APPROVED: "policy.approved",
   POLICY_PUBLISHED: "policy.published",
+
+  // Inspection pack lifecycle
+  PACK_CREATED: "pack.created",
+  PACK_DOWNLOADED: "pack.downloaded",
+  PACK_DELETED: "pack.deleted",
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];
@@ -42,7 +47,8 @@ export type AuditEntityType =
   | "user"
   | "invitation"
   | "policy"
-  | "action";
+  | "action"
+  | "inspection_pack";
 
 /**
  * Audit event details structure
