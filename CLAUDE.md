@@ -52,6 +52,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Invitation-only registration (after first user)
 - Multi-tenant with role-based access control
 
+### AI & ML
+- **Vercel AI SDK** (`ai` package) - AI integration layer
+- **Cerebras API** - LLM for evidence classification and document analysis
+- **Workers AI** - Secondary AI capabilities via Cloudflare
+- Exponential backoff retry logic for API resilience
+
 ## Project Structure
 
 ```
@@ -59,17 +65,26 @@ src/
 ├── agent/              # Cloudflare Durable Objects
 │   └── ChatAgent.ts    # AI chat agent with tool calling
 ├── components/
-│   ├── ui/             # Shadcn UI components (new-york style)
-│   ├── app/            # Application-level components (sidebar, header)
+│   ├── ui/             # Shadcn UI components (new-york style, ~38 components)
 │   ├── ai/             # AI chat interface components
-│   ├── dashboard/      # Dashboard widgets
-│   ├── evidence/       # Evidence management components
+│   ├── app/            # Application-level components
 │   ├── checklist/      # Controls hub and checklists
+│   ├── dashboard/      # Dashboard widgets
+│   ├── demo/           # Demo components (safe to delete)
+│   ├── evidence/       # Evidence management components
 │   ├── landing/        # Marketing/landing page components
-│   ├── users/          # User management components
-│   ├── theme/          # Theme provider and toggle
-│   └── navigation/     # Navigation components
+│   ├── navigation/     # Navigation components
+│   ├── app-sidebar.tsx # Application sidebar component
+│   ├── compass-logo.tsx # Logo component
+│   ├── default-catch-boundary.tsx # Error boundary
+│   ├── main-layout.tsx # Main layout wrapper
+│   ├── nav-main.tsx    # Main navigation
+│   ├── nav-user.tsx    # User navigation menu
+│   ├── not-found.tsx   # 404 page component
+│   ├── site-context.tsx # Site context provider
+│   └── team-switcher.tsx # Team/site switcher component
 ├── core/
+│   ├── base.server.ts  # Base server utilities
 │   ├── data/           # Static data (extended_controls.json, taxonomy)
 │   ├── functions/      # Server functions (TanStack Start createServerFn)
 │   ├── middleware/     # Request middleware (auth, db, session)
@@ -84,17 +99,29 @@ src/
 ├── lib/
 │   ├── config/         # Static configuration (roles, permissions)
 │   ├── services/       # Business logic services
+│   ├── audit.ts        # Audit logging utilities
 │   ├── auth.ts         # Better Auth configuration
 │   ├── auth-client.ts  # Client-side auth utilities
 │   ├── auth-server.ts  # Server-side auth utilities
-│   ├── audit.ts        # Audit logging utilities
+│   ├── cookie.ts       # Cookie management utilities
+│   ├── evidence-workflow.ts # Evidence workflow utilities
+│   ├── file-validation.ts # File validation utilities
+│   ├── password.ts     # Password utilities
 │   └── utils.ts        # General utilities (cn, clsx)
 ├── routes/             # File-based routes (auto-generates routeTree.gen.ts)
 │   ├── __root.tsx      # Root layout with providers
 │   ├── api/            # API routes
 │   │   └── auth/       # Auth API endpoints
 │   ├── admin/          # Admin pages (audit, users, tenants)
-│   └── legal/          # Legal pages
+│   ├── legal/          # Legal pages
+│   ├── account.tsx     # User account settings
+│   ├── checklist.tsx   # Checklist page
+│   ├── create-site.tsx # Site creation flow
+│   ├── dashboard.tsx   # Dashboard page
+│   ├── documents.tsx   # Documents management page
+│   ├── onboarding.tsx  # User onboarding flow
+│   ├── presentation.tsx # Presentation/inspection page
+│   └── (additional routes as needed)
 ├── types/              # TypeScript type definitions
 ├── utils/              # Utility functions
 │   ├── seo.ts          # SEO helper functions
@@ -249,12 +276,16 @@ Roles are defined statically in `src/lib/config/roles.ts`:
 - Base color: `zinc`
 - CSS variables enabled
 - Icon library: `lucide-react`
+- Approximately 38 components installed
 
 ### Additional UI Libraries
 - `@tabler/icons-react` - Additional icons
 - `motion` (Framer Motion) - Animations
+- `next-themes` - Theme provider (light/dark mode toggle)
 - `cmdk` - Command palette
 - `sonner` - Toast notifications
+- `react-markdown` - Markdown rendering
+- `remark-gfm` - GitHub-flavored markdown support
 
 ### Path Aliases
 - `@/*` maps to `src/*`
