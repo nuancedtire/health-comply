@@ -15,14 +15,17 @@ jobs:
       id-token: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v5
         with:
           fetch-depth: 1
           persist-credentials: false
+
+      - name: List available models (debug)
+        run: opencode models
 
       - name: Run OpenCode
         uses: anomalyco/opencode/github@latest
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         with:
-          model: openai/gpt-5.1-codex
+          model: openai/gpt-5.2-codex
