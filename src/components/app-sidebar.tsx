@@ -52,7 +52,7 @@ const items = [
     icon: FileText,
   },
   {
-    title: "Teams & Tasks",
+    title: "Teams",
     url: "/team",
     icon: Users,
   },

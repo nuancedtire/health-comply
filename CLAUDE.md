@@ -301,6 +301,35 @@ Roles are defined statically in `src/lib/config/roles.ts`:
 - First user to sign up becomes system admin automatically
 - Subsequent users require invitations
 
+## Git Conventions
+
+### Commit Messages
+- Follow conventional commits format: `type: description`
+- Common types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `style`, `perf`
+- Keep subject line under 72 characters
+- Use imperative mood ("Add feature" not "Added feature")
+- Add detailed body when context is needed
+
+Example:
+```
+feat: Add user authentication flow
+
+Implements email/password authentication with Better Auth.
+Includes session management and protected routes.
+```
+
+### Co-Author Attribution
+When commits involve AI assistance, use:
+```
+Co-Authored-By: Fazeen, Founding Engineer, Aiigent.io
+```
+
+### Branch Naming
+- Feature branches: `feat/description`
+- Bug fixes: `fix/description`
+- Refactoring: `refactor/description`
+- Use kebab-case for branch names
+
 ## Testing
 
 Tests use Vitest with:

@@ -15,7 +15,7 @@ const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Compliance Checklist", href: "/checklist", icon: CheckSquare },
     { name: "Documents", href: "/documents", icon: FileText },
-    { name: "Teams & Tasks", href: "/team", icon: Users },
+    { name: "Teams", href: "/team", icon: Users },
     { name: "Expert Sign-Off", href: "/sign-off", icon: FileCheck },
     { name: "CQC Presentation", href: "/presentation", icon: Presentation },
 ];
