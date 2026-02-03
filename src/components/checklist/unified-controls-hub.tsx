@@ -25,7 +25,11 @@ import {
     Zap,
     Users,
     AlertTriangle,
-    Calendar
+    Calendar,
+    XCircle,
+    AlertCircle,
+    CircleDot,
+    List
 } from "lucide-react";
 import { toast } from "sonner";
 import { isPast, isToday, addDays, format } from "date-fns";
@@ -332,9 +336,9 @@ export function UnifiedControlsHub({
     const { overallProgress } = checklistData || { overallProgress: 0 };
 
     return (
-        <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500">
+        <div className="space-y-6 animate-in fade-in duration-500">
             {/* Header Area */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6">
+            <div className="flex flex-col md:flex-row md:items-end justify-between">
                 <div className="space-y-3 md:space-y-4 flex-1">
                     <div>
                         <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Compliance Controls Hub</h1>
@@ -381,33 +385,38 @@ export function UnifiedControlsHub({
             </div>
 
             {/* Navigation & Filters */}
-            <div className="space-y-3 md:space-y-4">
+            <div className="space-y-3">
                 <Tabs value={activeStatusTab} onValueChange={setActiveStatusTab} className="w-full">
-                    <TabsList className="bg-muted/50 p-1">
+                    <TabsList className="bg-muted/50 p-0.5">
                         <TabsTrigger value="overdue" className="data-[state=active]:bg-rose-500 data-[state=active]:text-white text-xs md:text-sm transition-all hover:bg-rose-50 dark:hover:bg-rose-950/20">
-                            <span className="hidden sm:inline">🔴 Overdue ({statusCounts.overdue})</span>
-                            <span className="sm:hidden">🔴 {statusCounts.overdue}</span>
+                            <XCircle className="h-3.5 w-3.5 mr-1.5" />
+                            <span className="hidden sm:inline">Overdue ({statusCounts.overdue})</span>
+                            <span className="sm:hidden">{statusCounts.overdue}</span>
                         </TabsTrigger>
                         <TabsTrigger value="due-soon" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white text-xs md:text-sm transition-all hover:bg-amber-50 dark:hover:bg-amber-950/20">
-                            <span className="hidden sm:inline">🟡 Due Soon ({statusCounts['due-soon']})</span>
-                            <span className="sm:hidden">🟡 {statusCounts['due-soon']}</span>
+                            <AlertCircle className="h-3.5 w-3.5 mr-1.5" />
+                            <span className="hidden sm:inline">Due Soon ({statusCounts['due-soon']})</span>
+                            <span className="sm:hidden">{statusCounts['due-soon']}</span>
                         </TabsTrigger>
                         <TabsTrigger value="on-track" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white text-xs md:text-sm transition-all hover:bg-emerald-50 dark:hover:bg-emerald-950/20">
-                            <span className="hidden sm:inline">✅ On Track ({statusCounts['on-track']})</span>
-                            <span className="sm:hidden">✅ {statusCounts['on-track']}</span>
+                            <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                            <span className="hidden sm:inline">On Track ({statusCounts['on-track']})</span>
+                            <span className="sm:hidden">{statusCounts['on-track']}</span>
                         </TabsTrigger>
                         <TabsTrigger value="not-started" className="data-[state=active]:bg-slate-500 data-[state=active]:text-white text-xs md:text-sm transition-all hover:bg-slate-50 dark:hover:bg-slate-950/20">
-                            <span className="hidden sm:inline">⚪ Not Started ({statusCounts['not-started']})</span>
-                            <span className="sm:hidden">⚪ {statusCounts['not-started']}</span>
+                            <CircleDot className="h-3.5 w-3.5 mr-1.5" />
+                            <span className="hidden sm:inline">Not Started ({statusCounts['not-started']})</span>
+                            <span className="sm:hidden">{statusCounts['not-started']}</span>
                         </TabsTrigger>
                         <TabsTrigger value="all" className="text-xs md:text-sm transition-all hover:bg-accent">
-                            <span className="hidden sm:inline">📋 All ({statusCounts.all})</span>
-                            <span className="sm:hidden">📋 {statusCounts.all}</span>
+                            <List className="h-3.5 w-3.5 mr-1.5" />
+                            <span className="hidden sm:inline">All ({statusCounts.all})</span>
+                            <span className="sm:hidden">{statusCounts.all}</span>
                         </TabsTrigger>
                     </TabsList>
                 </Tabs>
 
-                <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center bg-card p-3 rounded-xl border shadow-sm transition-shadow hover:shadow-md">
+                <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center bg-card p-3 rounded-lg border shadow-sm transition-shadow hover:shadow-md">
                     <div className="relative w-full md:flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
