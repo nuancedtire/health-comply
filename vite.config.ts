@@ -6,6 +6,9 @@ import tailwindcss from "@tailwindcss/vite";
 import { cloudflare } from "@cloudflare/vite-plugin";
 
 const config = defineConfig({
+  server: {
+    allowedHosts: ["test.fazeen.dev"],
+  },
   plugins: [
     // this is the plugin that enables path aliases
     viteTsConfigPaths({

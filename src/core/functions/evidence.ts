@@ -315,6 +315,7 @@ export const updateEvidenceFn = createServerFn({ method: "POST" })
             evidenceCategoryId: z.string().optional(),
             qsId: z.string().optional(),
             summary: z.string().optional(),
+            evidenceDate: z.date().nullable().optional(),
             // New fields
             reviewNotes: z.string().optional(),
             suggestedControlId: z.string().nullable().optional(),
