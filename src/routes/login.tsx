@@ -4,8 +4,8 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { authClient } from '@/lib/auth-client'
-import { Shield, Mail, Lock, AlertCircle, Loader2 } from 'lucide-react'
-
+import { Mail, Lock, AlertCircle, Loader2 } from 'lucide-react'
+import { CompassLogo } from '@/components/compass-logo'
 import { Button } from '@/components/ui/button'
 import {
     Form,
@@ -74,20 +74,18 @@ function LoginComponent() {
 
             {/* Login Card */}
             <Card className="w-full max-w-md relative shadow-2xl border-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <CardHeader className="space-y-3 pb-6">
-                    <div className="flex justify-center mb-2">
+                <CardHeader className="space-y-3 pb-2">
+                    <div className="flex justify-center">
                         <div className="relative">
                             <div className="absolute inset-0 bg-primary/20 rounded-2xl blur-xl" />
-                            <div className="relative flex items-center justify-center w-16 h-16 bg-primary rounded-2xl shadow-lg">
-                                <Shield className="h-8 w-8 text-primary-foreground" />
-                            </div>
+                            <CompassLogo className="relative flex items-center justify-center w-16 h-16" />
                         </div>
                     </div>
                     <CardTitle className="text-3xl font-bold text-center tracking-tight">
                         Welcome Back
                     </CardTitle>
                     <CardDescription className="text-center text-base">
-                        Sign in to your HealthComply account
+                        Sign in to your Compass account
                     </CardDescription>
                 </CardHeader>
 
@@ -174,12 +172,23 @@ function LoginComponent() {
                     <p className="text-sm text-center text-muted-foreground">
                         Don't have an account?{" "}
                         <Link to="/signup" className="text-primary font-semibold hover:underline transition-colors">
-                            Sign up for free
+                            Sign up
                         </Link>
                     </p>
-                    <p className="text-xs text-center text-muted-foreground/60">
-                        By signing in, you agree to our Terms of Service and Privacy Policy
-                    </p>
+                    <div className="flex justify-center space-x-1">
+                        <p className="text-xs text-center text-muted-foreground/60">
+                            By signing in, you agree to our
+                        </p>
+                        <Link to="/legal/privacy" className="text-xs text-center text-muted-foreground/60">
+                            Privacy Policy
+                        </Link>
+                        <p className="text-xs text-center text-muted-foreground/60">
+                            and
+                        </p>
+                        <Link to="/legal/terms" className="text-xs text-center text-muted-foreground/60">
+                            Terms of Service
+                        </Link>
+                    </div>
                 </CardFooter>
             </Card>
         </div>

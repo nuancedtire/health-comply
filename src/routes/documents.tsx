@@ -31,7 +31,7 @@ export const Route = createFileRoute('/documents')({
 function DocumentsPage() {
     const { activeSite, isLoading: isSiteLoading } = useSite()
     const [selectedEvidence, setSelectedEvidence] = useState<EvidenceItem | null>(null)
-    const [sidebarWidth, setSidebarWidth] = useState(420)
+    const [sidebarWidth, setSidebarWidth] = useState(600)
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
     const queryClient = useQueryClient()
 
