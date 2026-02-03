@@ -38,14 +38,12 @@ function ChecklistPage() {
 
     return (
         <MainLayout title="Compliance Hub">
-            <div className="container mx-auto py-6">
-                <UnifiedControlsHub
-                    initialCreateControl={search.createControl === 'true'}
-                    initialTitle={search.title}
-                    initialQsId={search.qsId}
-                    linkEvidenceId={search.linkEvidenceId}
-                />
-            </div>
+            <UnifiedControlsHub
+                initialCreateControl={search.createControl === 'true'}
+                initialTitle={search.title}
+                initialQsId={search.qsId}
+                linkEvidenceId={search.linkEvidenceId}
+            />
         </MainLayout>
     )
 }

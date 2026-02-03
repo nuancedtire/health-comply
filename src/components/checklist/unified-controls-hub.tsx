@@ -332,83 +332,93 @@ export function UnifiedControlsHub({
     const { overallProgress } = checklistData || { overallProgress: 0 };
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500">
+        <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500">
             {/* Header Area */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div className="space-y-4 flex-1">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6">
+                <div className="space-y-3 md:space-y-4 flex-1">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-foreground">Compliance Controls Hub</h1>
-                        <p className="text-muted-foreground mt-1">Manage, track, and evidence your service standards.</p>
+                        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Compliance Controls Hub</h1>
+                        <p className="text-muted-foreground mt-1 text-sm md:text-base">Manage, track, and evidence your service standards.</p>
                     </div>
 
-                    <div className="bg-card p-4 rounded-xl border shadow-sm max-w-xl">
+                    <div className="bg-card p-3 md:p-4 rounded-xl border shadow-sm max-w-xl transition-shadow hover:shadow-md">
                         <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium">Overall Compliance Status</span>
-                            <span className="text-sm font-bold text-primary">{overallProgress}%</span>
+                            <span className="text-xs md:text-sm font-medium">Overall Compliance Status</span>
+                            <span className="text-xs md:text-sm font-bold text-primary">{overallProgress}%</span>
                         </div>
                         <Progress value={overallProgress} className="h-2" />
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-2 md:gap-3">
                     {controls.length === 0 && (
                         <Button
                             variant="outline"
                             onClick={() => seedMutation.mutate({ data: { siteId: activeSite?.id } })}
                             disabled={seedMutation.isPending}
-                            className="border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 shadow-sm"
+                            className="border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 shadow-sm hover:shadow transition-all text-xs md:text-sm"
                         >
-                            {seedMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackagePlus className="mr-2 h-4 w-4" />}
-                            Import Starter Pack
+                            {seedMutation.isPending ? <Loader2 className="mr-2 h-3.5 w-3.5 md:h-4 md:w-4 animate-spin" /> : <PackagePlus className="mr-2 h-3.5 w-3.5 md:h-4 md:w-4" />}
+                            <span className="hidden sm:inline">Import Starter Pack</span>
+                            <span className="sm:hidden">Import</span>
                         </Button>
                     )}
                     <Button
                         variant="outline"
                         onClick={() => setIsAIOpen(true)}
-                        className="border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 shadow-sm"
+                        className="border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 shadow-sm hover:shadow transition-all text-xs md:text-sm"
                     >
-                        <Sparkles className="mr-2 h-4 w-4" /> AI Suggestions
+                        <Sparkles className="mr-2 h-3.5 w-3.5 md:h-4 md:w-4" />
+                        <span className="hidden sm:inline">AI Suggestions</span>
+                        <span className="sm:hidden">AI</span>
                     </Button>
-                    <Button onClick={() => { setEditControl(null); setIsDialogOpen(true); }} className="shadow-sm">
-                        <Plus className="mr-2 h-4 w-4" /> Add Control
+                    <Button onClick={() => { setEditControl(null); setIsDialogOpen(true); }} className="shadow-sm hover:shadow transition-all text-xs md:text-sm">
+                        <Plus className="mr-2 h-3.5 w-3.5 md:h-4 md:w-4" />
+                        <span className="hidden sm:inline">Add Control</span>
+                        <span className="sm:hidden">Add</span>
                     </Button>
                 </div>
             </div>
 
             {/* Navigation & Filters */}
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
                 <Tabs value={activeStatusTab} onValueChange={setActiveStatusTab} className="w-full">
                     <TabsList className="bg-muted/50 p-1">
-                        <TabsTrigger value="overdue" className="data-[state=active]:bg-rose-500 data-[state=active]:text-white">
-                            🔴 Overdue ({statusCounts.overdue})
+                        <TabsTrigger value="overdue" className="data-[state=active]:bg-rose-500 data-[state=active]:text-white text-xs md:text-sm transition-all hover:bg-rose-50 dark:hover:bg-rose-950/20">
+                            <span className="hidden sm:inline">🔴 Overdue ({statusCounts.overdue})</span>
+                            <span className="sm:hidden">🔴 {statusCounts.overdue}</span>
                         </TabsTrigger>
-                        <TabsTrigger value="due-soon" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white">
-                            🟡 Due Soon ({statusCounts['due-soon']})
+                        <TabsTrigger value="due-soon" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white text-xs md:text-sm transition-all hover:bg-amber-50 dark:hover:bg-amber-950/20">
+                            <span className="hidden sm:inline">🟡 Due Soon ({statusCounts['due-soon']})</span>
+                            <span className="sm:hidden">🟡 {statusCounts['due-soon']}</span>
                         </TabsTrigger>
-                        <TabsTrigger value="on-track" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
-                            ✅ On Track ({statusCounts['on-track']})
+                        <TabsTrigger value="on-track" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white text-xs md:text-sm transition-all hover:bg-emerald-50 dark:hover:bg-emerald-950/20">
+                            <span className="hidden sm:inline">✅ On Track ({statusCounts['on-track']})</span>
+                            <span className="sm:hidden">✅ {statusCounts['on-track']}</span>
                         </TabsTrigger>
-                        <TabsTrigger value="not-started" className="data-[state=active]:bg-slate-500 data-[state=active]:text-white">
-                            ⚪ Not Started ({statusCounts['not-started']})
+                        <TabsTrigger value="not-started" className="data-[state=active]:bg-slate-500 data-[state=active]:text-white text-xs md:text-sm transition-all hover:bg-slate-50 dark:hover:bg-slate-950/20">
+                            <span className="hidden sm:inline">⚪ Not Started ({statusCounts['not-started']})</span>
+                            <span className="sm:hidden">⚪ {statusCounts['not-started']}</span>
                         </TabsTrigger>
-                        <TabsTrigger value="all">
-                            📋 All ({statusCounts.all})
+                        <TabsTrigger value="all" className="text-xs md:text-sm transition-all hover:bg-accent">
+                            <span className="hidden sm:inline">📋 All ({statusCounts.all})</span>
+                            <span className="sm:hidden">📋 {statusCounts.all}</span>
                         </TabsTrigger>
                     </TabsList>
                 </Tabs>
 
-                <div className="flex flex-col md:flex-row gap-3 items-center bg-card p-3 rounded-xl border shadow-sm">
+                <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center bg-card p-3 rounded-xl border shadow-sm transition-shadow hover:shadow-md">
                     <div className="relative w-full md:flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                             placeholder="Search controls..."
-                            className="pl-9 bg-background h-9 text-sm"
+                            className="pl-9 bg-background h-9 text-sm transition-shadow focus:shadow-sm"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
                         <FilterDropdown
                             label="Key Question"
                             options={["safe", "effective", "caring", "responsive", "well_led"]}
@@ -436,7 +446,7 @@ export function UnifiedControlsHub({
                                     setSearchQuery("");
                                     setActiveFilters({ frequency: [], reviewer: [], keyQuestion: [] });
                                 }}
-                                className="text-muted-foreground hover:text-foreground text-xs h-8"
+                                className="text-muted-foreground hover:text-foreground text-xs h-8 transition-colors"
                             >
                                 Reset Filters
                             </Button>
@@ -672,28 +682,28 @@ function KeyQuestionSection({
         <Collapsible open={isOpen} onOpenChange={setIsOpen} className="group">
             <CollapsibleTrigger asChild>
                 <button className={cn(
-                    "w-full px-4 py-3 flex items-center gap-4 rounded-lg transition-all duration-200",
-                    "hover:bg-accent/50 border border-transparent",
+                    "w-full px-3 md:px-4 py-2.5 md:py-3 flex items-center gap-3 md:gap-4 rounded-lg transition-all duration-200",
+                    "hover:bg-accent/50 hover:shadow-sm border border-transparent hover:border-border/30",
                     isOpen && bgColor
                 )}>
                     <div className={cn(
-                        "flex items-center justify-center w-9 h-9 rounded-lg transition-colors",
+                        "flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-lg transition-all duration-200",
                         iconColor,
-                        isOpen ? "bg-background shadow-sm" : "bg-muted/60"
+                        isOpen ? "bg-background shadow-sm scale-105" : "bg-muted/60 group-hover:scale-105"
                     )}>
-                        <KqIcon className="h-[18px] w-[18px]" />
+                        <KqIcon className="h-4 w-4 md:h-[18px] md:w-[18px]" />
                     </div>
                     <div className="flex-1 text-left min-w-0">
-                        <div className="flex items-center gap-3">
-                            <h3 className="font-semibold text-[15px] text-foreground">{kqTitle}</h3>
+                        <div className="flex items-center gap-2 md:gap-3 flex-wrap">
+                            <h3 className="font-semibold text-sm md:text-[15px] text-foreground">{kqTitle}</h3>
                             <StatusSegments controls={allControls} />
                         </div>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                        <p className="text-[10px] md:text-[11px] text-muted-foreground mt-0.5">
                             {qsCount} quality statement{qsCount !== 1 ? 's' : ''}
                         </p>
                     </div>
                     <ChevronDown className={cn(
-                        "h-4 w-4 text-muted-foreground/60 transition-transform duration-200",
+                        "h-4 w-4 text-muted-foreground/60 transition-transform duration-200 shrink-0",
                         !isOpen && "-rotate-90"
                     )} />
                 </button>
@@ -743,12 +753,12 @@ function QualityStatementSection({
     return (
         <Collapsible open={isOpen} onOpenChange={setIsOpen} className={cn(!isLast && "pb-0.5")}>
             <CollapsibleTrigger asChild>
-                <button className="w-full py-2 px-3 flex items-center gap-3 rounded-md hover:bg-accent/50 transition-colors text-left group/qs">
+                <button className="w-full py-2 px-2 md:px-3 flex items-center gap-2 md:gap-3 rounded-md hover:bg-accent/50 hover:shadow-sm transition-all text-left group/qs">
                     <ChevronRight className={cn(
-                        "h-3.5 w-3.5 text-muted-foreground/50 transition-transform duration-200 shrink-0",
+                        "h-3 w-3 md:h-3.5 md:w-3.5 text-muted-foreground/50 transition-transform duration-200 shrink-0 group-hover/qs:text-muted-foreground",
                         isOpen && "rotate-90"
                     )} />
-                    <span className="font-medium text-[13px] text-foreground/90 truncate flex-1">{qsTitle}</span>
+                    <span className="font-medium text-xs md:text-[13px] text-foreground/90 truncate flex-1 group-hover/qs:text-foreground transition-colors">{qsTitle}</span>
                     <StatusDotGrid controls={controls} max={8} />
                 </button>
             </CollapsibleTrigger>
@@ -795,61 +805,70 @@ function ControlHubRow({ control, siteId, onEdit, onDelete }: { control: any, si
 
     return (
         <div className={cn(
-            "group rounded-lg transition-all duration-150",
-            "hover:bg-accent/40 border border-transparent hover:border-border/50",
-            isExpanded && "bg-accent/30 border-border/50"
+            "group rounded-lg transition-all duration-200",
+            "hover:bg-accent/40 hover:shadow-sm border border-transparent hover:border-border/50",
+            isExpanded && "bg-accent/30 border-border/50 shadow-sm"
         )}>
-            <div className="px-3 py-2.5 flex items-center gap-3">
-                <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", config.dot)} title={config.label} />
+            <div className="px-2 md:px-3 py-2 md:py-2.5 flex items-start md:items-center gap-2 md:gap-3">
+                <div className={cn("w-1.5 h-1.5 rounded-full shrink-0 mt-1.5 md:mt-0", config.dot)} title={config.label} />
 
                 <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                         <button
-                            className="font-medium text-[13px] text-foreground hover:text-primary transition-colors text-left truncate hover:underline"
+                            className="font-medium text-xs md:text-[13px] text-foreground hover:text-primary transition-colors text-left hover:underline decoration-primary/30"
                             onClick={() => setIsExpanded(!isExpanded)}
                         >
                             {control.title}
                         </button>
                         {control.sourcePackId && (
-                            <span className="text-[9px] font-semibold uppercase tracking-wide text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded">
+                            <span className="text-[8px] md:text-[9px] font-semibold uppercase tracking-wide text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded">
                                 Pack
                             </span>
                         )}
                     </div>
 
-                    <div className="flex items-center gap-1 mt-0.5 text-[11px] text-muted-foreground">
-                        <Calendar className="w-3 h-3" />
-                        <span>{formatFrequency(control.frequencyType, control.frequencyDays)}</span>
-                        <User className="w-3 h-3 ml-3" />
-                        <span>{control.defaultReviewerRole || 'Unassigned'}</span>
+                    <div className="flex flex-wrap items-center gap-x-1 gap-y-0.5 mt-1 text-[10px] md:text-[11px] text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            <span>{formatFrequency(control.frequencyType, control.frequencyDays)}</span>
+                        </div>
+                        <span className="hidden md:inline text-muted-foreground/40">•</span>
+                        <div className="flex items-center gap-1">
+                            <User className="w-3 h-3 md:ml-2" />
+                            <span className="truncate max-w-[120px]">{control.defaultReviewerRole || 'Unassigned'}</span>
+                        </div>
                         {nextDueLabel && (
                             <>
-                                <Clock className="w-3 h-3 ml-3" />
-                                <span className={cn(status === 'overdue' && config.text, "font-medium")}>
-                                    {nextDueLabel}
-                                </span>
+                                <span className="hidden md:inline text-muted-foreground/40">•</span>
+                                <div className="flex items-center gap-1">
+                                    <Clock className="w-3 h-3 md:ml-2" />
+                                    <span className={cn(status === 'overdue' && config.text, "font-medium")}>
+                                        {nextDueLabel}
+                                    </span>
+                                </div>
                             </>
                         )}
                     </div>
                 </div>
 
-                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center gap-0.5 md:opacity-0 md:group-hover:opacity-100 transition-opacity shrink-0">
                     <UploadModal
                         siteId={siteId}
                         initialQsId={control.qsId}
                         initialControlId={control.id}
                         trigger={
-                            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground">
-                                <Upload className="w-3.5 h-3.5 mr-1" />
+                            <Button size="sm" variant="ghost" className="h-7 px-1.5 md:px-2 text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
+                                <Upload className="w-3 h-3 md:w-3.5 md:h-3.5 md:mr-1" />
+                                <span className="hidden md:inline sr-only">Upload</span>
                             </Button>
                         }
                     />
-                    <Button size="sm" variant="ghost" onClick={onEdit} className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground">
+                    <Button size="sm" variant="ghost" onClick={onEdit} className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
                         <Pencil className="w-3 h-3" />
                     </Button>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-7 w-7 p-0 text-muted-foreground">
+                            <Button variant="ghost" className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
                                 <MoreHorizontal className="h-3.5 w-3.5" />
                             </Button>
                         </DropdownMenuTrigger>
