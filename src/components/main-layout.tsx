@@ -22,10 +22,10 @@ export function MainLayout({ children, title = "Compass" }: MainLayoutProps) {
     return (
         <SidebarProvider defaultOpen={uiSettings.sidebarOpen}>
             <AppSidebar />
-            <main className="flex-1 overflow-hidden h-screen flex flex-col">
-                <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-                    <div className="flex items-center gap-2 px-4">
-                        <SidebarTrigger className="-ml-1" />
+            <main className="flex-1 overflow-hidden h-screen flex flex-col bg-background">
+                <header className="flex h-14 shrink-0 items-center gap-2 border-b-2 px-4 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+                    <div className="flex items-center">
+                        <SidebarTrigger />
                         <Separator orientation="vertical" className="mr-2 h-4" />
                         <Breadcrumb>
                             <BreadcrumbList>
@@ -33,7 +33,7 @@ export function MainLayout({ children, title = "Compass" }: MainLayoutProps) {
                                     <>
                                         <BreadcrumbSeparator className="hidden md:block" />
                                         <BreadcrumbItem>
-                                            <BreadcrumbPage>{title}</BreadcrumbPage>
+                                            <BreadcrumbPage className="font-semibold">{title}</BreadcrumbPage>
                                         </BreadcrumbItem>
                                     </>
                                 )}
@@ -41,7 +41,7 @@ export function MainLayout({ children, title = "Compass" }: MainLayoutProps) {
                         </Breadcrumb>
                     </div>
                 </header>
-                <div className="flex-1 overflow-auto p-4">
+                <div className="flex-1 overflow-auto p-6">
                     {children}
                 </div>
             </main>

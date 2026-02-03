@@ -13,7 +13,7 @@
     {
       "binding": "DB",
       "database_name": "health-comply",
-      "database_id": "84f8a56b-2113-44e5-8854-8dd52cb6d09f",
+      "database_id": "0f71ffb2-7bc0-49d7-9fe5-015bb66c0648",
       "migrations_dir": "drizzle"
     }
   ],

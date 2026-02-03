@@ -442,10 +442,10 @@ export function DocumentsSidebar({
                                     <Badge variant="outline" className={cn(
                                         "text-[10px]",
                                         classResult.type === "match"
-                                            ? "border-emerald-300 text-emerald-700 bg-emerald-50"
+                                            ? "border-emerald-300 text-emerald-700 bg-emerald-50 dark:bg-emerald-950/50 dark:border-emerald-800"
                                             : classResult.type === "suggestion"
-                                                ? "border-purple-300 text-purple-700 bg-purple-50"
-                                                : "border-slate-300 text-slate-600 bg-slate-50"
+                                                ? "border-purple-300 text-purple-700 bg-purple-50 dark:bg-purple-950/50 dark:border-purple-800"
+                                                : "border-slate-300 text-slate-600 bg-slate-50 dark:bg-slate-950/50 dark:border-slate-800"
                                     )}>
                                         {classResult.type === "match" ? (
                                             <><CheckCircle2 className="h-3 w-3 mr-1" /> Matched</>
@@ -489,63 +489,63 @@ export function DocumentsSidebar({
 
                             {/* Reviewer Information */}
                             {(evidence.status === 'pending_review' ||
-                              evidence.status === 'approved' ||
-                              evidence.status === 'rejected') && (
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                                        {evidence.status === 'pending_review' ? (
-                                            <User className="h-3.5 w-3.5" />
-                                        ) : (
-                                            <UserCheck className="h-3.5 w-3.5" />
-                                        )}
-                                        Reviewer Information
-                                    </Label>
+                                evidence.status === 'approved' ||
+                                evidence.status === 'rejected') && (
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                                            {evidence.status === 'pending_review' ? (
+                                                <User className="h-3.5 w-3.5" />
+                                            ) : (
+                                                <UserCheck className="h-3.5 w-3.5" />
+                                            )}
+                                            Reviewer Information
+                                        </Label>
 
-                                    <div className="grid grid-cols-2 gap-2 text-xs">
-                                        {evidence.status === 'pending_review' ? (
-                                            // Show expected reviewer role
-                                            <>
-                                                <div className="p-2 rounded bg-muted/50">
-                                                    <p className="text-muted-foreground">Status</p>
-                                                    <p className="font-medium">Awaiting Review</p>
-                                                </div>
-                                                <div className="p-2 rounded bg-muted/50">
-                                                    <p className="text-muted-foreground">Assigned To</p>
-                                                    <p className="font-medium">{evidence.assigneeRole || 'Practice Manager'}</p>
-                                                </div>
-                                            </>
-                                        ) : (
-                                            // Show actual reviewer for approved/rejected
-                                            <>
-                                                <div className="p-2 rounded bg-muted/50">
-                                                    <p className="text-muted-foreground">Reviewer</p>
-                                                    <p className="font-medium">
-                                                        {evidence.reviewerName || 'Unknown'}
-                                                    </p>
-                                                </div>
-                                                {evidence.reviewedAt && (
+                                        <div className="grid grid-cols-2 gap-2 text-xs">
+                                            {evidence.status === 'pending_review' ? (
+                                                // Show expected reviewer role
+                                                <>
                                                     <div className="p-2 rounded bg-muted/50">
-                                                        <p className="text-muted-foreground">Reviewed</p>
+                                                        <p className="text-muted-foreground">Status</p>
+                                                        <p className="font-medium">Awaiting Review</p>
+                                                    </div>
+                                                    <div className="p-2 rounded bg-muted/50">
+                                                        <p className="text-muted-foreground">Assigned To</p>
+                                                        <p className="font-medium">{evidence.assigneeRole || 'Practice Manager'}</p>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                // Show actual reviewer for approved/rejected
+                                                <>
+                                                    <div className="p-2 rounded bg-muted/50">
+                                                        <p className="text-muted-foreground">Reviewer</p>
                                                         <p className="font-medium">
-                                                            {format(new Date(evidence.reviewedAt), "MMM d, yyyy")}
+                                                            {evidence.reviewerName || 'Unknown'}
                                                         </p>
                                                     </div>
-                                                )}
-                                            </>
+                                                    {evidence.reviewedAt && (
+                                                        <div className="p-2 rounded bg-muted/50">
+                                                            <p className="text-muted-foreground">Reviewed</p>
+                                                            <p className="font-medium">
+                                                                {format(new Date(evidence.reviewedAt), "MMM d, yyyy")}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </>
+                                            )}
+                                        </div>
+
+                                        {/* Review Notes - Show for approved/rejected if present */}
+                                        {evidence.reviewNotes && evidence.status !== 'pending_review' && (
+                                            <div className="p-2 rounded bg-muted/50 text-xs">
+                                                <p className="text-muted-foreground mb-1">Review Notes</p>
+                                                <p className="text-foreground leading-relaxed">
+                                                    {evidence.reviewNotes}
+                                                </p>
+                                            </div>
                                         )}
                                     </div>
-
-                                    {/* Review Notes - Show for approved/rejected if present */}
-                                    {evidence.reviewNotes && evidence.status !== 'pending_review' && (
-                                        <div className="p-2 rounded bg-muted/50 text-xs">
-                                            <p className="text-muted-foreground mb-1">Review Notes</p>
-                                            <p className="text-foreground leading-relaxed">
-                                                {evidence.reviewNotes}
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
+                                )}
 
                             {/* Summary Display */}
                             {evidence.summary && (
@@ -881,7 +881,7 @@ export function DocumentsSidebar({
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            className="bg-destructive text-background hover:bg-destructive/80"
                             onClick={() => deleteMutation.mutate({ data: { evidenceId: evidence.id } })}
                         >
                             {deleteMutation.isPending ? "Deleting..." : "Delete"}
