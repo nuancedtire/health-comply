@@ -104,8 +104,8 @@ export function TeamSwitcher() {
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground disabled:opacity-100"
             >
-              <div className="bg-muted-foreground/20 text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                <CompassLogo className="size-5" />
+              <div className="">
+                <CompassLogo className="size-8" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{activeSite.name}</span>
