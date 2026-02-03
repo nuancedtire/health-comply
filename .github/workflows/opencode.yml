@@ -13,19 +13,24 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 1
-          persist-credentials: false
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5 # current major in the official repo docs
+      with:
+        fetch-depth: 1
+        persist-credentials: false
 
-      - name: List available models (debug)
-        run: opencode models
+    - name: Install OpenCode CLI
+      run: curl -fsSL https://opencode.ai/install | bash
+      shell: bash
 
-      - name: Run OpenCode
-        uses: anomalyco/opencode/github@latest
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        with:
-          model: openai/gpt-5.2-codex
+    - name: List available models (debug)
+      run: opencode models
+      shell: bash
+
+    - name: Run OpenCode
+      uses: anomalyco/opencode/github@latest
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      with:
+        model: openai/gpt-5.2-codex
