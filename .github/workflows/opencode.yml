@@ -8,6 +8,8 @@ on:
 
 jobs:
   opencode:
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     if: contains(github.event.comment.body, '/oc') || contains(github.event.comment.body, '/opencode')
     runs-on: ubuntu-latest
     permissions:
@@ -30,7 +32,5 @@ jobs:
 
       - name: Run OpenCode
         uses: anomalyco/opencode/github@latest
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         with:
           model: opencode/kimi-k2.5-free
