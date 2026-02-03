@@ -190,6 +190,8 @@ export const getInspectionPackDetailFn = baseFunction
             status: schema.inspectionPacks.status,
             createdBy: schema.inspectionPacks.createdBy,
             createdAt: schema.inspectionPacks.createdAt,
+            executiveSummary: schema.inspectionPacks.executiveSummary,
+            keyQuestionSummaries: schema.inspectionPacks.keyQuestionSummaries,
             siteName: schema.sites.name,
             createdByName: schema.users.name,
         })
@@ -210,6 +212,8 @@ export const getInspectionPackDetailFn = baseFunction
 
         const packRecord = pack[0];
         const scopeData = packRecord.scopeData ? JSON.parse(packRecord.scopeData) : null;
+        const keyQuestionSummariesData = packRecord.keyQuestionSummaries ? JSON.parse(packRecord.keyQuestionSummaries) : {};
+        const executiveSummary = packRecord.executiveSummary || undefined;
 
         // Fetch outputs
         const outputs = await db.select({
@@ -375,6 +379,7 @@ export const getInspectionPackDetailFn = baseFunction
                 totalControls: kqControlCount,
                 totalGaps: kqGapCount,
                 coveragePercentage: kqCoveragePercentage,
+                aiSummary: keyQuestionSummariesData[kq.id] || undefined,
                 qualityStatements: qsSummaries,
             });
         }
@@ -399,6 +404,7 @@ export const getInspectionPackDetailFn = baseFunction
             createdBy: packRecord.createdBy,
             createdByName: packRecord.createdByName || undefined,
             createdAt: packRecord.createdAt,
+            executiveSummary,
             keyQuestions: keyQuestionSummaries,
             totalEvidenceCount,
             totalControlsCount,

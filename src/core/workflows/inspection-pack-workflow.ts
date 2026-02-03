@@ -407,12 +407,23 @@ Provide a compliance assessment for this domain.`;
                 }
             }
 
-            return {
+            const result = {
                 executive: summaries.executive || "",
                 keyQuestions: Object.fromEntries(
                     Object.entries(summaries).filter(([k]) => k !== 'executive')
                 ),
             };
+
+            // Save summaries to database for UI display
+            const db = drizzle(this.env.DB, { schema });
+            await db.update(schema.inspectionPacks)
+                .set({
+                    executiveSummary: result.executive,
+                    keyQuestionSummaries: JSON.stringify(result.keyQuestions),
+                })
+                .where(eq(schema.inspectionPacks.id, packId));
+
+            return result;
         });
 
         // Step 3: Build ZIP archive
@@ -543,6 +554,19 @@ Statistics:
             const margin = 20;
             let y = margin;
 
+            // Professional color scheme (CQC blue theme)
+            const colors = {
+                primary: [0, 82, 147],      // CQC Blue
+                secondary: [100, 100, 100], // Dark Gray
+                accent: [0, 150, 200],      // Light Blue
+                light: [240, 240, 240],     // Light Gray background
+                white: [255, 255, 255],
+                text: [50, 50, 50],         // Dark text
+                success: [34, 139, 34],   // Green for good
+                warning: [255, 165, 0],   // Orange for warning
+                danger: [220, 20, 60],     // Red for missing
+            };
+
             const addPage = () => {
                 doc.addPage();
                 y = margin;
@@ -554,40 +578,115 @@ Statistics:
                 }
             };
 
-            // Cover Page
-            doc.setFontSize(24);
+            // Helper to set fill color
+            const setFillColor = (rgb: number[]) => {
+                doc.setFillColor(rgb[0], rgb[1], rgb[2]);
+            };
+
+            // Helper to set text color
+            const setTextColor = (rgb: number[]) => {
+                doc.setTextColor(rgb[0], rgb[1], rgb[2]);
+            };
+
+            // Professional Cover Page
+            // Header bar
+            setFillColor(colors.primary);
+            doc.rect(0, 0, pageWidth, 100, 'F');
+
+            // Title on header
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(28);
             doc.setFont("helvetica", "bold");
-            doc.text("CQC Inspection Pack", pageWidth / 2, 60, { align: 'center' });
+            doc.text("CQC Inspection Pack", pageWidth / 2, 50, { align: 'center' });
 
             doc.setFontSize(16);
             doc.setFont("helvetica", "normal");
-            doc.text(packData.siteName, pageWidth / 2, 80, { align: 'center' });
+            doc.text(packData.siteName, pageWidth / 2, 75, { align: 'center' });
 
+            // White content area
+            y = 130;
+            setTextColor(colors.text);
+
+            // Info box
+            setFillColor(colors.light);
+            doc.roundedRect(margin, y, pageWidth - 2 * margin, 60, 3, 3, 'F');
+
+            y += 15;
             doc.setFontSize(12);
-            doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth / 2, 100, { align: 'center' });
-            doc.text(`Scope: ${packData.scopeType === 'full_site' ? 'Full Site Inspection' : 'Focused Inspection'}`, pageWidth / 2, 110, { align: 'center' });
+            doc.setFont("helvetica", "bold");
+            doc.text("Pack Information", margin + 10, y);
+            y += 12;
 
-            doc.setFontSize(14);
-            y = 140;
-            doc.text("Summary Statistics", margin, y);
-            y += 10;
+            doc.setFont("helvetica", "normal");
             doc.setFontSize(11);
-            doc.text(`Total Evidence Items: ${packData.totalEvidence}`, margin + 10, y);
-            y += 7;
-            doc.text(`Total Controls: ${packData.totalControls}`, margin + 10, y);
-            y += 7;
-            doc.text(`Gaps Identified: ${packData.totalGaps}`, margin + 10, y);
+            doc.text(`Generated: ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`, margin + 10, y);
+            y += 8;
+            doc.text(`Scope: ${packData.scopeType === 'full_site' ? 'Full Site Inspection' : 'Focused Inspection'}`, margin + 10, y);
+            y += 8;
+            doc.text(`Pack ID: ${packId}`, margin + 10, y);
+
+            // Summary statistics cards
+            y += 40;
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("Summary Statistics", margin, y);
+            y += 15;
+
+            // Draw stat boxes
+            const boxWidth = (pageWidth - 2 * margin - 30) / 3;
+            const statY = y;
+
+            // Evidence box
+            setFillColor(colors.accent);
+            doc.roundedRect(margin, statY, boxWidth, 35, 3, 3, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(20);
+            doc.setFont("helvetica", "bold");
+            doc.text(String(packData.totalEvidence), margin + boxWidth / 2, statY + 18, { align: 'center' });
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "normal");
+            doc.text("Evidence Items", margin + boxWidth / 2, statY + 28, { align: 'center' });
+
+            // Controls box
+            setFillColor(colors.secondary);
+            doc.roundedRect(margin + boxWidth + 15, statY, boxWidth, 35, 3, 3, 'F');
+            doc.text(String(packData.totalControls), margin + boxWidth + 15 + boxWidth / 2, statY + 18, { align: 'center' });
+            doc.setFontSize(9);
+            doc.text("Controls", margin + boxWidth + 15 + boxWidth / 2, statY + 28, { align: 'center' });
+
+            // Gaps box (color based on count)
+            const gapColor = packData.totalGaps === 0 ? colors.success : packData.totalGaps < 5 ? colors.warning : colors.danger;
+            setFillColor(gapColor);
+            doc.roundedRect(margin + 2 * (boxWidth + 15), statY, boxWidth, 35, 3, 3, 'F');
+            doc.text(String(packData.totalGaps), margin + 2 * (boxWidth + 15) + boxWidth / 2, statY + 18, { align: 'center' });
+            doc.setFontSize(9);
+            doc.text("Gaps Identified", margin + 2 * (boxWidth + 15) + boxWidth / 2, statY + 28, { align: 'center' });
+
+            y = statY + 50;
+
+            // Footer on cover
+            doc.setTextColor(150, 150, 150);
+            doc.setFontSize(9);
+            doc.text("Generated by Compass by aiigent.io", pageWidth / 2, pageHeight - 20, { align: 'center' });
 
             // Executive Summary Page
             addPage();
-            doc.setFontSize(18);
-            doc.setFont("helvetica", "bold");
-            doc.text("Executive Summary", margin, y);
-            y += 15;
+            y = margin;
 
+            // Section header with background
+            setFillColor(colors.primary);
+            doc.rect(0, y - 5, pageWidth, 25, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(16);
+            doc.setFont("helvetica", "bold");
+            doc.text("Executive Summary", margin + 5, y + 10);
+            y += 35;
+
+            // AI Summary content
+            setTextColor(colors.text);
             doc.setFontSize(11);
             doc.setFont("helvetica", "normal");
-            const executiveText = aiSummaries.executive || "No AI summary available.";
+            const executiveText = aiSummaries.executive || "No AI summary available. The executive summary provides an overview of the practice's compliance posture, highlighting key strengths and areas requiring attention.";
             const splitExecutive = doc.splitTextToSize(executiveText, pageWidth - 2 * margin);
             for (const line of splitExecutive) {
                 checkPageBreak(7);
@@ -597,123 +696,253 @@ Statistics:
 
             // Gap Analysis Page
             addPage();
-            doc.setFontSize(18);
+            y = margin;
+
+            // Section header
+            setFillColor(colors.primary);
+            doc.rect(0, y - 5, pageWidth, 25, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(16);
             doc.setFont("helvetica", "bold");
-            doc.text("Gap Analysis", margin, y);
-            y += 15;
+            doc.text("Gap Analysis", margin + 5, y + 10);
+            y += 35;
 
             if (packData.gaps.length === 0) {
-                doc.setFontSize(11);
-                doc.setFont("helvetica", "normal");
-                doc.text("No gaps identified. All controls have current evidence.", margin, y);
-            } else {
-                doc.setFontSize(10);
+                // Success message
+                setFillColor([230, 255, 230]);
+                doc.roundedRect(margin, y, pageWidth - 2 * margin, 40, 3, 3, 'F');
+                setTextColor(colors.success);
+                doc.setFontSize(12);
                 doc.setFont("helvetica", "bold");
-                doc.text("Gap Type", margin, y);
-                doc.text("Control", margin + 30, y);
-                doc.text("Quality Statement", margin + 100, y);
-                y += 7;
-
+                doc.text("✓ No gaps identified", margin + 10, y + 18);
+                setTextColor(colors.text);
                 doc.setFont("helvetica", "normal");
-                for (const gap of packData.gaps.slice(0, 30)) { // Limit to 30 for PDF
-                    checkPageBreak(7);
+                doc.setFontSize(10);
+                doc.text("All controls have current evidence. The practice is up to date with compliance requirements.", margin + 10, y + 32);
+            } else {
+                // Gap summary stats
+                const missingCount = packData.gaps.filter(g => g.gapType === 'missing').length;
+                const outdatedCount = packData.gaps.filter(g => g.gapType === 'outdated').length;
+                const expiringCount = packData.gaps.filter(g => g.gapType === 'expiring_soon').length;
+
+                setFillColor(colors.light);
+                doc.roundedRect(margin, y, pageWidth - 2 * margin, 30, 3, 3, 'F');
+                setTextColor(colors.text);
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "normal");
+                doc.text(`Missing Evidence: ${missingCount}  |  Outdated: ${outdatedCount}  |  Expiring Soon: ${expiringCount}`, margin + 10, y + 18);
+                y += 40;
+
+                // Gap table header
+                setFillColor(colors.secondary);
+                doc.rect(margin, y, pageWidth - 2 * margin, 12, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(9);
+                doc.setFont("helvetica", "bold");
+                doc.text("Type", margin + 5, y + 8);
+                doc.text("Control", margin + 50, y + 8);
+                doc.text("Quality Statement", margin + 150, y + 8);
+                y += 15;
+
+                // Gap rows
+                setTextColor(colors.text);
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(9);
+
+                for (const gap of packData.gaps.slice(0, 40)) {
+                    checkPageBreak(12);
+
+                    // Alternating row background
+                    if ((packData.gaps.indexOf(gap) % 2) === 1) {
+                        setFillColor([250, 250, 250]);
+                        doc.rect(margin, y - 5, pageWidth - 2 * margin, 10, 'F');
+                    }
+
                     const gapTypeLabel = gap.gapType === 'missing' ? 'Missing' :
                         gap.gapType === 'outdated' ? 'Outdated' : 'Expiring';
-                    doc.text(gapTypeLabel, margin, y);
-                    doc.text(gap.controlTitle.substring(0, 35), margin + 30, y);
-                    doc.text(gap.qsTitle.substring(0, 30), margin + 100, y);
-                    y += 6;
+
+                    // Color code the type
+                    const typeColor = gap.gapType === 'missing' ? colors.danger :
+                        gap.gapType === 'outdated' ? colors.warning : colors.accent;
+                    setTextColor(typeColor);
+                    doc.text(gapTypeLabel, margin + 5, y + 3);
+
+                    setTextColor(colors.text);
+                    doc.text(gap.controlTitle.substring(0, 40), margin + 50, y + 3);
+                    doc.text(gap.qsTitle.substring(0, 35), margin + 150, y + 3);
+                    y += 10;
                 }
 
-                if (packData.gaps.length > 30) {
-                    y += 5;
-                    doc.text(`... and ${packData.gaps.length - 30} more gaps (see CSV for full list)`, margin, y);
+                if (packData.gaps.length > 40) {
+                    y += 8;
+                    doc.setFont("helvetica", "italic");
+                    doc.setTextColor(150, 150, 150);
+                    doc.text(`... and ${packData.gaps.length - 40} more gaps (see gap-analysis.csv in ZIP for full list)`, margin, y);
                 }
             }
 
             // Key Question Sections
             for (const kq of packData.keyQuestions) {
                 addPage();
+                y = margin;
+
+                // Section header with accent color
+                setFillColor(colors.accent);
+                doc.rect(0, y - 5, pageWidth, 25, 'F');
+                doc.setTextColor(255, 255, 255);
                 doc.setFontSize(16);
                 doc.setFont("helvetica", "bold");
-                doc.text(kq.title, margin, y);
-                y += 12;
+                doc.text(kq.title, margin + 5, y + 10);
+                y += 35;
 
-                doc.setFontSize(11);
+                // Stats bar
+                setFillColor(colors.light);
+                doc.roundedRect(margin, y, pageWidth - 2 * margin, 20, 3, 3, 'F');
+                setTextColor(colors.text);
+                doc.setFontSize(10);
                 doc.setFont("helvetica", "normal");
-                doc.text(`Evidence Items: ${kq.evidenceCount}  |  Controls: ${kq.controlCount}  |  Gaps: ${kq.gapCount}`, margin, y);
-                y += 10;
+                doc.text(`Evidence: ${kq.evidenceCount} items  |  Controls: ${kq.controlCount}  |  Gaps: ${kq.gapCount}`, margin + 10, y + 12);
+                y += 30;
 
-                // KQ Summary
+                // KQ AI Summary
                 const kqSummary = aiSummaries.keyQuestions[kq.id] || "";
                 if (kqSummary) {
-                    const splitSummary = doc.splitTextToSize(kqSummary, pageWidth - 2 * margin);
-                    for (const line of splitSummary) {
-                        checkPageBreak(7);
-                        doc.text(line, margin, y);
-                        y += 6;
+                    setFillColor([235, 245, 255]);
+                    doc.roundedRect(margin, y, pageWidth - 2 * margin, 60, 3, 3, 'F');
+                    setTextColor(colors.primary);
+                    doc.setFontSize(10);
+                    doc.setFont("helvetica", "bold");
+                    doc.text("AI Assessment", margin + 10, y + 12);
+                    setTextColor(colors.text);
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(9);
+                    const splitSummary = doc.splitTextToSize(kqSummary, pageWidth - 2 * margin - 20);
+                    let summaryY = y + 22;
+                    for (const line of splitSummary.slice(0, 5)) { // Limit lines
+                        doc.text(line, margin + 10, summaryY);
+                        summaryY += 6;
                     }
-                    y += 5;
+                    y += 70;
                 }
 
-                // Quality Statements
-                for (const qs of kq.qualityStatements) {
-                    checkPageBreak(20);
-                    doc.setFont("helvetica", "bold");
+                // Quality Statements list
+                if (kq.qualityStatements.length > 0) {
+                    setTextColor(colors.secondary);
                     doc.setFontSize(11);
-                    doc.text(`${qs.code}: ${qs.title}`, margin + 5, y);
-                    y += 6;
+                    doc.setFont("helvetica", "bold");
+                    doc.text("Quality Statements", margin, y);
+                    y += 12;
 
-                    doc.setFont("helvetica", "normal");
-                    doc.setFontSize(10);
-                    doc.text(`Evidence: ${qs.evidence.length}  |  Controls: ${qs.controls.length}`, margin + 10, y);
-                    y += 8;
+                    for (const qs of kq.qualityStatements) {
+                        checkPageBreak(25);
+
+                        setFillColor(colors.light);
+                        doc.roundedRect(margin + 5, y - 5, pageWidth - 2 * margin - 10, 18, 2, 2, 'F');
+
+                        setTextColor(colors.accent);
+                        doc.setFontSize(10);
+                        doc.setFont("helvetica", "bold");
+                        doc.text(qs.code, margin + 12, y + 5);
+
+                        setTextColor(colors.text);
+                        doc.setFont("helvetica", "normal");
+                        const titleLines = doc.splitTextToSize(qs.title, pageWidth - 2 * margin - 80);
+                        doc.text(titleLines[0], margin + 40, y + 5);
+
+                        // Stats on right
+                        setTextColor(120, 120, 120);
+                        doc.setFontSize(8);
+                        doc.text(`${qs.evidence.length} evidence`, pageWidth - margin - 40, y + 5, { align: 'right' });
+
+                        y += 20;
+                    }
                 }
             }
 
-            // Evidence Index (simplified)
+            // Evidence Index Page
             addPage();
-            doc.setFontSize(18);
+            y = margin;
+
+            // Section header
+            setFillColor(colors.primary);
+            doc.rect(0, y - 5, pageWidth, 25, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(16);
             doc.setFont("helvetica", "bold");
-            doc.text("Evidence Index", margin, y);
+            doc.text("Evidence Index", margin + 5, y + 10);
+            y += 35;
+
+            setTextColor(colors.text);
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Complete list of ${packData.totalEvidence} evidence items organized by Key Question and Quality Statement.`, margin, y);
             y += 15;
 
+            // Evidence list (limited)
             doc.setFontSize(9);
-            doc.setFont("helvetica", "normal");
-
             let evidenceCount = 0;
             for (const kq of packData.keyQuestions) {
                 for (const qs of kq.qualityStatements) {
                     for (const evidence of qs.evidence) {
-                        if (evidenceCount >= 50) break; // Limit for PDF
-                        checkPageBreak(12);
+                        if (evidenceCount >= 60) break;
+                        checkPageBreak(15);
+
+                        // Evidence entry
+                        setFillColor(colors.light);
+                        doc.roundedRect(margin, y - 3, pageWidth - 2 * margin, 12, 2, 2, 'F');
+
+                        setTextColor(colors.accent);
                         doc.setFont("helvetica", "bold");
-                        doc.text(evidence.title.substring(0, 60), margin, y);
-                        y += 5;
+                        doc.text(evidence.title.substring(0, 70), margin + 5, y + 4);
+
+                        setTextColor(120, 120, 120);
                         doc.setFont("helvetica", "normal");
-                        doc.text(`${kq.title} > ${qs.title}`, margin + 5, y);
-                        y += 7;
+                        doc.setFontSize(7);
+                        doc.text(`${kq.title} > ${qs.code}`, margin + 5, y + 10);
+
+                        y += 15;
                         evidenceCount++;
                     }
                 }
             }
 
-            if (packData.totalEvidence > 50) {
-                y += 5;
-                doc.text(`... and ${packData.totalEvidence - 50} more items (see CSV for full list)`, margin, y);
+            if (packData.totalEvidence > 60) {
+                y += 10;
+                setFillColor([255, 250, 235]);
+                doc.roundedRect(margin, y, pageWidth - 2 * margin, 30, 3, 3, 'F');
+                setTextColor(colors.warning);
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "italic");
+                doc.text(`... and ${packData.totalEvidence - 60} more evidence items`, margin + 10, y + 18);
+                setTextColor(colors.text);
+                doc.setFontSize(9);
+                doc.setFont("helvetica", "normal");
+                doc.text("See complete evidence-index.csv in the ZIP archive", margin + 10, y + 26);
             }
 
-            // Footer
+            // Professional Footer on all pages
             const pageCount = doc.getNumberOfPages();
             for (let i = 1; i <= pageCount; i++) {
                 doc.setPage(i);
+
+                // Footer line
+                doc.setDrawColor(200, 200, 200);
+                doc.line(margin, pageHeight - 25, pageWidth - margin, pageHeight - 25);
+
+                // Footer text
                 doc.setFontSize(8);
                 doc.setFont("helvetica", "normal");
+                doc.setTextColor(150, 150, 150);
                 doc.text(
-                    `Page ${i} of ${pageCount} | Generated by Compass by aiigent.io`,
-                    pageWidth / 2,
-                    pageHeight - 10,
-                    { align: 'center' }
+                    `CQC Inspection Pack | ${packData.siteName} | Page ${i} of ${pageCount}`,
+                    margin,
+                    pageHeight - 15
+                );
+                doc.text(
+                    `Generated by Compass by aiigent.io`,
+                    pageWidth - margin,
+                    pageHeight - 15,
+                    { align: 'right' }
                 );
             }
 

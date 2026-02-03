@@ -376,6 +376,18 @@ function InspectionPacksPage() {
                       <Progress value={packDetail.coveragePercentage} className="h-2" />
                     </div>
 
+                    {/* Executive Summary */}
+                    {packDetail.executiveSummary && (
+                      <div className="space-y-2 pt-2">
+                        <h4 className="text-sm font-semibold text-primary">AI Executive Summary</h4>
+                        <div className="p-4 bg-blue-50/70 border border-blue-100 rounded-lg">
+                          <p className="text-sm text-blue-900 leading-relaxed">
+                            {packDetail.executiveSummary}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Download Section */}
                     {packDetail.status === 'ready' && (
                       <div className="border-t pt-4">

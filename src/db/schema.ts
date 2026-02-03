@@ -329,6 +329,8 @@ export const inspectionPacks = sqliteTable('inspection_packs', {
     createdBy: text('created_by').notNull().references(() => users.id),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
     status: text('status').notNull().default('building'), // 'building', 'ready', 'error'
+    executiveSummary: text('executive_summary'), // AI-generated executive summary
+    keyQuestionSummaries: text('key_question_summaries'), // JSON object with KQ ID -> summary mapping
 }, (table) => [
     index('idx_inspection_packs_site').on(table.tenantId, table.siteId),
 ]);
