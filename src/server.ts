@@ -9,9 +9,9 @@ console.log("[server-entry]: using custom server entry in 'src/server.ts'");
 import { EvidenceIngestWorkflow } from "./core/workflows/evidence-ingest";
 import { InspectionPackWorkflow } from "./core/workflows/inspection-pack-workflow";
 
-import { ChatAgent } from "./agent/ChatAgent";
+import { ComplianceAgent } from "./agent/ComplianceAgent";
 
-export { EvidenceIngestWorkflow, InspectionPackWorkflow, ChatAgent };
+export { EvidenceIngestWorkflow, InspectionPackWorkflow, ComplianceAgent };
 
 export default {
   fetch(request: Request, env: Env) {

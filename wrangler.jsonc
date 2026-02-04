@@ -7,7 +7,8 @@
   ],
   "main": "./src/server.ts",
   "vars": {
-    "MY_VAR": "Hello from Cloudflare"
+    "MY_VAR": "Hello from Cloudflare",
+    "AI_SEARCH_INDEX": "health-comply"
   },
   "d1_databases": [
     {
@@ -27,7 +28,7 @@
     "bindings": [
       {
         "name": "CHAT_AGENT",
-        "class_name": "ChatAgent"
+        "class_name": "ComplianceAgent"
       }
     ]
   },
@@ -35,7 +36,7 @@
     {
       "tag": "v1",
       "new_sqlite_classes": [
-        "ChatAgent"
+        "ComplianceAgent"
       ]
     }
   ],
