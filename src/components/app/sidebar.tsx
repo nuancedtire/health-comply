@@ -16,7 +16,7 @@ const navigation = [
     { name: "Compliance Checklist", href: "/checklist", icon: CheckSquare },
     { name: "Documents", href: "/documents", icon: FileText },
     { name: "Teams", href: "/team", icon: Users },
-    { name: "Expert Sign-Off", href: "/sign-off", icon: FileCheck },
+    { name: "Sign-Off", href: "/sign-off", icon: FileCheck },
     { name: "CQC Presentation", href: "/presentation", icon: Presentation },
 ];
 

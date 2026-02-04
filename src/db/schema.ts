@@ -329,6 +329,8 @@ export const inspectionPacks = sqliteTable('inspection_packs', {
     createdBy: text('created_by').notNull().references(() => users.id),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
     status: text('status').notNull().default('building'), // 'building', 'ready', 'error'
+    executiveSummary: text('executive_summary'), // AI-generated executive summary
+    keyQuestionSummaries: text('key_question_summaries'), // JSON object with KQ ID -> summary mapping
 }, (table) => [
     index('idx_inspection_packs_site').on(table.tenantId, table.siteId),
 ]);
@@ -427,4 +429,16 @@ export const cqcQualityStatementRelations = relations(cqcQualityStatements, ({ o
 
 export const cqcKeyQuestionRelations = relations(cqcKeyQuestions, ({ many }) => ({
     qualityStatements: many(cqcQualityStatements),
+}));
+
+export const inspectionPackRelations = relations(inspectionPacks, ({ one, many }) => ({
+    tenant: one(tenants, { fields: [inspectionPacks.tenantId], references: [tenants.id] }),
+    site: one(sites, { fields: [inspectionPacks.siteId], references: [sites.id] }),
+    createdByUser: one(users, { fields: [inspectionPacks.createdBy], references: [users.id] }),
+    outputs: many(inspectionPackOutputs),
+}));
+
+export const inspectionPackOutputRelations = relations(inspectionPackOutputs, ({ one }) => ({
+    tenant: one(tenants, { fields: [inspectionPackOutputs.tenantId], references: [tenants.id] }),
+    pack: one(inspectionPacks, { fields: [inspectionPackOutputs.packId], references: [inspectionPacks.id] }),
 }));

@@ -57,7 +57,7 @@ const items = [
     icon: Users,
   },
   {
-    title: "Expert Sign-Off",
+    title: "Sign-Off",
     url: "/signoff",
     icon: FileCheck,
   },
