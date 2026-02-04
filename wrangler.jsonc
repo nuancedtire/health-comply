@@ -41,11 +41,14 @@
     },
     {
       "tag": "v2",
-      "renamed_classes": [
-        {
-          "from": "ChatAgent",
-          "to": "ComplianceAgent"
-        }
+      "deleted_classes": [
+        "ChatAgent"
+      ]
+    },
+    {
+      "tag": "v3",
+      "new_sqlite_classes": [
+        "ComplianceAgent"
       ]
     }
   ],
