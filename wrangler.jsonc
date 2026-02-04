@@ -36,7 +36,16 @@
     {
       "tag": "v1",
       "new_sqlite_classes": [
-        "ComplianceAgent"
+        "ChatAgent"
+      ]
+    },
+    {
+      "tag": "v2",
+      "renamed_classes": [
+        {
+          "from": "ChatAgent",
+          "to": "ComplianceAgent"
+        }
       ]
     }
   ],
