@@ -41,8 +41,11 @@ import {
   AlertTriangle,
   Loader2,
   RefreshCw,
+  Sparkles,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import {
   createInspectionPackFn,
   getInspectionPacksFn,
@@ -51,7 +54,7 @@ import {
   downloadPackOutputFn,
   getKeyQuestionsForPackFn,
 } from '@/core/functions/inspection-pack-functions'
-import { getUserSitesFn } from '@/core/functions/evidence'
+import { useSite } from '@/components/site-context'
 import type { PackScopeType, InspectionPackDetail, EvidenceGap, KeyQuestionSummary, QualityStatementSummary } from '@/types/inspection-pack'
 
 export const Route = createFileRoute('/presentation')({
@@ -72,28 +75,38 @@ const KEY_QUESTION_COLORS: Record<string, string> = {
   well_led: 'bg-amber-100 text-amber-800 border-amber-200',
 }
 
+const MarkdownComponents = {
+  h1: ({ ...props }) => <h1 className="text-lg font-bold mt-4 mb-2 text-blue-900" {...props} />,
+  h2: ({ ...props }) => <h2 className="text-md font-semibold mt-3 mb-1 text-blue-900" {...props} />,
+  h3: ({ ...props }) => <h3 className="text-sm font-semibold mt-2 mb-1 text-blue-900" {...props} />,
+  p: ({ ...props }) => <p className="text-sm leading-relaxed mb-3 text-blue-800/90" {...props} />,
+  ul: ({ ...props }) => <ul className="list-none space-y-1.5 mb-4 ml-1" {...props} />,
+  ol: ({ ...props }) => <ol className="list-decimal space-y-1.5 mb-4 ml-4 text-sm text-blue-800/90" {...props} />,
+  li: ({ ...props }) => (
+    <li className="flex items-start gap-2 text-sm text-blue-800/90">
+      <span className="mt-1.5 h-1 w-1 rounded-full bg-blue-400 shrink-0" />
+      <span>{props.children}</span>
+    </li>
+  ),
+  strong: ({ ...props }) => <strong className="font-bold text-blue-900" {...props} />,
+  blockquote: ({ ...props }) => (
+    <blockquote className="border-l-2 border-blue-200 pl-4 italic my-2 text-blue-700 font-medium" {...props} />
+  ),
+}
+
 function InspectionPacksPage() {
   const queryClient = useQueryClient()
+  const { activeSite } = useSite()
   const [selectedPackId, setSelectedPackId] = useState<string | null>(null)
-  const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [packToDelete, setPackToDelete] = useState<string | null>(null)
 
-  // Fetch sites
-  const { data: sites = [] } = useQuery({
-    queryKey: ['user-sites'],
-    queryFn: () => getUserSitesFn(),
-  })
-
-  // Auto-select first site
-  const effectiveSiteId = selectedSiteId || sites[0]?.id || null
-
   // Fetch packs for site
   const { data: packs = [], isLoading: packsLoading, refetch: refetchPacks } = useQuery({
-    queryKey: ['inspection-packs', effectiveSiteId],
-    queryFn: () => effectiveSiteId ? getInspectionPacksFn({ data: { siteId: effectiveSiteId } }) : Promise.resolve([]),
-    enabled: !!effectiveSiteId,
+    queryKey: ['inspection-packs', activeSite?.id],
+    queryFn: () => activeSite?.id ? getInspectionPacksFn({ data: { siteId: activeSite.id } }) : Promise.resolve([]),
+    enabled: !!activeSite?.id,
   })
 
   // Auto-select first pack
@@ -116,7 +129,7 @@ function InspectionPacksPage() {
     onSuccess: (result: { id: string; status: string }) => {
       toast.success('Inspection pack creation started')
       setCreateDialogOpen(false)
-      queryClient.invalidateQueries({ queryKey: ['inspection-packs', effectiveSiteId] })
+      queryClient.invalidateQueries({ queryKey: ['inspection-packs', activeSite?.id] })
       setSelectedPackId(result.id)
     },
     onError: (error: Error) => {
@@ -131,7 +144,7 @@ function InspectionPacksPage() {
       toast.success('Inspection pack deleted')
       setDeleteDialogOpen(false)
       setPackToDelete(null)
-      queryClient.invalidateQueries({ queryKey: ['inspection-packs', effectiveSiteId] })
+      queryClient.invalidateQueries({ queryKey: ['inspection-packs', activeSite?.id] })
       if (selectedPackId === packToDelete) {
         setSelectedPackId(null)
       }
@@ -207,6 +220,7 @@ function InspectionPacksPage() {
     }
   }
 
+
   return (
     <MainLayout title="CQC Inspection Packs">
       <div className="space-y-6">
@@ -219,24 +233,10 @@ function InspectionPacksPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            {sites.length > 1 && (
-              <Select value={effectiveSiteId || ''} onValueChange={setSelectedSiteId}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Select site" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sites.map((site) => (
-                    <SelectItem key={site.id} value={site.id}>
-                      {site.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
             <CreatePackDialog
               open={createDialogOpen}
               onOpenChange={setCreateDialogOpen}
-              siteId={effectiveSiteId}
+              siteId={activeSite?.id || null}
               onSubmit={(inputData) => createMutation.mutate({ data: inputData })}
               isLoading={createMutation.isPending}
             />
@@ -271,11 +271,10 @@ function InspectionPacksPage() {
                     <button
                       key={pack.id}
                       onClick={() => setSelectedPackId(pack.id)}
-                      className={`w-full text-left p-3 rounded-lg border transition-all ${
-                        effectivePackId === pack.id
-                          ? 'border-primary bg-primary/5 shadow-sm'
-                          : 'border-border hover:border-muted-foreground/40 hover:bg-muted/50'
-                      }`}
+                      className={`w-full text-left p-3 rounded-lg border transition-all ${effectivePackId === pack.id
+                        ? 'border-primary bg-primary/5 shadow-sm'
+                        : 'border-border hover:border-muted-foreground/40 hover:bg-muted/50'
+                        }`}
                     >
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -378,12 +377,19 @@ function InspectionPacksPage() {
 
                     {/* Executive Summary */}
                     {packDetail.executiveSummary && (
-                      <div className="space-y-2 pt-2">
-                        <h4 className="text-sm font-semibold text-primary">AI Executive Summary</h4>
-                        <div className="p-4 bg-blue-50/70 border border-blue-100 rounded-lg">
-                          <p className="text-sm text-blue-900 leading-relaxed">
+                      <div className="space-y-3 pt-2">
+                        <div className="flex items-center gap-2">
+                          <div className="p-1 bg-blue-100 rounded-md">
+                            <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                          </div>
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-blue-900/70">
+                            AI Executive Summary
+                          </h4>
+                        </div>
+                        <div className="px-4 pt-3 bg-blue-50/40 border border-blue-100/50 rounded-sm shadow-[2px_2px_0px_0px_rgba(59,130,246,0.05)]">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]} components={MarkdownComponents}>
                             {packDetail.executiveSummary}
-                          </p>
+                          </ReactMarkdown>
                         </div>
                       </div>
                     )}
@@ -504,11 +510,11 @@ function InspectionPacksPage() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className='max-w-xl'>
           <DialogHeader>
             <DialogTitle>Delete Inspection Pack?</DialogTitle>
             <DialogDescription>
-              This will permanently delete the inspection pack and all associated files. This action cannot be undone.
+              This will permanently delete the inspection pack and all associated files. <br /> This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -813,9 +819,18 @@ function KeyQuestionSection({ keyQuestion }: { keyQuestion: KeyQuestionSummary }
           ))}
 
           {keyQuestion.aiSummary && (
-            <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg mt-3">
-              <p className="text-xs font-medium text-blue-800 mb-1">AI Summary</p>
-              <p className="text-sm text-blue-700">{keyQuestion.aiSummary}</p>
+            <div className="mt-4 pt-4 border-t border-blue-100/50">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="w-3 h-3 text-blue-500" />
+                <p className="text-[10px] font-bold uppercase tracking-tighter text-blue-900/50">
+                  Domain AI Insights
+                </p>
+              </div>
+              <div className="px-4 pt-3 bg-blue-50/30 border border-blue-100/30 rounded-sm">
+                <ReactMarkdown remarkPlugins={[remarkGfm]} components={MarkdownComponents}>
+                  {keyQuestion.aiSummary}
+                </ReactMarkdown>
+              </div>
             </div>
           )}
         </div>

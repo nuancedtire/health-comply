@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { useTheme } from '@/components/theme/theme-provider'
-import { User, Bell, Palette, Building2, Shield, Monitor, Sun, Moon, Check } from 'lucide-react'
+import { User, Bell, Palette, Shield, Monitor, Sun, Moon, Check } from 'lucide-react'
 
 export const Route = createFileRoute('/settings')({
     beforeLoad: ({ context }) => {
@@ -39,7 +39,7 @@ function SettingsPage() {
 
     return (
         <MainLayout title="Settings">
-            <div className="space-y-6 max-w-4xl">
+            <div className="space-y-6 max-w-full">
                 <div className="border-b pb-4">
                     <h1 className="text-3xl font-bold mb-1">Settings</h1>
                     <p className="text-muted-foreground">Manage your account preferences and workspace settings</p>
@@ -180,38 +180,6 @@ function SettingsPage() {
                                 checked={notifications.complianceAlerts}
                                 onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, complianceAlerts: checked }))}
                             />
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Organization Settings */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Building2 className="w-5 h-5" />
-                            Organization
-                        </CardTitle>
-                        <CardDescription>
-                            Workspace and organization details
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="org-name">Organization Name</Label>
-                                <Input id="org-name" placeholder="Your organization" defaultValue="Example Medical Practice" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="cqc-id">CQC Location ID</Label>
-                                <Input id="cqc-id" placeholder="1-XXXXXXXXX" defaultValue="1-123456789" />
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="address">Address</Label>
-                            <Input id="address" placeholder="Practice address" defaultValue="123 Health Street, London, SW1A 1AA" />
-                        </div>
-                        <div className="pt-2">
-                            <Button>Update Organization</Button>
                         </div>
                     </CardContent>
                 </Card>
