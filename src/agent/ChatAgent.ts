@@ -6,8 +6,10 @@ import { eq, and, count, gte, lte, inArray } from "drizzle-orm";
 interface Env {
     AI: any;
     DB: D1Database;
+    CEREBRAS_API_KEY?: string;
     EXA_API_KEY?: string;
     AI_SEARCH_INDEX?: string;
+    [key: string]: any;
 }
 
 // Context sent from the frontend on initialization
@@ -103,10 +105,10 @@ export class ChatAgent extends DurableObject<Env> {
             const tools = this.getTools();
             const steps: any[] = [];
 
-            // Run LLM with Workers AI
+            // Run LLM via Cerebras (OpenAI-compatible)
             let response: any;
             try {
-                response = await this.runLLMWithWorkersAI([
+                response = await this.runLLM([
                     { role: "system", content: this.getSystemPrompt() },
                     ...this.history
                 ], tools.map(t => t.definition));
@@ -118,16 +120,18 @@ export class ChatAgent extends DurableObject<Env> {
                 }));
             }
 
-            // Standardize response format handling
-            const responseMessage = response;
-            const content = responseMessage.content || "";
-            const toolCalls = responseMessage.tool_calls;
+            // Parse OpenAI-compatible response from Cerebras
+            const choice = response.choices?.[0];
+            const responseMessage = choice?.message;
+            const content = responseMessage?.content || "";
+            const toolCalls = responseMessage?.tool_calls;
 
             // Save the tool call request to history
             if (toolCalls && toolCalls.length > 0) {
                 this.history.push({
                     role: "assistant",
                     content: content,
+                    // @ts-ignore
                     tool_calls: toolCalls
                 });
                 await this.saveHistory();
@@ -141,6 +145,7 @@ export class ChatAgent extends DurableObject<Env> {
                 for (const call of toolCalls) {
                     const tool = tools.find(t => t.definition.function.name === call.function.name);
                     if (tool) {
+                        // Parse arguments: they come as a JSON string from Cerebras
                         let args = {};
                         try {
                             args = JSON.parse(call.function.arguments);
@@ -148,6 +153,7 @@ export class ChatAgent extends DurableObject<Env> {
                             console.error("Failed to parse tool arguments", e);
                         }
 
+                        // Record step start
                         const stepInfo = {
                             tool: call.function.name,
                             input: args,
@@ -156,7 +162,9 @@ export class ChatAgent extends DurableObject<Env> {
                         };
 
                         try {
+                            // Execute tool - returns { text, sources }
                             const result = await tool.handler(args);
+
                             const textContent = typeof result === 'string' ? result : result.text;
                             const sources = typeof result === 'object' ? result.sources : [];
 
@@ -189,16 +197,17 @@ export class ChatAgent extends DurableObject<Env> {
                     }
                 }
 
+                // Save history after all tools run
                 await this.saveHistory();
 
                 try {
-                    // Feed back to LLM
-                    response = await this.runLLMWithWorkersAI([
+                    // Feed back to LLM for final response
+                    response = await this.runLLM([
                         { role: "system", content: this.getSystemPrompt() },
                         ...this.history
                     ]);
 
-                    finalContent = response.content || "";
+                    finalContent = response.choices?.[0]?.message?.content || "";
 
                 } catch (err: any) {
                     console.error("Error in AI tool loop:", err);
@@ -212,6 +221,7 @@ export class ChatAgent extends DurableObject<Env> {
             this.history.push({ role: "assistant", content: finalContent });
             await this.saveHistory();
 
+            // Return Structured Response
             return new Response(JSON.stringify({
                 content: finalContent,
                 steps: steps
@@ -249,7 +259,6 @@ export class ChatAgent extends DurableObject<Env> {
         const entry = this.rateLimits.get(userId);
 
         if (!entry || now > entry.resetAt) {
-            // New window
             this.rateLimits.set(userId, {
                 count: 1,
                 resetAt: now + RATE_LIMIT.windowMs
@@ -370,10 +379,10 @@ export class ChatAgent extends DurableObject<Env> {
         try {
             const searchRes = await this.env.AI.autorag(indexName).search({
                 query: query,
-                topK: 4,
+                max_num_results: 4,
                 filters: {
-                    type: "gte",
-                    key: "id",
+                    type: "eq",
+                    key: "folder",
                     value: searchPrefix
                 }
             });
@@ -574,28 +583,16 @@ ${item.summary || item.textContent || '(No text content)'}`).join("\n---\n");
         const db = drizzle(this.env.DB, { schema });
 
         try {
-            let conditions = [
-                eq(schema.evidenceItems.tenantId, tenantId),
-                eq(schema.evidenceItems.siteId, siteId)
-            ];
-
-            if (status) {
-                conditions.push(eq(schema.evidenceItems.status, status));
-            }
-
-            if (days) {
-                const cutoffDate = new Date();
-                cutoffDate.setDate(cutoffDate.getDate() - days);
-                conditions.push(gte(schema.evidenceItems.uploadedAt, cutoffDate));
-            }
-
             // Get counts by status
             const statusCounts = await db.select({
                 status: schema.evidenceItems.status,
                 count: count(schema.evidenceItems.id)
             })
             .from(schema.evidenceItems)
-            .where(and(...conditions.filter(c => !('operator' in c && c.constructor.name === 'Sql'))))
+            .where(and(
+                eq(schema.evidenceItems.tenantId, tenantId),
+                eq(schema.evidenceItems.siteId, siteId)
+            ))
             .groupBy(schema.evidenceItems.status);
 
             // Get total count
@@ -686,9 +683,7 @@ ${item.summary || item.textContent || '(No text content)'}`).join("\n---\n");
 
             if (data.results) {
                 const text = data.results.map((r: any) =>
-                    `[Title: ${r.title}]
-[URL: ${r.url}]
-${r.text.slice(0, 10000)}...`
+                    `[Title: ${r.title}]\n[URL: ${r.url}]\n${r.text.slice(0, 10000)}...`
                 ).join("\n\n");
 
                 const sources = data.results.map((r: any) => ({
@@ -734,27 +729,35 @@ RULES:
 8. Always consider the current site context (${c.siteName}) when answering.`;
     }
 
-    // Run LLM with Workers AI
-    async runLLMWithWorkersAI(messages: any[], tools: any[] | null = null): Promise<any> {
-        const model = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+    // Run LLM via Cerebras API (OpenAI-compatible)
+    async runLLM(messages: any[], tools: any[] | null = null) {
+        const apiKey = this.env.CEREBRAS_API_KEY;
+        if (!apiKey) throw new Error("CEREBRAS_API_KEY is missing");
 
         const body: any = {
-            messages: messages.map(m => ({
-                role: m.role,
-                content: m.content
-            }))
+            model: "qwen-3-32b",
+            messages: messages,
+            temperature: 0.1
         };
 
         if (tools && tools.length > 0) {
             body.tools = tools;
         }
 
-        try {
-            const response = await this.env.AI.run(model, body);
-            return response;
-        } catch (e: any) {
-            console.error("Workers AI Error:", e);
-            throw new Error(`AI processing failed: ${e.message}`);
+        const response = await fetch("https://api.cerebras.ai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${apiKey}`
+            },
+            body: JSON.stringify(body)
+        });
+
+        if (!response.ok) {
+            const err = await response.text();
+            throw new Error(`Cerebras API Error: ${err}`);
         }
+
+        return await response.json();
     }
 }
