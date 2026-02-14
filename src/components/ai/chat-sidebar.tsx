@@ -42,11 +42,12 @@ import {
     TaskContent,
     TaskItem,
     TaskTrigger,
+    TaskCodeBlock,
+    type TaskStatus,
 } from "@/components/ai/task";
-import type { ToolUIPart } from "ai";
-import { GlobeIcon, MessageSquare, X, Loader2 } from "lucide-react";
+import { GlobeIcon, MessageSquare, X, Terminal } from "lucide-react";
 import { nanoid } from "nanoid";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useLocation } from "@tanstack/react-router";
 import { initChatFn, sendMessageFn, getChatHistoryFn, clearChatFn } from "@/core/functions/chat-functions";
 import { Button } from "@/components/ui/button";
@@ -68,7 +69,7 @@ type MessageType = {
     tools?: {
         name: string;
         description: string;
-        status: ToolUIPart["state"];
+        status: TaskStatus;
         parameters: Record<string, unknown>;
         result: string | undefined;
         error: string | undefined;
@@ -99,6 +100,9 @@ export function ChatSidebar() {
     >("ready");
     const [messages, setMessages] = useState<MessageType[]>(initialMessages);
     const [lastInitializedPath, setLastInitializedPath] = useState<string>("");
+    const [sidebarWidth, setSidebarWidth] = useState(450);
+    const sidebarRef = useRef<HTMLDivElement>(null);
+    const isDragging = useRef(false);
 
     // Initialize/Update Chat Context on Sidebar Open OR Navigation
     useEffect(() => {
@@ -253,6 +257,35 @@ export function ChatSidebar() {
         }
     }, [isOpen, location.pathname, activeSite?.id, lastInitializedPath]);
 
+    // Drag to resize handlers
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            if (!isDragging.current) return;
+            const newWidth = window.innerWidth - e.clientX;
+            setSidebarWidth(Math.max(320, Math.min(800, newWidth)));
+        };
+
+        const handleMouseUp = () => {
+            isDragging.current = false;
+            document.body.style.cursor = "";
+            document.body.style.userSelect = "";
+        };
+
+        document.addEventListener("mousemove", handleMouseMove);
+        document.addEventListener("mouseup", handleMouseUp);
+
+        return () => {
+            document.removeEventListener("mousemove", handleMouseMove);
+            document.removeEventListener("mouseup", handleMouseUp);
+        };
+    }, []);
+
+    const handleDragStart = () => {
+        isDragging.current = true;
+        document.body.style.cursor = "ew-resize";
+        document.body.style.userSelect = "none";
+    };
+
     const addUserMessage = useCallback(
         async (content: string) => {
             // 1. Add User Message to UI
@@ -345,8 +378,33 @@ export function ChatSidebar() {
         setText("");
     };
 
+    // Close sidebar when clicking outside
+    const handleOverlayClick = () => {
+        setIsOpen(false);
+    };
+
     return (
         <>
+            {isOpen && (
+                <>
+                    {/* Overlay */}
+                    <div 
+                        className="fixed inset-0 bg-black/20 z-40 animate-in fade-in"
+                        onClick={handleOverlayClick}
+                    />
+                    
+                    {/* FAB Button (outside sidebar) */}
+                    <Button
+                        onClick={() => setIsOpen(true)}
+                        size="icon"
+                        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-xl bg-indigo-600 hover:bg-indigo-700 text-white z-50 animate-in fade-in zoom-in"
+                    >
+                        <MessageSquare className="h-7 w-7" />
+                    </Button>
+                </>
+            )}
+
+            {/* Floating button when closed */}
             {!isOpen && (
                 <Button
                     onClick={() => setIsOpen(true)}
@@ -358,7 +416,25 @@ export function ChatSidebar() {
             )}
 
             {isOpen && (
-                <div className="fixed inset-y-0 right-0 w-full sm:w-[450px] bg-background shadow-2xl z-50 flex flex-col border-l animate-in slide-in-from-right duration-300">
+                <div 
+                    ref={sidebarRef}
+                    className="fixed inset-y-0 right-0 bg-background shadow-2xl z-50 flex flex-col border-l animate-in slide-in-from-right duration-300"
+                    style={{ width: sidebarWidth }}
+                >
+                    {/* Drag Handle - full height, more visible */}
+                    <div 
+                        className="absolute left-0 top-0 bottom-0 w-3 cursor-ew-resize group z-10"
+                        onMouseDown={handleDragStart}
+                    >
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex flex-col gap-1">
+                                <div className="w-1 h-3 bg-muted-foreground/40 rounded-full" />
+                                <div className="w-1 h-3 bg-muted-foreground/40 rounded-full" />
+                                <div className="w-1 h-3 bg-muted-foreground/40 rounded-full" />
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Header */}
                     <div className="flex items-center justify-between p-4 border-b">
                         <h2 className="font-semibold text-lg flex items-center gap-2">
@@ -411,46 +487,76 @@ export function ChatSidebar() {
                                                     key={`${message.key}-${version.id}`}
                                                 >
                                                     <div>
-                                                        {/* Task / Tools Display */}
-                                                        {message.tools && message.tools.length > 0 && (
-                                                            <div className="mb-2">
-                                                                <Task className="bg-transparent border-0">
-                                                                    <TaskTrigger
-                                                                        title={
-                                                                            <span className="flex items-center gap-2 text-xs font-medium">
-                                                                                <Loader2 className="w-3 h-3 text-indigo-500" />
-                                                                                Processed {message.tools.length} Step{message.tools.length !== 1 ? 's' : ''}
-                                                                            </span>
-                                                                        }
-                                                                        className="py-1 px-2 hover:bg-muted/50 rounded cursor-pointer"
-                                                                    />
-                                                                    <TaskContent>
-                                                                        {message.tools.map((tool, idx) => (
-                                                                            <TaskItem key={idx} className="text-xs py-1 border-l-2 border-muted pl-4 ml-1">
-                                                                                <div className="flex flex-col gap-1">
-                                                                                    {/* Tool Name */}
-                                                                                    <span className="font-semibold text-foreground/80 lowercase bg-muted px-1.5 py-0.5 rounded w-fit">
-                                                                                        {tool.name === 'web_search' ? 'Web Search' :
-                                                                                            tool.name === 'search_evidence' ? 'Evidence Check' : tool.name}
-                                                                                    </span>
+                                                        <MessageContent>
+                                                            <MessageResponse>{version.content}</MessageResponse>
+                                                        </MessageContent>
 
-                                                                                    {/* Tool Input / Query */}
-                                                                                    <span className="text-muted-foreground break-words italic">
-                                                                                        {tool.name === 'web_search' || tool.name === 'search_evidence' ?
-                                                                                            `"${(tool.parameters as any).query}"` : ''}
-                                                                                    </span>
-                                                                                </div>
-                                                                                {tool.error && <div className="text-red-500 text-[10px] mt-1">{tool.error}</div>}
-                                                                            </TaskItem>
-                                                                        ))}
-                                                                    </TaskContent>
-                                                                </Task>
-                                                            </div>
-                                                        )}
+                                                        {/* Task / Tools Display */}
+                                                        {message.tools && message.tools.length > 0 && (() => {
+                                                            const allCompleted = message.tools.every(t => t.status === 'result' || t.status === 'completed');
+                                                            const anyFailed = message.tools.some(t => t.error || t.status === 'failed');
+                                                            
+                                                            return (
+                                                                <div className="mt-4 flex flex-col gap-3 border-t border-muted/50 pt-4">
+                                                                    <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70 px-1">
+                                                                        <Terminal className="size-3" />
+                                                                        Tools Used
+                                                                    </div>
+                                                                    <div className="flex flex-wrap gap-2">
+                                                                        {allCompleted && !anyFailed ? (
+                                                                            <Task status="completed">
+                                                                                <TaskTrigger 
+                                                                                    title={`Used ${message.tools.length} tool${message.tools.length !== 1 ? 's' : ''}`} 
+                                                                                    status="completed"
+                                                                                />
+                                                                                <TaskContent className="max-w-[400px]">
+                                                                                    <div className="flex flex-col gap-4">
+                                                                                        {message.tools.map((tool, idx) => (
+                                                                                            <div key={idx} className={idx > 0 ? "border-t border-muted/30 pt-4" : ""}>
+                                                                                                <div className="flex items-center gap-2 mb-2">
+                                                                                                    <div className="text-[10px] font-bold text-foreground uppercase bg-muted px-1.5 py-0.5 rounded">
+                                                                                                        {tool.name}
+                                                                                                    </div>
+                                                                                                    <div className="text-[10px] text-muted-foreground italic truncate">
+                                                                                                        {(tool.parameters as any)?.query || ''}
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                                <TaskCodeBlock label="Input" value={tool.parameters} />
+                                                                                                {tool.result && (
+                                                                                                    <div className="mt-2">
+                                                                                                        <TaskCodeBlock label="Output" value={tool.result} />
+                                                                                                    </div>
+                                                                                                )}
+                                                                                            </div>
+                                                                                        ))}
+                                                                                    </div>
+                                                                                </TaskContent>
+                                                                            </Task>
+                                                                        ) : (
+                                                                            message.tools.map((tool, idx) => (
+                                                                                <Task key={idx} status={tool.status as TaskStatus}>
+                                                                                    <TaskTrigger 
+                                                                                        title={tool.name} 
+                                                                                        status={(tool.error || tool.status === 'failed') ? 'failed' : (tool.status as TaskStatus)}
+                                                                                    />
+                                                                                    <TaskContent>
+                                                                                        <TaskItem>
+                                                                                            <TaskCodeBlock label="Parameters" value={tool.parameters} />
+                                                                                            {tool.result && <TaskCodeBlock label="Result" value={tool.result} />}
+                                                                                            {tool.error && <TaskCodeBlock label="Error" value={tool.error} />}
+                                                                                        </TaskItem>
+                                                                                    </TaskContent>
+                                                                                </Task>
+                                                                            ))
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })()}
 
                                                         {/* Sources Display */}
                                                         {message.sources?.length && (
-                                                            <div className="mb-2">
+                                                            <div className="mt-4">
                                                                 <Sources>
                                                                     <SourcesTrigger count={message.sources.length} />
                                                                     <SourcesContent>
@@ -465,10 +571,6 @@ export function ChatSidebar() {
                                                                 </Sources>
                                                             </div>
                                                         )}
-
-                                                        <MessageContent>
-                                                            <MessageResponse>{version.content}</MessageResponse>
-                                                        </MessageContent>
                                                     </div>
                                                 </Message>
                                             ))}
