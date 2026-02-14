@@ -513,7 +513,7 @@ function SettingsPage() {
                 <div className="space-y-3">
                   {sessions.map((sessionItem) => {
                     const sessionToken = sessionItem.token;
-                    const isCurrentSession = sessionToken === session?.user?.id;
+                    const isCurrentSession = sessionToken === session?.session?.token;
                     return (
                       <div
                         key={sessionToken || sessionItem.id}
