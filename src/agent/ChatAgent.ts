@@ -129,6 +129,12 @@ export class ChatAgent extends DurableObject<Env> {
       // Classify query to determine tool categories and improved query - always pass to LLM
       const classification = await this.classifyQuery(message);
 
+      // Log classification results
+      console.log(
+        `[ChatAgent] Router suggested tools:`,
+        classification.suggestedTools,
+      );
+
       // Update the message with rewritten query if provided
       const processedMessage = classification.rewrittenQuery || message;
       const messageHistory = this.history.map((msg) => {
@@ -148,12 +154,10 @@ export class ChatAgent extends DurableObject<Env> {
               role: "system",
               content:
                 this.getSystemPrompt() +
-                `\n\nCLASSIFICATION: This is a "${classification.primaryIntent}" query. ` +
-                (classification.suggestedTools.length > 1
-                  ? `**REQUIRED: CALL ALL OF THESE TOOLS IN PARALLEL**: ${classification.suggestedTools.join(", ")}. You MUST call all listed tools to provide a complete answer. Do not skip any tool.`
-                  : classification.suggestedTools.length === 1
-                    ? `**REQUIRED: CALL THIS TOOL**: ${classification.suggestedTools[0]}. Use it to answer the query accurately.`
-                    : `No tools required. Answer directly.`),
+                `\n\nThe user is asking about: ${classification.primaryIntent}. ` +
+                (classification.suggestedTools.length > 0
+                  ? `Use the following tool(s) to answer: ${classification.suggestedTools.join(", ")}. Call all relevant tools before providing your response.`
+                  : `Answer directly without using tools.`),
             },
             ...messageHistory,
           ],
@@ -175,14 +179,24 @@ export class ChatAgent extends DurableObject<Env> {
       const content = responseMessage?.content || "";
       const toolCalls = responseMessage?.tool_calls;
 
-      // Initialize finalContent with the LLM's response
-      let finalContent = content;
+      // Debug logging
+      console.log(`[ChatAgent] LLM response:`, {
+        content: content?.substring(0, 200),
+        hasToolCalls: !!toolCalls,
+        toolCount: toolCalls?.length || 0,
+        toolNames:
+          toolCalls?.map((tc: any) => tc.function?.name || tc.name) || [],
+      });
+
+      // If there are tool calls, ignore any content from this response (it's likely malformed)
+      // and wait for the synthesis step to generate proper content
+      let finalContent = toolCalls && toolCalls.length > 0 ? "" : content;
 
       // Save the tool call request to history
       if (toolCalls && toolCalls.length > 0) {
         this.history.push({
           role: "assistant",
-          content: content,
+          content: "", // Don't save malformed content
           // @ts-ignore
           tool_calls: toolCalls,
         });
@@ -239,9 +253,10 @@ export class ChatAgent extends DurableObject<Env> {
             stepInfo.sources = sources;
 
             // Tool result content for LLM - plain text with sources appended
-            const toolResultContent = sources && sources.length > 0
-              ? `${textContent}\n\nSources:\n${sources.map((s: any) => `- ${s.title}: ${s.href}`).join('\n')}`
-              : textContent;
+            const toolResultContent =
+              sources && sources.length > 0
+                ? `${textContent}\n\nSources:\n${sources.map((s: any) => `- ${s.title}: ${s.href}`).join("\n")}`
+                : textContent;
 
             const toolResultMsg = {
               role: "tool" as const,
@@ -268,6 +283,15 @@ export class ChatAgent extends DurableObject<Env> {
 
         // Execute all tools in parallel
         const results = await Promise.all(toolPromises);
+        console.log(
+          `[ChatAgent] Tool execution results:`,
+          results.map((r: any) => ({
+            tool: r.call?.function?.name,
+            success: r.success,
+            hasStepInfo: !!r.stepInfo,
+            outputPreview: r.stepInfo?.output?.substring(0, 100),
+          })),
+        );
 
         // Process results in order to maintain conversation flow
         const toolResults = [];
@@ -293,8 +317,15 @@ export class ChatAgent extends DurableObject<Env> {
 
         try {
           // Feed back to LLM for final response
+          const synthesisPrompt = `You are Compass, a CQC compliance assistant. Based on the tool results in the conversation history above, provide a helpful summary for the user.
+
+Rules:
+- Write in natural, conversational English
+- Do not include JSON, code blocks, or raw tool output
+- Summarize the key findings and provide actionable recommendations`;
+
           response = await this.runLLM([
-            { role: "system", content: this.getSystemPrompt() },
+            { role: "system", content: synthesisPrompt },
             ...this.history,
           ]);
 
@@ -312,6 +343,11 @@ export class ChatAgent extends DurableObject<Env> {
 
       this.history.push({ role: "assistant", content: finalContent });
       await this.saveHistory();
+
+      // Debug logging
+      console.log(
+        `[ChatAgent] Returning response with ${steps.length} tool step(s)`,
+      );
 
       // Return Structured Response
       return new Response(
@@ -416,7 +452,7 @@ export class ChatAgent extends DurableObject<Env> {
           function: {
             name: "search_evidence",
             description:
-              "Search uploaded compliance evidence files in the specific site context. Use this when the user asks about documents, files, or evidence. Can be used alongside web_search for comprehensive research.",
+              "Search uploaded compliance evidence files in the specific site context. Use this when the user asks about documents, files, or evidence.",
             parameters: {
               type: "object",
               properties: {
@@ -445,7 +481,7 @@ export class ChatAgent extends DurableObject<Env> {
           function: {
             name: "query_compliance_status",
             description:
-              "Query the compliance status of Quality Statements and controls. Use this when the user asks about compliance achieved, gaps, coverage, or status. Use alongside web_search when user asks about 'what evidence is needed' or 'what am I missing' to compare internal gaps against external requirements.",
+              "Query the compliance status of Quality Statements and controls. Use this when the user asks about compliance achieved, gaps, coverage, or status.",
             parameters: {
               type: "object",
               properties: {
@@ -508,7 +544,7 @@ export class ChatAgent extends DurableObject<Env> {
           function: {
             name: "web_search",
             description:
-              "Search the public internet for CQC regulations, news, or clinical guidelines. IMPORTANT: When user asks about 'their' evidence, 'missing' items, or 'what do I need' alongside external research, you MUST ALSO call query_compliance_status or query_evidence_metadata in parallel to check internal state.",
+              "Search the public internet for CQC regulations, news, or clinical guidelines.",
             parameters: {
               type: "object",
               properties: { query: { type: "string" } },
@@ -1038,12 +1074,11 @@ AVAILABLE TOOLS:
 3. query_evidence_metadata - Get statistics about evidence (counts, pending reviews, expiring)
 ${this.env.EXA_API_KEY ? "4. web_search - Search external CQC regulations, guidelines, and best practices" : ""}
 
-CORE RULES:
-1. **ALWAYS** call the tools suggested by the routing system. Do not skip suggested tools.
-2. When multiple tools are suggested, call ALL of them in parallel for a complete answer.
-3. Synthesize information from all tool results into a clear, actionable response.
-4. Be friendly, helpful, professional, and concise.
-5. Always consider the current site context (${c.siteName}) when answering.`;
+INSTRUCTIONS:
+1. Use the available tools via function calls when needed to answer user questions
+2. Call multiple tools in parallel if they provide complementary information
+3. Synthesize tool results into natural, helpful responses - never echo raw JSON or tool arguments
+4. Be friendly, professional, and concise`;
   }
 
   // LLM-based Router (Anthropic Pattern: Routing)
@@ -1053,7 +1088,9 @@ CORE RULES:
     const lowerMessage = message.toLowerCase().trim();
     if (["hi", "hello", "hey", "thanks", "thank you"].includes(lowerMessage)) {
       return {
-        primaryIntent: lowerMessage.includes("thank") ? "acknowledgment" : "greeting",
+        primaryIntent: lowerMessage.includes("thank")
+          ? "acknowledgment"
+          : "greeting",
         suggestedTools: [],
         rewrittenQuery: message,
       };
@@ -1063,26 +1100,30 @@ CORE RULES:
     const availableTools = [
       {
         name: "search_evidence",
-        description: "Search user's uploaded compliance evidence files and documents. Use for: finding files, checking what evidence exists, looking up documents, 'my files', 'our evidence'",
+        description:
+          "Search user's uploaded compliance evidence files and documents. Use for: finding files, checking what evidence exists, looking up documents, 'my files', 'our evidence'",
       },
       {
         name: "query_compliance_status",
-        description: "Check compliance coverage, gaps, what's missing, which Quality Statements have evidence. Use for: 'missing evidence', 'what do I need', 'gaps', 'coverage', 'compliance achieved'",
+        description:
+          "Check compliance coverage, gaps, what's missing, which Quality Statements have evidence. Use for: 'missing evidence', 'what do I need', 'gaps', 'coverage', 'compliance achieved'",
       },
       {
         name: "query_evidence_metadata",
-        description: "Get statistics about evidence: counts, pending reviews, expiring items, dates. Use for: 'how many', 'counts', 'statistics', 'status of evidence'",
+        description:
+          "Get statistics about evidence: counts, pending reviews, expiring items, dates. Use for: 'how many', 'counts', 'statistics', 'status of evidence'",
       },
       {
         name: "web_search",
-        description: "Search external CQC regulations, guidelines, best practices. Use for: external regulations, guidance, best practices, 'research online', 'what does CQC require'",
+        description:
+          "Search external CQC regulations, guidelines, best practices. Use for: external regulations, guidance, best practices, 'research online', 'what does CQC require'",
       },
-    ].filter(t => t.name !== "web_search" || this.env.EXA_API_KEY);
+    ].filter((t) => t.name !== "web_search" || this.env.EXA_API_KEY);
 
     const routerPrompt = `You are a query router for a CQC compliance assistant. Analyze the user query and decide which tools to use.
 
 Available Tools:
-${availableTools.map(t => `- ${t.name}: ${t.description}`).join("\n")}
+${availableTools.map((t) => `- ${t.name}: ${t.description}`).join("\n")}
 
 User Query: "${message}"
 
@@ -1106,16 +1147,17 @@ Rules:
     try {
       const routerResponse: any = await this.runLLM([
         { role: "system", content: routerPrompt },
-        { role: "user", content: message }
+        { role: "user", content: message },
       ]);
 
       const content = routerResponse.choices?.[0]?.message?.content || "";
-      
+
       // Extract JSON from response (handle markdown code blocks)
-      const jsonMatch = content.match(/```json\s*([\s\S]*?)```/) || 
-                       content.match(/```\s*([\s\S]*?)```/) ||
-                       content.match(/(\{[\s\S]*\})/);
-      
+      const jsonMatch =
+        content.match(/```json\s*([\s\S]*?)```/) ||
+        content.match(/```\s*([\s\S]*?)```/) ||
+        content.match(/(\{[\s\S]*\})/);
+
       const jsonStr = jsonMatch ? jsonMatch[1] || jsonMatch[0] : content;
       const routing = JSON.parse(jsonStr);
 
@@ -1141,13 +1183,15 @@ Rules:
     if (!apiKey) throw new Error("CEREBRAS_API_KEY is missing");
 
     const body: any = {
-      model: "gpt-oss-120b",
+      model: "zai-glm-4.7", // Better tool calling support than gpt-oss-120b
       messages: messages,
       temperature: 0.1,
     };
 
     if (tools && tools.length > 0) {
       body.tools = tools;
+      body.tool_choice = "auto";
+      body.parallel_tool_calls = true;
     }
 
     const response = await fetch(
