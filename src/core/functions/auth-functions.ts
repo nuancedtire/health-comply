@@ -182,34 +182,20 @@ export const requestPasswordResetFn = createServerFn({ method: "POST" })
         const { createAuth } = await import("@/lib/auth");
         const auth = createAuth(db, env);
 
-        // 1. Trigger Better Auth's forget password
-        // This usually sends an email. 
-        // We'll catch errors if user not found.
+        // Trigger Better Auth's forget password
+        // This sends an email with the reset link
         try {
-            // Using 'any' bypasses potential type mismatches with Better Auth plugins/versions
             await (auth.api as any).forgetPassword({
                 body: { email, redirectTo: "/reset-password" }
             });
         } catch (e) {
-            // If user doesn't exist, BA might throw or just return. 
-            // For security, generally return success.
-            // But for this debug/demo, we want the token.
-            console.error(e);
+            // Log error but don't expose whether email exists for security
+            console.error("Password reset request failed:", e);
         }
 
-        // 2. Peek into DB to find the token (DEMO ONLY)
-        // Switch to db.select to avoid query builder type issues if schemas mismatch
-        const { desc } = await import("drizzle-orm");
-
-        const verification = await db.select({ value: schema.verifications.value })
-            .from(schema.verifications as any)
-            .where(eq(schema.verifications.identifier, email) as any)
-            .orderBy(desc(schema.verifications.createdAt))
-            .limit(1)
-            .get();
-
-        // The token value is what we need.
-        return { success: true, token: verification?.value };
+        // SECURITY: Never return the token in the API response
+        // The token is sent via email only
+        return { success: true };
     });
 
 const ResetPasswordSchema = z.object({
