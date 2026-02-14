@@ -148,7 +148,12 @@ export class ChatAgent extends DurableObject<Env> {
               role: "system",
               content:
                 this.getSystemPrompt() +
-                `\n\nCLASSIFICATION HINT: The user is asking about "${classification.primaryIntent}" - consider using ${classification.suggestedTools.join(", ") || "appropriate tools"} if needed.`,
+                `\n\nCLASSIFICATION: This is a "${classification.primaryIntent}" query. ` +
+                (classification.suggestedTools.length > 1
+                  ? `**REQUIRED: CALL ALL OF THESE TOOLS IN PARALLEL**: ${classification.suggestedTools.join(", ")}. You MUST call all listed tools to provide a complete answer. Do not skip any tool.`
+                  : classification.suggestedTools.length === 1
+                    ? `**REQUIRED: CALL THIS TOOL**: ${classification.suggestedTools[0]}. Use it to answer the query accurately.`
+                    : `No tools required. Answer directly.`),
             },
             ...messageHistory,
           ],
@@ -233,13 +238,15 @@ export class ChatAgent extends DurableObject<Env> {
             stepInfo.output = textContent;
             stepInfo.sources = sources;
 
+            // Tool result content for LLM - plain text with sources appended
+            const toolResultContent = sources && sources.length > 0
+              ? `${textContent}\n\nSources:\n${sources.map((s: any) => `- ${s.title}: ${s.href}`).join('\n')}`
+              : textContent;
+
             const toolResultMsg = {
               role: "tool" as const,
               tool_call_id: call.id,
-              content: JSON.stringify({
-                text: textContent,
-                sources: sources,
-              }),
+              content: toolResultContent,
             };
 
             return {
@@ -409,7 +416,7 @@ export class ChatAgent extends DurableObject<Env> {
           function: {
             name: "search_evidence",
             description:
-              "Search uploaded compliance evidence files in the specific site context. Use this when the user asks about documents, files, or evidence.",
+              "Search uploaded compliance evidence files in the specific site context. Use this when the user asks about documents, files, or evidence. Can be used alongside web_search for comprehensive research.",
             parameters: {
               type: "object",
               properties: {
@@ -438,7 +445,7 @@ export class ChatAgent extends DurableObject<Env> {
           function: {
             name: "query_compliance_status",
             description:
-              "Query the compliance status of Quality Statements and controls. Use this when the user asks about compliance achieved, gaps, coverage, or status.",
+              "Query the compliance status of Quality Statements and controls. Use this when the user asks about compliance achieved, gaps, coverage, or status. Use alongside web_search when user asks about 'what evidence is needed' or 'what am I missing' to compare internal gaps against external requirements.",
             parameters: {
               type: "object",
               properties: {
@@ -501,7 +508,7 @@ export class ChatAgent extends DurableObject<Env> {
           function: {
             name: "web_search",
             description:
-              "Search the public internet for CQC regulations, news, or clinical guidelines.",
+              "Search the public internet for CQC regulations, news, or clinical guidelines. IMPORTANT: When user asks about 'their' evidence, 'missing' items, or 'what do I need' alongside external research, you MUST ALSO call query_compliance_status or query_evidence_metadata in parallel to check internal state.",
             parameters: {
               type: "object",
               properties: { query: { type: "string" } },
@@ -1026,129 +1033,106 @@ Current Page: ${c.pageContext.title}
 ${c.pageContext.qsId ? `Focus: Quality Statement ${c.pageContext.qsId}` : ""}
 
 AVAILABLE TOOLS:
-1. search_evidence - Search uploaded documents and evidence files
-2. query_compliance_status - Check compliance coverage for Quality Statements and controls
-3. query_evidence_metadata - Get statistics about evidence items (counts, status, expiring)
-${this.env.EXA_API_KEY ? "4. web_search - Search external CQC regulations and guidelines" : ""}
+1. search_evidence - Search uploaded compliance documents and evidence files
+2. query_compliance_status - Check compliance coverage, gaps, and what's missing for Quality Statements
+3. query_evidence_metadata - Get statistics about evidence (counts, pending reviews, expiring)
+${this.env.EXA_API_KEY ? "4. web_search - Search external CQC regulations, guidelines, and best practices" : ""}
 
-RULES:
-1. If user asks about "our evidence", "my files", or specific documents, use 'search_evidence'.
-2. If user asks about "compliance achieved", "gaps", "what QS are covered", use 'query_compliance_status'.
-3. If user asks about "how many evidence items", "what's pending review", "what's expiring", use 'query_evidence_metadata'.
-4. If user asks about external regulations or CQC guidance${this.env.EXA_API_KEY ? ", use 'web_search'" : ", explain that web search is not configured"}.
-5. Be friendly, helpful, professional, and concise.
-6. You do not always need to use a tool if you can answer directly.
-7. Use tools only when necessary to provide accurate information.
-8. Always consider the current site context (${c.siteName}) when answering.`;
+CORE RULES:
+1. **ALWAYS** call the tools suggested by the routing system. Do not skip suggested tools.
+2. When multiple tools are suggested, call ALL of them in parallel for a complete answer.
+3. Synthesize information from all tool results into a clear, actionable response.
+4. Be friendly, helpful, professional, and concise.
+5. Always consider the current site context (${c.siteName}) when answering.`;
   }
 
-  // P2: QUERY CLASSIFICATION (Anthropic Pattern: Routing)
-  // Classifies input and provides hints to the LLM
+  // LLM-based Router (Anthropic Pattern: Routing)
+  // Uses LLM to intelligently route queries to appropriate tools
   async classifyQuery(message: string): Promise<QueryClassification> {
-    const lowerMessage = message.toLowerCase();
-
-    // Pattern match for common query types
-    const isEvidenceQuery =
-      lowerMessage.includes("document") ||
-      lowerMessage.includes("file") ||
-      lowerMessage.includes("evidence") ||
-      lowerMessage.includes("upload") ||
-      lowerMessage.includes("show me") ||
-      lowerMessage.includes("my files");
-
-    const isComplianceQuery =
-      lowerMessage.includes("compliance") ||
-      lowerMessage.includes("coverage") ||
-      lowerMessage.includes("gap") ||
-      lowerMessage.includes("quality statement") ||
-      lowerMessage.includes("qs") ||
-      lowerMessage.includes("control") ||
-      lowerMessage.includes("achieved");
-
-    const isMetadataQuery =
-      lowerMessage.includes("how many") ||
-      lowerMessage.includes("count") ||
-      lowerMessage.includes("pending") ||
-      lowerMessage.includes("expiring") ||
-      lowerMessage.includes("statistics") ||
-      lowerMessage.includes("status");
-
-    const isWebQuery =
-      lowerMessage.includes("regulation") ||
-      lowerMessage.includes("guidance") ||
-      lowerMessage.includes("cqc guidelines") ||
-      lowerMessage.includes("search") ||
-      lowerMessage.includes("external");
-
-    // Check for direct answer patterns (greetings, simple questions)
-    const isGreeting =
-      lowerMessage.includes("hello") ||
-      lowerMessage.includes("hi") ||
-      lowerMessage.includes("hey") ||
-      lowerMessage === "hi" ||
-      lowerMessage === "hello";
-
-    const isThanks =
-      lowerMessage.includes("thank") || lowerMessage.includes("thanks");
-
-    // Simple capability questions
-    const isCapabilityQuery =
-      lowerMessage.includes("what can you do") ||
-      lowerMessage.includes("help me") ||
-      lowerMessage === "help";
-
-    if (isGreeting) {
+    // Quick check for simple greetings/thanks (no LLM call needed)
+    const lowerMessage = message.toLowerCase().trim();
+    if (["hi", "hello", "hey", "thanks", "thank you"].includes(lowerMessage)) {
       return {
-        primaryIntent: "greeting",
+        primaryIntent: lowerMessage.includes("thank") ? "acknowledgment" : "greeting",
         suggestedTools: [],
         rewrittenQuery: message,
       };
     }
 
-    if (isThanks) {
+    // Available tools for the LLM to choose from
+    const availableTools = [
+      {
+        name: "search_evidence",
+        description: "Search user's uploaded compliance evidence files and documents. Use for: finding files, checking what evidence exists, looking up documents, 'my files', 'our evidence'",
+      },
+      {
+        name: "query_compliance_status",
+        description: "Check compliance coverage, gaps, what's missing, which Quality Statements have evidence. Use for: 'missing evidence', 'what do I need', 'gaps', 'coverage', 'compliance achieved'",
+      },
+      {
+        name: "query_evidence_metadata",
+        description: "Get statistics about evidence: counts, pending reviews, expiring items, dates. Use for: 'how many', 'counts', 'statistics', 'status of evidence'",
+      },
+      {
+        name: "web_search",
+        description: "Search external CQC regulations, guidelines, best practices. Use for: external regulations, guidance, best practices, 'research online', 'what does CQC require'",
+      },
+    ].filter(t => t.name !== "web_search" || this.env.EXA_API_KEY);
+
+    const routerPrompt = `You are a query router for a CQC compliance assistant. Analyze the user query and decide which tools to use.
+
+Available Tools:
+${availableTools.map(t => `- ${t.name}: ${t.description}`).join("\n")}
+
+User Query: "${message}"
+
+Respond in JSON format:
+{
+  "primaryIntent": "brief description of what user wants",
+  "suggestedTools": ["tool1", "tool2"],
+  "rewrittenQuery": "improved query for better results",
+  "reasoning": "why you chose these tools"
+}
+
+Rules:
+1. Call MULTIPLE tools when the query involves both internal evidence AND external research
+2. Examples of multi-tool queries:
+   - "Research online about my missing evidence" → ["web_search", "query_compliance_status"]
+   - "What do I need for safeguarding?" → ["query_compliance_status", "web_search"]
+   - "Find my training records and CQC requirements" → ["search_evidence", "web_search"]
+3. Suggest at least one tool for any query about evidence, compliance, or regulations
+4. Keep rewrittenQuery concise and search-friendly`;
+
+    try {
+      const routerResponse: any = await this.runLLM([
+        { role: "system", content: routerPrompt },
+        { role: "user", content: message }
+      ]);
+
+      const content = routerResponse.choices?.[0]?.message?.content || "";
+      
+      // Extract JSON from response (handle markdown code blocks)
+      const jsonMatch = content.match(/```json\s*([\s\S]*?)```/) || 
+                       content.match(/```\s*([\s\S]*?)```/) ||
+                       content.match(/(\{[\s\S]*\})/);
+      
+      const jsonStr = jsonMatch ? jsonMatch[1] || jsonMatch[0] : content;
+      const routing = JSON.parse(jsonStr);
+
       return {
-        primaryIntent: "acknowledgment",
+        primaryIntent: routing.primaryIntent || "general question",
+        suggestedTools: routing.suggestedTools || [],
+        rewrittenQuery: routing.rewrittenQuery || message,
+      };
+    } catch (err) {
+      console.error("Router LLM error:", err);
+      // Fallback: return empty tools, let main LLM decide
+      return {
+        primaryIntent: "general question",
         suggestedTools: [],
         rewrittenQuery: message,
       };
     }
-
-    if (isCapabilityQuery) {
-      return {
-        primaryIntent: "help request",
-        suggestedTools: [],
-        rewrittenQuery: message,
-      };
-    }
-
-    // Determine which tools are suggested
-    const suggestedTools: string[] = [];
-    if (isEvidenceQuery) suggestedTools.push("search_evidence");
-    if (isComplianceQuery) suggestedTools.push("query_compliance_status");
-    if (isMetadataQuery) suggestedTools.push("query_evidence_metadata");
-    if (isWebQuery && this.env.EXA_API_KEY) suggestedTools.push("web_search");
-
-    // Generate rewritten query for better search relevance
-    let rewrittenQuery = message;
-    if (isEvidenceQuery && !message.toLowerCase().includes("search")) {
-      rewrittenQuery = `Find evidence documents related to: ${message}`;
-    } else if (isComplianceQuery) {
-      rewrittenQuery = `Check compliance status for: ${message}`;
-    } else if (isMetadataQuery) {
-      rewrittenQuery = `Get statistics about: ${message}`;
-    }
-
-    return {
-      primaryIntent: isEvidenceQuery
-        ? "evidence search"
-        : isComplianceQuery
-          ? "compliance query"
-          : isMetadataQuery
-            ? "metadata request"
-            : "general question",
-      suggestedTools,
-      rewrittenQuery,
-    };
   }
 
   // Run LLM via Cerebras API (OpenAI-compatible)
