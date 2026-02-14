@@ -686,76 +686,106 @@ ${item.summary || item.textContent || "(No text content)"}`,
     const db = drizzle(this.env.DB, { schema });
 
     try {
-      // Get counts by status
+      // Build base conditions with tenant/site filter
+      let baseConditions = [
+        eq(schema.evidenceItems.tenantId, tenantId),
+        eq(schema.evidenceItems.siteId, siteId),
+      ];
+
+      // Apply status filter if provided
+      if (status) {
+        baseConditions.push(eq(schema.evidenceItems.status, status));
+      }
+
+      // Apply days filter if provided (uploaded in last N days)
+      if (days && days > 0) {
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - days);
+        baseConditions.push(gte(schema.evidenceItems.uploadedAt, cutoffDate));
+      }
+
+      // Get counts by status (respecting other filters but not status itself for the breakdown)
+      let statusCountConditions = [
+        eq(schema.evidenceItems.tenantId, tenantId),
+        eq(schema.evidenceItems.siteId, siteId),
+      ];
+      if (days && days > 0) {
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - days);
+        statusCountConditions.push(gte(schema.evidenceItems.uploadedAt, cutoffDate));
+      }
+
       const statusCounts = await db
         .select({
           status: schema.evidenceItems.status,
           count: count(schema.evidenceItems.id),
         })
         .from(schema.evidenceItems)
-        .where(
-          and(
-            eq(schema.evidenceItems.tenantId, tenantId),
-            eq(schema.evidenceItems.siteId, siteId),
-          ),
-        )
+        .where(and(...statusCountConditions))
         .groupBy(schema.evidenceItems.status);
 
-      // Get total count
+      // Get total count (with all filters applied)
       const totalResult = await db
         .select({
           count: count(schema.evidenceItems.id),
         })
         .from(schema.evidenceItems)
-        .where(
-          and(
-            eq(schema.evidenceItems.tenantId, tenantId),
-            eq(schema.evidenceItems.siteId, siteId),
-          ),
-        );
+        .where(and(...baseConditions));
 
       const total = totalResult[0]?.count || 0;
 
-      // Get recent evidence (last 30 days)
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      // Get recent evidence (last 30 days, or custom days if provided)
+      const recentDays = days || 30;
+      const recentCutoff = new Date();
+      recentCutoff.setDate(recentCutoff.getDate() - recentDays);
+
+      let recentConditions = [
+        eq(schema.evidenceItems.tenantId, tenantId),
+        eq(schema.evidenceItems.siteId, siteId),
+        gte(schema.evidenceItems.uploadedAt, recentCutoff),
+      ];
+      if (status) {
+        recentConditions.push(eq(schema.evidenceItems.status, status));
+      }
 
       const recentCount = await db
         .select({
           count: count(schema.evidenceItems.id),
         })
         .from(schema.evidenceItems)
-        .where(
-          and(
-            eq(schema.evidenceItems.tenantId, tenantId),
-            eq(schema.evidenceItems.siteId, siteId),
-            gte(schema.evidenceItems.uploadedAt, thirtyDaysAgo),
-          ),
-        );
+        .where(and(...recentConditions));
 
       // Get expiring evidence (validUntil in next 30 days)
       const thirtyDaysFromNow = new Date();
       thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+
+      let expiringConditions = [
+        eq(schema.evidenceItems.tenantId, tenantId),
+        eq(schema.evidenceItems.siteId, siteId),
+        lte(schema.evidenceItems.validUntil, thirtyDaysFromNow),
+        gte(schema.evidenceItems.validUntil, new Date()),
+      ];
+      if (status) {
+        expiringConditions.push(eq(schema.evidenceItems.status, status));
+      }
 
       const expiringCount = await db
         .select({
           count: count(schema.evidenceItems.id),
         })
         .from(schema.evidenceItems)
-        .where(
-          and(
-            eq(schema.evidenceItems.tenantId, tenantId),
-            eq(schema.evidenceItems.siteId, siteId),
-            lte(schema.evidenceItems.validUntil, thirtyDaysFromNow),
-            gte(schema.evidenceItems.validUntil, new Date()),
-          ),
-        );
+        .where(and(...expiringConditions));
 
+      // Build report
       const report: string[] = [];
-      report.push(`**Evidence Statistics for ${this.context?.siteName}**\n`);
+      const filterDesc = [];
+      if (status) filterDesc.push(`status: ${status}`);
+      if (days) filterDesc.push(`last ${days} days`);
+      
+      report.push(`**Evidence Statistics for ${this.context?.siteName}${filterDesc.length > 0 ? ` (${filterDesc.join(', ')})` : ''}**\n`);
       report.push(`Total Evidence Items: ${total}`);
 
-      if (statusCounts.length > 0) {
+      if (statusCounts.length > 0 && !status) {
         report.push(`\nBy Status:`);
         statusCounts.forEach((sc) => {
           report.push(`- ${sc.status}: ${sc.count}`);
@@ -763,7 +793,7 @@ ${item.summary || item.textContent || "(No text content)"}`,
       }
 
       report.push(`\nRecent Activity:`);
-      report.push(`- Uploaded in last 30 days: ${recentCount[0]?.count || 0}`);
+      report.push(`- Uploaded in last ${recentDays} days: ${recentCount[0]?.count || 0}`);
       report.push(
         `- Expiring in next 30 days: ${expiringCount[0]?.count || 0}`,
       );
