@@ -47,7 +47,7 @@ import {
 } from "@/components/ai/task";
 import { GlobeIcon, MessageSquare, X, Terminal } from "lucide-react";
 import { nanoid } from "nanoid";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useLocation } from "@tanstack/react-router";
 import { initChatFn, sendMessageFn, getChatHistoryFn, clearChatFn } from "@/core/functions/chat-functions";
 import { Button } from "@/components/ui/button";
@@ -100,6 +100,9 @@ export function ChatSidebar() {
     >("ready");
     const [messages, setMessages] = useState<MessageType[]>(initialMessages);
     const [lastInitializedPath, setLastInitializedPath] = useState<string>("");
+    const [sidebarWidth, setSidebarWidth] = useState(450);
+    const sidebarRef = useRef<HTMLDivElement>(null);
+    const isDragging = useRef(false);
 
     // Initialize/Update Chat Context on Sidebar Open OR Navigation
     useEffect(() => {
@@ -254,6 +257,35 @@ export function ChatSidebar() {
         }
     }, [isOpen, location.pathname, activeSite?.id, lastInitializedPath]);
 
+    // Drag to resize handlers
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            if (!isDragging.current) return;
+            const newWidth = window.innerWidth - e.clientX;
+            setSidebarWidth(Math.max(320, Math.min(800, newWidth)));
+        };
+
+        const handleMouseUp = () => {
+            isDragging.current = false;
+            document.body.style.cursor = "";
+            document.body.style.userSelect = "";
+        };
+
+        document.addEventListener("mousemove", handleMouseMove);
+        document.addEventListener("mouseup", handleMouseUp);
+
+        return () => {
+            document.removeEventListener("mousemove", handleMouseMove);
+            document.removeEventListener("mouseup", handleMouseUp);
+        };
+    }, []);
+
+    const handleDragStart = () => {
+        isDragging.current = true;
+        document.body.style.cursor = "ew-resize";
+        document.body.style.userSelect = "none";
+    };
+
     const addUserMessage = useCallback(
         async (content: string) => {
             // 1. Add User Message to UI
@@ -346,8 +378,33 @@ export function ChatSidebar() {
         setText("");
     };
 
+    // Close sidebar when clicking outside
+    const handleOverlayClick = () => {
+        setIsOpen(false);
+    };
+
     return (
         <>
+            {isOpen && (
+                <>
+                    {/* Overlay */}
+                    <div 
+                        className="fixed inset-0 bg-black/20 z-40 animate-in fade-in"
+                        onClick={handleOverlayClick}
+                    />
+                    
+                    {/* FAB Button (outside sidebar) */}
+                    <Button
+                        onClick={() => setIsOpen(true)}
+                        size="icon"
+                        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-xl bg-indigo-600 hover:bg-indigo-700 text-white z-50 animate-in fade-in zoom-in"
+                    >
+                        <MessageSquare className="h-7 w-7" />
+                    </Button>
+                </>
+            )}
+
+            {/* Floating button when closed */}
             {!isOpen && (
                 <Button
                     onClick={() => setIsOpen(true)}
@@ -359,7 +416,25 @@ export function ChatSidebar() {
             )}
 
             {isOpen && (
-                <div className="fixed inset-y-0 right-0 w-full sm:w-[450px] bg-background shadow-2xl z-50 flex flex-col border-l animate-in slide-in-from-right duration-300">
+                <div 
+                    ref={sidebarRef}
+                    className="fixed inset-y-0 right-0 bg-background shadow-2xl z-50 flex flex-col border-l animate-in slide-in-from-right duration-300"
+                    style={{ width: sidebarWidth }}
+                >
+                    {/* Drag Handle - full height, more visible */}
+                    <div 
+                        className="absolute left-0 top-0 bottom-0 w-3 cursor-ew-resize group z-10"
+                        onMouseDown={handleDragStart}
+                    >
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex flex-col gap-1">
+                                <div className="w-1 h-3 bg-muted-foreground/40 rounded-full" />
+                                <div className="w-1 h-3 bg-muted-foreground/40 rounded-full" />
+                                <div className="w-1 h-3 bg-muted-foreground/40 rounded-full" />
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Header */}
                     <div className="flex items-center justify-between p-4 border-b">
                         <h2 className="font-semibold text-lg flex items-center gap-2">
