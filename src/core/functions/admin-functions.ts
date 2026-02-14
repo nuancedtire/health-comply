@@ -3,7 +3,7 @@ import * as schema from "@/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { authMiddleware } from "@/core/middleware/auth-middleware";
-import { logUserEvent, AUDIT_ACTIONS } from "@/lib/audit";
+import { logUserEvent, logAuditEvent, AUDIT_ACTIONS } from "@/lib/audit";
 
 // Admin functions are protected by authMiddleware
 // Middleware provides: user, session, db
@@ -18,7 +18,12 @@ export const createTenantFn = createServerFn({ method: "POST" })
     .inputValidator((data: z.infer<typeof CreateTenantSchema>) => CreateTenantSchema.parse(data))
     .handler(async (ctx) => {
         const { name } = ctx.data;
-        const { db } = ctx.context;
+        const { db, user } = ctx.context;
+
+        // 1. Authorization Check - Only System Admins can create tenants
+        if (!(user as any).isSystemAdmin) {
+            throw new Error("Unauthorized: Only System Admins can create tenants.");
+        }
 
         // 2. Create Tenant
         // Use crypto.randomUUID for IDs or a simple random string for 't_...'
@@ -31,6 +36,18 @@ export const createTenantFn = createServerFn({ method: "POST" })
         });
 
         // No need to seed roles anymore!
+
+        // Audit log
+        await logAuditEvent(db, {
+            tenantId: tenantId,
+            actorUserId: user.id,
+            action: AUDIT_ACTIONS.TENANT_CREATED,
+            entityType: "tenant",
+            entityId: tenantId,
+            details: {
+                tenantName: name,
+            },
+        });
 
         return { tenantId };
     });
@@ -314,7 +331,13 @@ export const deleteUserFn = createServerFn({ method: "POST" })
     .inputValidator((data: z.infer<typeof DeleteUserSchema>) => DeleteUserSchema.parse(data))
     .handler(async (ctx) => {
         const { userId } = ctx.data;
-        const { db } = ctx.context;
+        const { db, user } = ctx.context;
+
+        // Authorization Check - Only System Admins can delete any user
+        // Regular users should not be able to delete users
+        if (!(user as any).isSystemAdmin) {
+            throw new Error("Unauthorized: Only System Admins can delete users.");
+        }
 
         // Cascade delete handled by Drizzle Schema? 
         // Schema text says { onDelete: 'cascade' }, but Drizzle SQLite support for FKs depends on PRAGMA foreign_keys=ON usually.
@@ -330,6 +353,18 @@ export const deleteUserFn = createServerFn({ method: "POST" })
 
         await db.delete(schema.users).where(eq(schema.users.id, userId));
 
+        // Audit log
+        // Get user tenant info for audit
+        const userToDelete = await db.select({ tenantId: schema.users.tenantId }).from(schema.users).where(eq(schema.users.id, userId)).get();
+        if (userToDelete?.tenantId) {
+            await logUserEvent(db, {
+                tenantId: userToDelete.tenantId,
+                actorUserId: user.id,
+                targetUserId: userId,
+                action: AUDIT_ACTIONS.USER_DELETED,
+            });
+        }
+
         return { success: true };
     });
 
@@ -344,7 +379,13 @@ export const updateUserFn = createServerFn({ method: "POST" })
     .inputValidator((data: z.infer<typeof UpdateUserSchema>) => UpdateUserSchema.parse(data))
     .handler(async (ctx) => {
         const { userId, email } = ctx.data;
-        const { db } = ctx.context;
+        const { db, user } = ctx.context;
+
+        // Authorization Check - Only System Admins can update any user
+        // Users should only be able to update their own profile
+        if (!(user as any).isSystemAdmin) {
+            throw new Error("Unauthorized: Only System Admins can update user details.");
+        }
 
         if (email) {
             await db.update(schema.users)
@@ -472,12 +513,17 @@ export const generatePasswordResetLinkFn = createServerFn({ method: "POST" })
     .inputValidator((data: z.infer<typeof GenerateResetLinkSchema>) => GenerateResetLinkSchema.parse(data))
     .handler(async (ctx) => {
         const { userId } = ctx.data;
-        const { db, env } = ctx.context;
+        const { db, env, user } = ctx.context;
 
-        // 1. Get user email
-        const user = await db.select({ email: schema.users.email }).from(schema.users as any).where(eq(schema.users.id, userId)).get();
+        // Authorization Check - Only System Admins can generate password reset links for any user
+        if (!(user as any).isSystemAdmin) {
+            throw new Error("Unauthorized: Only System Admins can generate password reset links.");
+        }
 
-        if (!user) {
+        // 1. Get target user email
+        const targetUser = await db.select({ email: schema.users.email }).from(schema.users as any).where(eq(schema.users.id, userId)).get();
+
+        if (!targetUser) {
             throw new Error("User not found");
         }
 
@@ -496,7 +542,7 @@ export const generatePasswordResetLinkFn = createServerFn({ method: "POST" })
         // This will call our captured sendResetPassword handler
         await auth.api.requestPasswordReset({
             body: {
-                email: user.email,
+                email: targetUser.email,
                 redirectTo: "/reset-password"
             }
         });
@@ -511,7 +557,12 @@ export const generatePasswordResetLinkFn = createServerFn({ method: "POST" })
 export const getTenantsFn = createServerFn({ method: "GET" })
     .middleware([authMiddleware])
     .handler(async (ctx) => {
-        const { db } = ctx.context;
+        const { db, user } = ctx.context;
+
+        // Authorization Check - Only System Admins can list all tenants
+        if (!(user as any).isSystemAdmin) {
+            throw new Error("Unauthorized: Only System Admins can view all tenants.");
+        }
 
         // 1. Get all tenants
         const tenants = await db.select().from(schema.tenants as any);
@@ -566,7 +617,12 @@ export const deleteTenantFn = createServerFn({ method: "POST" })
     .inputValidator((data: z.infer<typeof DeleteTenantSchema>) => DeleteTenantSchema.parse(data))
     .handler(async (ctx) => {
         const { tenantId } = ctx.data;
-        const { db } = ctx.context;
+        const { db, user } = ctx.context;
+
+        // Authorization Check - Only System Admins can delete tenants
+        if (!(user as any).isSystemAdmin) {
+            throw new Error("Unauthorized: Only System Admins can delete tenants.");
+        }
 
         // Manual Cascade Delete due to potential SQLite FK limitations on D1
         // Delete in order of dependency (leaf nodes first)
@@ -626,6 +682,15 @@ export const deleteTenantFn = createServerFn({ method: "POST" })
         // 14. Finally, Delete Tenant
         await db.delete(schema.tenants as any).where(eq(schema.tenants.id, tenantId) as any);
 
+        // Audit log
+        await logAuditEvent(db, {
+            tenantId: tenantId,
+            actorUserId: user.id,
+            action: AUDIT_ACTIONS.TENANT_DELETED,
+            entityType: "tenant",
+            entityId: tenantId,
+        });
+
         return { success: true };
     });
 
@@ -636,7 +701,14 @@ const GetRolesSchema = z.object({
 export const getRolesFn = createServerFn({ method: "GET" })
     .middleware([authMiddleware])
     .inputValidator((data: z.infer<typeof GetRolesSchema>) => GetRolesSchema.parse(data))
-    .handler(async () => {
+    .handler(async (ctx) => {
+        const { user } = ctx.context;
+
+        // Authorization Check - Only authenticated users can view roles
+        // This is a read-only operation, but we should ensure user is authenticated
+        if (!user) {
+            throw new Error("Unauthorized: Authentication required.");
+        }
 
         const roles = ROLES; // Return static list
         // Could filter by context if we wanted to only show roles applicable to user context?
@@ -680,6 +752,18 @@ export const createSiteFn = createServerFn({ method: "POST" })
             name,
             address,
             createdAt: new Date(),
+        });
+
+        // Audit log
+        await logAuditEvent(db, {
+            tenantId: tenantId,
+            actorUserId: user.id,
+            action: AUDIT_ACTIONS.SITE_CREATED,
+            entityType: "site",
+            entityId: siteId,
+            details: {
+                siteName: name,
+            },
         });
 
         return { siteId };

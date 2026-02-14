@@ -34,6 +34,13 @@ export const AUDIT_ACTIONS = {
   PACK_CREATED: "pack.created",
   PACK_DOWNLOADED: "pack.downloaded",
   PACK_DELETED: "pack.deleted",
+
+  // Tenant lifecycle
+  TENANT_CREATED: "tenant.created",
+  TENANT_DELETED: "tenant.deleted",
+
+  // Site lifecycle
+  SITE_CREATED: "site.created",
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];
@@ -48,7 +55,9 @@ export type AuditEntityType =
   | "invitation"
   | "policy"
   | "action"
-  | "inspection_pack";
+  | "inspection_pack"
+  | "tenant"
+  | "site";
 
 /**
  * Audit event details structure
@@ -72,6 +81,10 @@ export interface AuditDetails {
   newRole?: string;
   targetUserId?: string;
   targetUserEmail?: string;
+
+  // For tenant/site changes
+  tenantName?: string;
+  siteName?: string;
 
   // Generic
   reason?: string;

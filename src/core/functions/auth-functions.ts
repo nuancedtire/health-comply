@@ -197,19 +197,9 @@ export const requestPasswordResetFn = createServerFn({ method: "POST" })
             console.error(e);
         }
 
-        // 2. Peek into DB to find the token (DEMO ONLY)
-        // Switch to db.select to avoid query builder type issues if schemas mismatch
-        const { desc } = await import("drizzle-orm");
-
-        const verification = await db.select({ value: schema.verifications.value })
-            .from(schema.verifications as any)
-            .where(eq(schema.verifications.identifier, email) as any)
-            .orderBy(desc(schema.verifications.createdAt))
-            .limit(1)
-            .get();
-
-        // The token value is what we need.
-        return { success: true, token: verification?.value };
+        // Note: In production, don't return the token in the response for security
+        // The token should only be sent via email
+        return { success: true };
     });
 
 const ResetPasswordSchema = z.object({
