@@ -1,9 +1,14 @@
 import { DurableObject } from "cloudflare:workers";
+import { drizzle } from "drizzle-orm/d1";
+import * as schema from "@/db/schema";
+import { eq, and, count, gte, lte, inArray } from "drizzle-orm";
 
 interface Env {
     AI: any;
-    EXA_API_KEY?: string;
+    DB: D1Database;
     CEREBRAS_API_KEY?: string;
+    EXA_API_KEY?: string;
+    AI_SEARCH_INDEX?: string;
     [key: string]: any;
 }
 
@@ -14,13 +19,24 @@ export interface AgentContext {
     role: string;
     tenantId: string;
     tenantName: string;
-    siteId?: string;
+    siteId: string;
     siteName: string;
     pageContext: {
         url: string;
         title: string;
-        qsId?: string; // e.g. "safe.safeguarding"
+        qsId?: string;
     };
+}
+
+// Rate limiting configuration
+const RATE_LIMIT = {
+    requestsPerMinute: 30,
+    windowMs: 60 * 1000, // 1 minute
+};
+
+interface RateLimitEntry {
+    count: number;
+    resetAt: number;
 }
 
 export class ChatAgent extends DurableObject<Env> {
@@ -33,14 +49,19 @@ export class ChatAgent extends DurableObject<Env> {
         tool_call_id?: string;
         name?: string;
     }[] = [];
+    rateLimits: Map<string, RateLimitEntry> = new Map();
 
     constructor(state: DurableObjectState, env: Env) {
         super(state, env);
         this.state = state;
-        // Restore history
+        // Restore history and rate limits
         this.state.blockConcurrencyWhile(async () => {
             this.history = (await this.state.storage.get("history")) || [];
             this.context = (await this.state.storage.get("context")) || null;
+            const storedRateLimits = await this.state.storage.get<Map<string, RateLimitEntry>>("rateLimits");
+            if (storedRateLimits) {
+                this.rateLimits = storedRateLimits;
+            }
         });
     }
 
@@ -49,8 +70,16 @@ export class ChatAgent extends DurableObject<Env> {
 
         // 1. INITIALIZE CONTEXT
         if (url.pathname === "/init") {
-            this.context = await request.json<AgentContext>();
-            // Update stored context so the system prompt always reflects the current page
+            const newContext = await request.json<AgentContext>();
+
+            // If site changed, reset conversation for security/privacy
+            if (this.context && this.context.siteId !== newContext.siteId) {
+                console.log(`Site changed from ${this.context.siteId} to ${newContext.siteId}. Resetting chat history.`);
+                this.history = [];
+                await this.state.storage.delete("history");
+            }
+
+            this.context = newContext;
             await this.state.storage.put("context", this.context);
             return new Response("OK");
         }
@@ -60,13 +89,23 @@ export class ChatAgent extends DurableObject<Env> {
             if (!this.context) return new Response("Context missing", { status: 400 });
 
             const { message } = await request.json<{ message: string }>();
+
+            // Check rate limiting
+            const rateLimitResult = this.checkRateLimit(this.context.userId);
+            if (!rateLimitResult.allowed) {
+                return new Response(JSON.stringify({
+                    content: `Rate limit exceeded. Please try again in ${Math.ceil(rateLimitResult.retryAfter! / 1000)} seconds.`,
+                    steps: []
+                }));
+            }
+
             this.history.push({ role: "user", content: message });
             await this.saveHistory();
 
             const tools = this.getTools();
-            const steps: any[] = []; // Capture tool execution steps
+            const steps: any[] = [];
 
-            // Run LLM
+            // Run LLM via Cerebras (OpenAI-compatible)
             let response: any;
             try {
                 response = await this.runLLM([
@@ -81,13 +120,13 @@ export class ChatAgent extends DurableObject<Env> {
                 }));
             }
 
-            // Standardize response format handling (OpenAI style to our internal format)
+            // Parse OpenAI-compatible response from Cerebras
             const choice = response.choices?.[0];
             const responseMessage = choice?.message;
             const content = responseMessage?.content || "";
             const toolCalls = responseMessage?.tool_calls;
 
-            // Save the tool call request to history so it persists
+            // Save the tool call request to history
             if (toolCalls && toolCalls.length > 0) {
                 this.history.push({
                     role: "assistant",
@@ -106,7 +145,7 @@ export class ChatAgent extends DurableObject<Env> {
                 for (const call of toolCalls) {
                     const tool = tools.find(t => t.definition.function.name === call.function.name);
                     if (tool) {
-                        // Parse arguments: they come as a JSON string
+                        // Parse arguments: they come as a JSON string from Cerebras
                         let args = {};
                         try {
                             args = JSON.parse(call.function.arguments);
@@ -123,10 +162,9 @@ export class ChatAgent extends DurableObject<Env> {
                         };
 
                         try {
-                            // Execute tool - now returns Object { text, sources }
+                            // Execute tool - returns { text, sources }
                             const result = await tool.handler(args);
 
-                            // result might be string (legacy/error) or object
                             const textContent = typeof result === 'string' ? result : result.text;
                             const sources = typeof result === 'object' ? result.sources : [];
 
@@ -139,11 +177,10 @@ export class ChatAgent extends DurableObject<Env> {
                                 content: JSON.stringify({
                                     text: textContent,
                                     sources: sources
-                                }) // OpenAI expects string content for tool outputs
+                                })
                             };
 
                             toolResults.push(toolResultMsg);
-                            // IMPORTANT: Save tool result to history so sources persist on reload
                             this.history.push(toolResultMsg);
 
                         } catch (err: any) {
@@ -164,7 +201,7 @@ export class ChatAgent extends DurableObject<Env> {
                 await this.saveHistory();
 
                 try {
-                    // Feed back to LLM
+                    // Feed back to LLM for final response
                     response = await this.runLLM([
                         { role: "system", content: this.getSystemPrompt() },
                         ...this.history
@@ -174,7 +211,6 @@ export class ChatAgent extends DurableObject<Env> {
 
                 } catch (err: any) {
                     console.error("Error in AI tool loop:", err);
-                    // Return a valid JSON error so frontend doesn't break
                     return new Response(JSON.stringify({
                         content: `AI Error during processing: ${err.message}`,
                         steps
@@ -214,89 +250,99 @@ export class ChatAgent extends DurableObject<Env> {
             this.history = this.history.slice(-50);
         }
         await this.state.storage.put("history", this.history);
+        await this.state.storage.put("rateLimits", this.rateLimits);
+    }
+
+    // Rate limiting check
+    checkRateLimit(userId: string): { allowed: boolean; retryAfter?: number } {
+        const now = Date.now();
+        const entry = this.rateLimits.get(userId);
+
+        if (!entry || now > entry.resetAt) {
+            this.rateLimits.set(userId, {
+                count: 1,
+                resetAt: now + RATE_LIMIT.windowMs
+            });
+            return { allowed: true };
+        }
+
+        if (entry.count >= RATE_LIMIT.requestsPerMinute) {
+            return { allowed: false, retryAfter: entry.resetAt - now };
+        }
+
+        entry.count++;
+        return { allowed: true };
     }
 
     // --- TOOLS ---
     getTools() {
-        // Always include web search if key happens to be present, but we prioritize internal first in prompt
-        const tools = [
-            // Tool 1: AutoRAG (Internal Evidence)
+        const tools: any[] = [
+            // Tool 1: Search Evidence (AI Search with DB fallback)
             {
                 definition: {
                     type: "function",
                     function: {
                         name: "search_evidence",
-                        description: "Search uploaded compliance evidence files in the specific tenant.",
+                        description: "Search uploaded compliance evidence files in the specific site context. Use this when the user asks about documents, files, or evidence.",
                         parameters: {
                             type: "object",
-                            properties: { query: { type: "string" } },
+                            properties: {
+                                query: { type: "string", description: "The search query to find relevant evidence" },
+                                qsId: { type: "string", description: "Optional: Filter by specific Quality Statement ID (e.g., 'safe.safeguarding')" }
+                            },
                             required: ["query"]
                         }
                     }
                 },
                 handler: async (args: any) => {
-                    // Strict prefix matching upload path: t/{tenantId}/s/{siteId}/
-                    const tenantId = this.context!.tenantId;
-                    const siteId = this.context!.siteId;
-
-                    let searchPrefix = `t/${tenantId}/`;
-                    // If we have a specific site context, narrow it down
-                    if (siteId && siteId !== "current-site") {
-                        searchPrefix = `t/${tenantId}/s/${siteId}/`;
-                    }
-
-                    // Construct "Starts With" filter using compound rules
-                    // We need to match folder >= searchPrefix AND folder <= searchPrefix + 'z' (roughly)
-                    // The 'folder' metadata in our index corresponds to the path prefix.
-
-                    const filters = {
-                        type: "and",
-                        filters: [
-                            {
-                                type: "gte",
-                                key: "folder",
-                                value: searchPrefix
-                            },
-                            {
-                                type: "lte",
-                                key: "folder",
-                                value: searchPrefix + "\uffff" // High unicode char to cover all suffixes
-                            }
-                        ]
-                    };
-
-                    try {
-                        // Pass filters to autorag search
-                        const searchRes = await this.env.AI.autorag("health-comply").search({
-                            query: args.query,
-                            topK: 4,
-                            filters: filters
-                        });
-
-                        if (!searchRes || !searchRes.data || searchRes.data.length === 0) {
-                            return { text: "No matching evidence found in your context.", sources: [] };
-                        }
-
-                        const relevantMatches = searchRes.data;
-
-                        // Prepare Sources
-                        const sources = relevantMatches.map((m: any) => ({
-                            title: m.metadata?.filename?.split('/').pop() || 'Unknown File',
-                            href: '#',
-                            type: 'file'
-                        }));
-
-                        // @ts-ignore
-                        const text = relevantMatches.map(m => `[File: ${m.metadata?.filename}]\n${m.text}`).join("\n---\n");
-
-                        return { text, sources };
-                    } catch (e: any) {
-                        return { text: `Error searching evidence: ${e.message}`, sources: [] };
-                    }
+                    return await this.searchEvidence(args.query, args.qsId);
                 }
             },
+            // Tool 2: Query Compliance Status
+            {
+                definition: {
+                    type: "function",
+                    function: {
+                        name: "query_compliance_status",
+                        description: "Query the compliance status of Quality Statements and controls. Use this when the user asks about compliance achieved, gaps, coverage, or status.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                qsId: { type: "string", description: "Optional: Specific Quality Statement ID to check (e.g., 'safe.safeguarding')" },
+                                keyQuestion: { type: "string", description: "Optional: Filter by key question (safe, effective, caring, responsive, well_led)" }
+                            },
+                            required: []
+                        }
+                    }
+                },
+                handler: async (args: any) => {
+                    return await this.queryComplianceStatus(args.qsId, args.keyQuestion);
+                }
+            },
+            // Tool 3: Query Evidence Metadata
+            {
+                definition: {
+                    type: "function",
+                    function: {
+                        name: "query_evidence_metadata",
+                        description: "Query metadata about evidence items (counts, status, dates, reviews). Use this for questions about evidence statistics or workflow status.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                status: { type: "string", description: "Optional: Filter by status (draft, pending_review, approved, rejected, archived)" },
+                                days: { type: "number", description: "Optional: Filter by evidence uploaded in the last N days" }
+                            },
+                            required: []
+                        }
+                    }
+                },
+                handler: async (args: any) => {
+                    return await this.queryEvidenceMetadata(args.status, args.days);
+                }
+            }
         ];
 
+        // Web search tool (only if EXA_API_KEY is configured)
         if (this.env.EXA_API_KEY) {
             tools.push({
                 definition: {
@@ -312,48 +358,348 @@ export class ChatAgent extends DurableObject<Env> {
                     }
                 },
                 handler: async (args: any) => {
-                    if (!this.env.EXA_API_KEY) return { text: "Web search disabled (No API Key).", sources: [] };
-
-                    try {
-                        const res = await fetch("https://api.exa.ai/search", {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                                "x-api-key": this.env.EXA_API_KEY
-                            },
-                            body: JSON.stringify({
-                                query: args.query,
-                                numResults: 3,
-                                useAutoprompt: true,
-                                contents: { text: true }
-                            })
-                        });
-                        const data = await res.json<any>();
-
-                        if (data.results) {
-                            const text = data.results.map((r: any) =>
-                                `[Title: ${r.title}]\n[URL: ${r.url}]\n${r.text.slice(0, 10000)}...`
-                            ).join("\n\n");
-
-                            const sources = data.results.map((r: any) => ({
-                                title: r.title,
-                                href: r.url,
-                                type: 'web'
-                            }));
-
-                            return { text, sources };
-                        }
-
-                        return { text: "No web results found.", sources: [] };
-                    } catch (e: any) {
-                        console.error("Exa search error:", e);
-                        return { text: "Web search failed.", sources: [] };
-                    }
+                    return await this.webSearch(args.query);
                 }
             });
         }
 
         return tools;
+    }
+
+    // Search evidence using AI Search with DB fallback
+    async searchEvidence(query: string, qsId?: string): Promise<{ text: string; sources: any[] }> {
+        const tenantId = this.context!.tenantId;
+        const siteId = this.context!.siteId;
+
+        // Build search prefix: t/{tenantId}/s/{siteId}/
+        const searchPrefix = `t/${tenantId}/s/${siteId}/`;
+        const indexName = this.env.AI_SEARCH_INDEX || "health-comply";
+
+        // Try AI Search first
+        try {
+            const searchRes = await this.env.AI.autorag(indexName).search({
+                query: query,
+                max_num_results: 4,
+                filters: {
+                    type: "eq",
+                    key: "folder",
+                    value: searchPrefix
+                }
+            });
+
+            if (searchRes?.data && searchRes.data.length > 0) {
+                const relevantMatches = searchRes.data;
+
+                const sources = relevantMatches.map((m: any) => ({
+                    title: m.metadata?.filename?.split('/').pop() || 'Unknown File',
+                    href: '#',
+                    type: 'file'
+                }));
+
+                const text = relevantMatches.map((m: any) => `[File: ${m.metadata?.filename}]
+${m.text}`).join("\n---\n");
+
+                return { text, sources };
+            }
+        } catch (e: any) {
+            console.warn("AI Search failed, falling back to database:", e.message);
+        }
+
+        // Fallback: Database search on textContent
+        try {
+            const db = drizzle(this.env.DB, { schema });
+
+            let conditions = [
+                eq(schema.evidenceItems.tenantId, tenantId),
+                eq(schema.evidenceItems.siteId, siteId)
+            ];
+
+            if (qsId) {
+                conditions.push(eq(schema.evidenceItems.qsId, qsId));
+            }
+
+            const evidenceItems = await db.query.evidenceItems.findMany({
+                where: (_table, { and }) => and(...conditions),
+                columns: {
+                    id: true,
+                    title: true,
+                    summary: true,
+                    textContent: true,
+                    r2Key: true,
+                    status: true
+                }
+            });
+
+            // Simple keyword matching on textContent and summary
+            const keywords = query.toLowerCase().split(' ').filter(k => k.length > 3);
+            const relevantItems = evidenceItems.filter(item => {
+                const text = `${item.summary || ''} ${item.textContent || ''} ${item.title}`.toLowerCase();
+                return keywords.some(kw => text.includes(kw));
+            }).slice(0, 4);
+
+            if (relevantItems.length > 0) {
+                const sources = relevantItems.map(item => ({
+                    title: item.title,
+                    href: '#',
+                    type: 'file'
+                }));
+
+                const text = relevantItems.map(item => `[File: ${item.title}]
+Status: ${item.status}
+${item.summary || item.textContent || '(No text content)'}`).join("\n---\n");
+
+                return { text, sources };
+            }
+
+            return { text: "No matching evidence found in your site context.", sources: [] };
+        } catch (e: any) {
+            console.error("Database search fallback failed:", e);
+            return { text: `Error searching evidence: ${e.message}`, sources: [] };
+        }
+    }
+
+    // Query compliance status for Quality Statements and controls
+    async queryComplianceStatus(qsId?: string, keyQuestion?: string): Promise<{ text: string; sources: any[] }> {
+        const tenantId = this.context!.tenantId;
+        const siteId = this.context!.siteId;
+        const db = drizzle(this.env.DB, { schema });
+
+        try {
+            // Build conditions
+            let qsConditions = [eq(schema.cqcQualityStatements.active, 1)];
+
+            if (qsId) {
+                qsConditions.push(eq(schema.cqcQualityStatements.id, qsId));
+            }
+
+            if (keyQuestion) {
+                qsConditions.push(eq(schema.cqcQualityStatements.keyQuestionId, keyQuestion));
+            }
+
+            // Get Quality Statements with their controls
+            const qualityStatements = await db.select({
+                qsId: schema.cqcQualityStatements.id,
+                qsTitle: schema.cqcQualityStatements.title,
+                keyQuestionId: schema.cqcQualityStatements.keyQuestionId
+            })
+            .from(schema.cqcQualityStatements)
+            .where(and(...qsConditions));
+
+            if (qualityStatements.length === 0) {
+                return { text: "No Quality Statements found matching your criteria.", sources: [] };
+            }
+
+            const qsIds = qualityStatements.map(qs => qs.qsId);
+
+            // Get local controls for these QS in this site
+            const controls = await db.query.localControls.findMany({
+                where: (table, { and, eq, inArray }) => and(
+                    eq(table.tenantId, tenantId),
+                    eq(table.siteId, siteId),
+                    inArray(table.qsId, qsIds),
+                    eq(table.active, true)
+                ),
+                columns: {
+                    id: true,
+                    title: true,
+                    qsId: true
+                }
+            });
+
+            // Get evidence counts per control
+            const controlIds = controls.map(c => c.id);
+
+            let evidenceCounts: { localControlId: string | null; count: number }[] = [];
+
+            if (controlIds.length > 0) {
+                const evidenceAgg = await db.select({
+                    localControlId: schema.evidenceItems.localControlId,
+                    count: count(schema.evidenceItems.id)
+                })
+                .from(schema.evidenceItems)
+                .where(and(
+                    eq(schema.evidenceItems.tenantId, tenantId),
+                    eq(schema.evidenceItems.siteId, siteId),
+                    inArray(schema.evidenceItems.localControlId, controlIds.filter(Boolean) as string[]),
+                    eq(schema.evidenceItems.status, 'approved')
+                ))
+                .groupBy(schema.evidenceItems.localControlId);
+
+                evidenceCounts = evidenceAgg;
+            }
+
+            // Build compliance report
+            const report: string[] = [];
+
+            for (const qs of qualityStatements) {
+                const qsControls = controls.filter(c => c.qsId === qs.qsId);
+                const totalControls = qsControls.length;
+                const controlsWithEvidence = qsControls.filter(c =>
+                    evidenceCounts.some(ec => ec.localControlId === c.id && ec.count > 0)
+                ).length;
+
+                const percentage = totalControls > 0 ? Math.round((controlsWithEvidence / totalControls) * 100) : 0;
+
+                report.push(`\n**${qs.qsTitle}** (${qs.qsId})`);
+                report.push(`- Total Controls: ${totalControls}`);
+                report.push(`- Controls with Evidence: ${controlsWithEvidence}`);
+                report.push(`- Coverage: ${percentage}%`);
+
+                if (totalControls > 0 && controlsWithEvidence < totalControls) {
+                    const gaps = qsControls
+                        .filter(c => !evidenceCounts.some(ec => ec.localControlId === c.id && ec.count > 0))
+                        .map(c => c.title);
+
+                    if (gaps.length > 0) {
+                        report.push(`- Gaps: ${gaps.slice(0, 3).join(', ')}${gaps.length > 3 ? ` and ${gaps.length - 3} more` : ''}`);
+                    }
+                }
+            }
+
+            const overallTotal = controls.length;
+            const overallWithEvidence = evidenceCounts.filter(ec => ec.count > 0).length;
+            const overallPercentage = overallTotal > 0 ? Math.round((overallWithEvidence / overallTotal) * 100) : 0;
+
+            report.push(`\n**Overall Compliance Summary:**`);
+            report.push(`- Total Active Controls: ${overallTotal}`);
+            report.push(`- Controls with Approved Evidence: ${overallWithEvidence}`);
+            report.push(`- Overall Coverage: ${overallPercentage}%`);
+
+            return {
+                text: report.join('\n'),
+                sources: []
+            };
+
+        } catch (e: any) {
+            console.error("Compliance query error:", e);
+            return { text: `Error querying compliance status: ${e.message}`, sources: [] };
+        }
+    }
+
+    // Query evidence metadata for statistics
+    async queryEvidenceMetadata(status?: string, days?: number): Promise<{ text: string; sources: any[] }> {
+        const tenantId = this.context!.tenantId;
+        const siteId = this.context!.siteId;
+        const db = drizzle(this.env.DB, { schema });
+
+        try {
+            // Get counts by status
+            const statusCounts = await db.select({
+                status: schema.evidenceItems.status,
+                count: count(schema.evidenceItems.id)
+            })
+            .from(schema.evidenceItems)
+            .where(and(
+                eq(schema.evidenceItems.tenantId, tenantId),
+                eq(schema.evidenceItems.siteId, siteId)
+            ))
+            .groupBy(schema.evidenceItems.status);
+
+            // Get total count
+            const totalResult = await db.select({
+                count: count(schema.evidenceItems.id)
+            })
+            .from(schema.evidenceItems)
+            .where(and(
+                eq(schema.evidenceItems.tenantId, tenantId),
+                eq(schema.evidenceItems.siteId, siteId)
+            ));
+
+            const total = totalResult[0]?.count || 0;
+
+            // Get recent evidence (last 30 days)
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+            const recentCount = await db.select({
+                count: count(schema.evidenceItems.id)
+            })
+            .from(schema.evidenceItems)
+            .where(and(
+                eq(schema.evidenceItems.tenantId, tenantId),
+                eq(schema.evidenceItems.siteId, siteId),
+                gte(schema.evidenceItems.uploadedAt, thirtyDaysAgo)
+            ));
+
+            // Get expiring evidence (validUntil in next 30 days)
+            const thirtyDaysFromNow = new Date();
+            thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+
+            const expiringCount = await db.select({
+                count: count(schema.evidenceItems.id)
+            })
+            .from(schema.evidenceItems)
+            .where(and(
+                eq(schema.evidenceItems.tenantId, tenantId),
+                eq(schema.evidenceItems.siteId, siteId),
+                lte(schema.evidenceItems.validUntil, thirtyDaysFromNow),
+                gte(schema.evidenceItems.validUntil, new Date())
+            ));
+
+            const report: string[] = [];
+            report.push(`**Evidence Statistics for ${this.context?.siteName}**\n`);
+            report.push(`Total Evidence Items: ${total}`);
+
+            if (statusCounts.length > 0) {
+                report.push(`\nBy Status:`);
+                statusCounts.forEach(sc => {
+                    report.push(`- ${sc.status}: ${sc.count}`);
+                });
+            }
+
+            report.push(`\nRecent Activity:`);
+            report.push(`- Uploaded in last 30 days: ${recentCount[0]?.count || 0}`);
+            report.push(`- Expiring in next 30 days: ${expiringCount[0]?.count || 0}`);
+
+            return { text: report.join('\n'), sources: [] };
+
+        } catch (e: any) {
+            console.error("Evidence metadata query error:", e);
+            return { text: `Error querying evidence metadata: ${e.message}`, sources: [] };
+        }
+    }
+
+    // Web search using Exa.ai
+    async webSearch(query: string): Promise<{ text: string; sources: any[] }> {
+        if (!this.env.EXA_API_KEY) {
+            return { text: "Web search disabled (No API Key).", sources: [] };
+        }
+
+        try {
+            const res = await fetch("https://api.exa.ai/search", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-api-key": this.env.EXA_API_KEY
+                },
+                body: JSON.stringify({
+                    query: query,
+                    numResults: 3,
+                    useAutoprompt: true,
+                    contents: { text: true }
+                })
+            });
+            const data = await res.json<any>();
+
+            if (data.results) {
+                const text = data.results.map((r: any) =>
+                    `[Title: ${r.title}]\n[URL: ${r.url}]\n${r.text.slice(0, 10000)}...`
+                ).join("\n\n");
+
+                const sources = data.results.map((r: any) => ({
+                    title: r.title,
+                    href: r.url,
+                    type: 'web'
+                }));
+
+                return { text, sources };
+            }
+
+            return { text: "No web results found.", sources: [] };
+        } catch (e: any) {
+            console.error("Exa search error:", e);
+            return { text: "Web search failed.", sources: [] };
+        }
     }
 
     // --- PROMPT ---
@@ -362,23 +708,34 @@ export class ChatAgent extends DurableObject<Env> {
         if (!c) return "You are a helpful assistant.";
 
         return `You are Compass, the CQC compliance assistant for ${c.tenantName} (${c.siteName}).
-    User: ${c.userName} (${c.role}).
-    Current Page: ${c.pageContext.title}
-    ${c.pageContext.qsId ? `Focus: Quality Statement ${c.pageContext.qsId}` : ""}
+User: ${c.userName} (${c.role}).
+Current Page: ${c.pageContext.title}
+${c.pageContext.qsId ? `Focus: Quality Statement ${c.pageContext.qsId}` : ""}
 
-    RULES:
-    1. If user asks about "our evidence", "my files", or specific audits, use 'search_evidence'.
-    2. IF web search is enabled (user requested it), use 'web_search' for external regulations/news. Otherwise, decline if unknown.
-    3. Be friendly, helpful, professional, and concise.
-    4. You do not always need to use a tool if you can answer directly.
-    5. Use tools only when necessary.`;
+AVAILABLE TOOLS:
+1. search_evidence - Search uploaded documents and evidence files
+2. query_compliance_status - Check compliance coverage for Quality Statements and controls
+3. query_evidence_metadata - Get statistics about evidence items (counts, status, expiring)
+${this.env.EXA_API_KEY ? "4. web_search - Search external CQC regulations and guidelines" : ""}
+
+RULES:
+1. If user asks about "our evidence", "my files", or specific documents, use 'search_evidence'.
+2. If user asks about "compliance achieved", "gaps", "what QS are covered", use 'query_compliance_status'.
+3. If user asks about "how many evidence items", "what's pending review", "what's expiring", use 'query_evidence_metadata'.
+4. If user asks about external regulations or CQC guidance${this.env.EXA_API_KEY ? ", use 'web_search'" : ", explain that web search is not configured"}.
+5. Be friendly, helpful, professional, and concise.
+6. You do not always need to use a tool if you can answer directly.
+7. Use tools only when necessary to provide accurate information.
+8. Always consider the current site context (${c.siteName}) when answering.`;
     }
+
+    // Run LLM via Cerebras API (OpenAI-compatible)
     async runLLM(messages: any[], tools: any[] | null = null) {
         const apiKey = this.env.CEREBRAS_API_KEY;
         if (!apiKey) throw new Error("CEREBRAS_API_KEY is missing");
 
         const body: any = {
-            model: "zai-glm-4.7",
+            model: "qwen-3-32b",
             messages: messages,
             temperature: 0.1
         };

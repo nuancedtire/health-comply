@@ -105,6 +105,16 @@ export function ChatSidebar() {
         // Only run if sidebar is open
         if (!isOpen) return;
 
+        // Must have an active site to use chat
+        if (!activeSite?.id) {
+            setMessages([{
+                key: "no-site",
+                from: "assistant",
+                versions: [{ id: "no-site-v1", content: "Please select a site from the team switcher to use the compliance assistant." }]
+            }]);
+            return;
+        }
+
         // Run if we haven't initialized for this specific path yet
         if (location.pathname !== lastInitializedPath) {
             // Add a small delay to allow document.title to update after navigation
@@ -116,7 +126,7 @@ export function ChatSidebar() {
                     data: {
                         pageUrl: location.pathname,
                         pageTitle: document.title,
-                        siteId: activeSite?.id,
+                        siteId: activeSite.id,
                         qsId
                     }
                 }).then(() => {

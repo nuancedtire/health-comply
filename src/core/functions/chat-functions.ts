@@ -8,7 +8,7 @@ import { eq } from "drizzle-orm";
 const ChatInitSchema = z.object({
     pageUrl: z.string(),
     pageTitle: z.string(),
-    siteId: z.string().optional(),
+    siteId: z.string(), // Required for proper site-scoped filtering
     qsId: z.string().optional()
 });
 
@@ -35,7 +35,12 @@ export const initChatFn = createServerFn({ method: "POST" })
             .where(eq(schema.userRoles.userId, user.id));
 
         const primaryRole = userRoles[0]; // Active role (or first found)
-        const siteId = data.siteId || primaryRole?.siteId || "current-site";
+        // Site ID is required - must come from active site context
+        const siteId = data.siteId || primaryRole?.siteId;
+
+        if (!siteId) {
+            throw new Error("Site ID is required. Please select a site from the team switcher.");
+        }
 
         // Fetch Tenant Name
         const tenant = await context.db.query.tenants.findFirst({
