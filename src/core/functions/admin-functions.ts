@@ -4,9 +4,48 @@ import { eq, and, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { authMiddleware } from "@/core/middleware/auth-middleware";
 import { logUserEvent, AUDIT_ACTIONS } from "@/lib/audit";
+import { getRole } from "@/lib/config/roles";
 
 // Admin functions are protected by authMiddleware
 // Middleware provides: user, session, db
+
+// Authorization helper functions
+async function requireSystemAdmin(db: any, user: any): Promise<void> {
+    if (user.isSystemAdmin) {
+        return;
+    }
+    throw new Error("Unauthorized: System admin access required");
+}
+
+async function requireTenantAdmin(db: any, user: any, targetTenantId?: string): Promise<{ tenantId: string; isSystemAdmin: boolean }> {
+    if (user.isSystemAdmin) {
+        return { tenantId: targetTenantId || user.tenantId, isSystemAdmin: true };
+    }
+
+    const userRoles = await db.select({
+        roleName: schema.userRoles.role,
+        tenantId: schema.users.tenantId,
+    })
+        .from(schema.userRoles)
+        .innerJoin(schema.users, eq(schema.userRoles.userId, schema.users.id))
+        .where(eq(schema.userRoles.userId, user.id));
+
+    const myRole = userRoles[0];
+    if (!myRole) {
+        throw new Error("Unauthorized: No role found");
+    }
+
+    const adminRoles = ["Practice Manager", "Admin", "Compliance Officer"];
+    if (!adminRoles.includes(myRole.roleName)) {
+        throw new Error("Unauthorized: Admin role required");
+    }
+
+    if (targetTenantId && myRole.tenantId !== targetTenantId) {
+        throw new Error("Unauthorized: Cannot access other tenants");
+    }
+
+    return { tenantId: myRole.tenantId, isSystemAdmin: false };
+}
 
 const CreateTenantSchema = z.object({
     name: z.string(),
@@ -18,11 +57,13 @@ export const createTenantFn = createServerFn({ method: "POST" })
     .inputValidator((data: z.infer<typeof CreateTenantSchema>) => CreateTenantSchema.parse(data))
     .handler(async (ctx) => {
         const { name } = ctx.data;
-        const { db } = ctx.context;
+        const { db, user } = ctx.context;
 
-        // 2. Create Tenant
-        // Use crypto.randomUUID for IDs or a simple random string for 't_...'
-        const tenantId = `t_${crypto.randomUUID().split('-')[0]}`; // Short ID
+        // Authorization: Only system admins can create tenants
+        await requireSystemAdmin(db, user);
+
+        // Create Tenant
+        const tenantId = `t_${crypto.randomUUID().split('-')[0]}`;
 
         await db.insert(schema.tenants as any).values({
             id: tenantId,
@@ -30,7 +71,13 @@ export const createTenantFn = createServerFn({ method: "POST" })
             createdAt: new Date(),
         });
 
-        // No need to seed roles anymore!
+        // Audit log
+        await logUserEvent(db, {
+            tenantId,
+            actorUserId: user.id,
+            action: AUDIT_ACTIONS.TENANT_CREATED,
+            details: { tenantName: name },
+        });
 
         return { tenantId };
     });
@@ -42,7 +89,7 @@ const InviteUserSchema = z.object({
     role: z.string()
 });
 
-import { ROLES, getRole } from "@/lib/config/roles";
+
 
 export const inviteUserFn = createServerFn({ method: "POST" })
     .middleware([authMiddleware])
@@ -314,21 +361,77 @@ export const deleteUserFn = createServerFn({ method: "POST" })
     .inputValidator((data: z.infer<typeof DeleteUserSchema>) => DeleteUserSchema.parse(data))
     .handler(async (ctx) => {
         const { userId } = ctx.data;
-        const { db } = ctx.context;
+        const { db, user: currentUser } = ctx.context;
 
-        // Cascade delete handled by Drizzle Schema? 
-        // Schema text says { onDelete: 'cascade' }, but Drizzle SQLite support for FKs depends on PRAGMA foreign_keys=ON usually.
-        // Let's explicitly delete key related items just in case, similar to tenant delete.
+        // Get target user info for authorization and audit
+        const targetUser = await db.select({
+            id: schema.users.id,
+            email: schema.users.email,
+            tenantId: schema.users.tenantId,
+            isSystemAdmin: schema.users.isSystemAdmin,
+        })
+            .from(schema.users)
+            .where(eq(schema.users.id, userId))
+            .get();
 
+        if (!targetUser) {
+            throw new Error("User not found");
+        }
+
+        // Prevent self-deletion
+        if (userId === currentUser.id) {
+            throw new Error("Cannot delete your own account");
+        }
+
+        // Authorization check
+        if (!currentUser.isSystemAdmin) {
+            // Get current user's role
+            const userRoles = await db.select({
+                roleName: schema.userRoles.role,
+                tenantId: schema.users.tenantId,
+            })
+                .from(schema.userRoles)
+                .innerJoin(schema.users, eq(schema.userRoles.userId, schema.users.id))
+                .where(eq(schema.userRoles.userId, currentUser.id));
+
+            const myRole = userRoles[0];
+            if (!myRole) {
+                throw new Error("Unauthorized: No role found");
+            }
+
+            const allowedRoles = ["Practice Manager", "Admin", "Compliance Officer"];
+            if (!allowedRoles.includes(myRole.roleName)) {
+                throw new Error("Unauthorized: Insufficient permissions to delete users");
+            }
+
+            // Can only delete users in same tenant
+            if (targetUser.tenantId !== myRole.tenantId) {
+                throw new Error("Unauthorized: Cannot delete users from other tenants");
+            }
+
+            // Cannot delete system admins
+            if (targetUser.isSystemAdmin) {
+                throw new Error("Unauthorized: Cannot delete system administrators");
+            }
+        }
+
+        // Delete in dependency order
         await db.delete(schema.sessions).where(eq(schema.sessions.userId, userId));
         await db.delete(schema.accounts).where(eq(schema.accounts.userId, userId));
         await db.delete(schema.userRoles).where(eq(schema.userRoles.userId, userId));
-        // Other items like policies owned by user might need reassignment or delete. 
-        // For now, let's just delete the user and let the DB throw if constraint (or cascade if enabled).
-        // Safest is to just delete the user if Schema has onDelete cascade.
-        // Given 'deleteTenantFn' did explicit deletes, I will do explicit deletes for safety for auth tables.
-
         await db.delete(schema.users).where(eq(schema.users.id, userId));
+
+        // Audit log
+        const tenantId = targetUser.tenantId || currentUser.tenantId;
+        if (tenantId) {
+            await logUserEvent(db, {
+                tenantId,
+                actorUserId: currentUser.id,
+                targetUserId: userId,
+                action: AUDIT_ACTIONS.USER_DELETED,
+                details: { targetUserEmail: targetUser.email },
+            });
+        }
 
         return { success: true };
     });
@@ -344,7 +447,48 @@ export const updateUserFn = createServerFn({ method: "POST" })
     .inputValidator((data: z.infer<typeof UpdateUserSchema>) => UpdateUserSchema.parse(data))
     .handler(async (ctx) => {
         const { userId, email } = ctx.data;
-        const { db } = ctx.context;
+        const { db, user: currentUser } = ctx.context;
+
+        // Get target user info for authorization
+        const targetUser = await db.select({
+            id: schema.users.id,
+            tenantId: schema.users.tenantId,
+            email: schema.users.email,
+        })
+            .from(schema.users)
+            .where(eq(schema.users.id, userId))
+            .get();
+
+        if (!targetUser) {
+            throw new Error("User not found");
+        }
+
+        // Users can update their own email, admins can update users in their tenant
+        if (userId !== currentUser.id) {
+            if (!currentUser.isSystemAdmin) {
+                const userRoles = await db.select({
+                    roleName: schema.userRoles.role,
+                    tenantId: schema.users.tenantId,
+                })
+                    .from(schema.userRoles)
+                    .innerJoin(schema.users, eq(schema.userRoles.userId, schema.users.id))
+                    .where(eq(schema.userRoles.userId, currentUser.id));
+
+                const myRole = userRoles[0];
+                if (!myRole) {
+                    throw new Error("Unauthorized: No role found");
+                }
+
+                const allowedRoles = ["Practice Manager", "Admin", "Compliance Officer"];
+                if (!allowedRoles.includes(myRole.roleName)) {
+                    throw new Error("Unauthorized: Insufficient permissions to update users");
+                }
+
+                if (targetUser.tenantId !== myRole.tenantId) {
+                    throw new Error("Unauthorized: Cannot update users from other tenants");
+                }
+            }
+        }
 
         if (email) {
             await db.update(schema.users)
@@ -472,13 +616,45 @@ export const generatePasswordResetLinkFn = createServerFn({ method: "POST" })
     .inputValidator((data: z.infer<typeof GenerateResetLinkSchema>) => GenerateResetLinkSchema.parse(data))
     .handler(async (ctx) => {
         const { userId } = ctx.data;
-        const { db, env } = ctx.context;
+        const { db, env, user: currentUser } = ctx.context;
 
-        // 1. Get user email
-        const user = await db.select({ email: schema.users.email }).from(schema.users as any).where(eq(schema.users.id, userId)).get();
+        // Get target user info for authorization
+        const targetUser = await db.select({
+            id: schema.users.id,
+            email: schema.users.email,
+            tenantId: schema.users.tenantId,
+        })
+            .from(schema.users)
+            .where(eq(schema.users.id, userId))
+            .get();
 
-        if (!user) {
+        if (!targetUser) {
             throw new Error("User not found");
+        }
+
+        // Authorization check
+        if (!currentUser.isSystemAdmin) {
+            const userRoles = await db.select({
+                roleName: schema.userRoles.role,
+                tenantId: schema.users.tenantId,
+            })
+                .from(schema.userRoles)
+                .innerJoin(schema.users, eq(schema.userRoles.userId, schema.users.id))
+                .where(eq(schema.userRoles.userId, currentUser.id));
+
+            const myRole = userRoles[0];
+            if (!myRole) {
+                throw new Error("Unauthorized: No role found");
+            }
+
+            const allowedRoles = ["Practice Manager", "Admin", "Compliance Officer"];
+            if (!allowedRoles.includes(myRole.roleName)) {
+                throw new Error("Unauthorized: Insufficient permissions to generate password reset links");
+            }
+
+            if (targetUser.tenantId !== myRole.tenantId) {
+                throw new Error("Unauthorized: Cannot generate reset links for users from other tenants");
+            }
         }
 
         const { createAuth } = await import("@/lib/auth");
@@ -492,11 +668,10 @@ export const generatePasswordResetLinkFn = createServerFn({ method: "POST" })
             }
         });
 
-        // 2. Trigger Better Auth forgetPassword
-        // This will call our captured sendResetPassword handler
+        // Trigger Better Auth forgetPassword
         await auth.api.requestPasswordReset({
             body: {
-                email: user.email,
+                email: targetUser.email,
                 redirectTo: "/reset-password"
             }
         });
@@ -505,13 +680,28 @@ export const generatePasswordResetLinkFn = createServerFn({ method: "POST" })
             throw new Error("Failed to generate token: Callback was not triggered.");
         }
 
+        // Audit log
+        const tenantId = targetUser.tenantId || currentUser.tenantId;
+        if (tenantId) {
+            await logUserEvent(db, {
+                tenantId,
+                actorUserId: currentUser.id,
+                targetUserId: userId,
+                action: AUDIT_ACTIONS.PASSWORD_RESET_GENERATED,
+                details: { targetUserEmail: targetUser.email },
+            });
+        }
+
         return { token: capturedToken };
     });
 
 export const getTenantsFn = createServerFn({ method: "GET" })
     .middleware([authMiddleware])
     .handler(async (ctx) => {
-        const { db } = ctx.context;
+        const { db, user } = ctx.context;
+
+        // Authorization: Only system admins can list all tenants
+        await requireSystemAdmin(db, user);
 
         // 1. Get all tenants
         const tenants = await db.select().from(schema.tenants as any);
@@ -528,11 +718,9 @@ export const getTenantsFn = createServerFn({ method: "GET" })
         })
             .from(schema.users as any)
             .innerJoin(schema.userRoles as any, eq(schema.users.id, schema.userRoles.userId) as any)
-            .where(eq(schema.userRoles.role, 'Practice Manager') as any); // Use string directly
+            .where(eq(schema.userRoles.role, 'Practice Manager') as any);
 
-        // 4. (No longer need to fetch role IDs for PMs, they are static)
-
-        // 5. Get Pending Invitations for PMs
+        // 4. Get Pending Invitations for PMs
         const pendingInvitations = await db.select({
             id: schema.invitations.id,
             email: schema.invitations.email,
@@ -552,7 +740,7 @@ export const getTenantsFn = createServerFn({ method: "GET" })
             ...tenant,
             sites: sites.filter((s: any) => s.tenantId === tenant.id),
             practiceManagers: practiceManagers.filter((pm: any) => pm.tenantId === tenant.id),
-            practiceManagerRole: 'Practice Manager', // roleId concept replaced
+            practiceManagerRole: 'Practice Manager',
             pendingInvitations: pendingInvitations.filter((inv: any) => inv.tenantId === tenant.id)
         }));
     });
@@ -566,67 +754,88 @@ export const deleteTenantFn = createServerFn({ method: "POST" })
     .inputValidator((data: z.infer<typeof DeleteTenantSchema>) => DeleteTenantSchema.parse(data))
     .handler(async (ctx) => {
         const { tenantId } = ctx.data;
-        const { db } = ctx.context;
+        const { db, user } = ctx.context;
 
-        // Manual Cascade Delete due to potential SQLite FK limitations on D1
-        // Delete in order of dependency (leaf nodes first)
+        // Authorization: Only system admins can delete tenants
+        await requireSystemAdmin(db, user);
 
-        // 1. Delete Evidence Links (references tenants)
-        await db.delete(schema.evidenceLinks as any).where(eq(schema.evidenceLinks.tenantId, tenantId) as any);
+        // Verify tenant exists
+        const tenant = await db.select({ name: schema.tenants.name })
+            .from(schema.tenants as any)
+            .where(eq(schema.tenants.id, tenantId) as any)
+            .get();
 
-        // 2. Delete Evidence (references tenants) - also clears user dependencies if any
-        await db.delete(schema.evidenceItems as any).where(eq(schema.evidenceItems.tenantId, tenantId) as any);
-
-        // 3. Delete Policy Approvals & Read Attestations (references tenants)
-        await db.delete(schema.policyReadAttestations as any).where(eq(schema.policyReadAttestations.tenantId, tenantId) as any);
-        await db.delete(schema.policyApprovals as any).where(eq(schema.policyApprovals.tenantId, tenantId) as any);
-
-        // 4. Delete Policy Versions & Policies
-        await db.delete(schema.policyVersions as any).where(eq(schema.policyVersions.tenantId, tenantId) as any);
-        await db.delete(schema.policies as any).where(eq(schema.policies.tenantId, tenantId) as any);
-
-        // 5. Delete Action Approvals & Actions
-        await db.delete(schema.actionApprovals as any).where(eq(schema.actionApprovals.tenantId, tenantId) as any);
-        await db.delete(schema.actions as any).where(eq(schema.actions.tenantId, tenantId) as any);
-
-        // 6. Delete Inspection Pack Outputs & Packs
-        await db.delete(schema.inspectionPackOutputs as any).where(eq(schema.inspectionPackOutputs.tenantId, tenantId) as any);
-        await db.delete(schema.inspectionPacks as any).where(eq(schema.inspectionPacks.tenantId, tenantId) as any);
-
-        // 7. Delete QS Owners & Local Controls
-        await db.delete(schema.qsOwners as any).where(eq(schema.qsOwners.tenantId, tenantId) as any);
-        await db.delete(schema.localControls as any).where(eq(schema.localControls.tenantId, tenantId) as any);
-
-        // 8. Delete Audit Log
-        await db.delete(schema.auditLog as any).where(eq(schema.auditLog.tenantId, tenantId) as any);
-
-        // 9. Delete Invitations
-        await db.delete(schema.invitations as any).where(eq(schema.invitations.tenantId, tenantId) as any);
-
-        // 10. Delete Sessions & Accounts for Users in this Tenant
-        // First find users
-        const tenantUsers = await db.select({ id: schema.users.id }).from(schema.users as any).where(eq(schema.users.tenantId, tenantId) as any);
-        const userIds = tenantUsers.map((u: any) => u.id);
-
-        if (userIds.length > 0) {
-            await db.delete(schema.sessions as any).where(inArray(schema.sessions.userId, userIds) as any);
-            await db.delete(schema.accounts as any).where(inArray(schema.accounts.userId, userIds) as any);
-            await db.delete(schema.userRoles as any).where(inArray(schema.userRoles.userId, userIds) as any); // Explicit delete just in case
+        if (!tenant) {
+            throw new Error("Tenant not found");
         }
 
-        // 11. Delete Users
-        await db.delete(schema.users as any).where(eq(schema.users.tenantId, tenantId) as any);
+        // Note: D1 doesn't support transactions, so we delete in dependency order
+        // If any step fails, the previous deletions remain (partial cleanup)
 
-        // 12. Delete Roles - SKIP (Roles table deleted)
+        try {
+            // 1. Delete Evidence Links (references tenants)
+            await db.delete(schema.evidenceLinks as any).where(eq(schema.evidenceLinks.tenantId, tenantId) as any);
 
+            // 2. Delete Evidence (references tenants)
+            await db.delete(schema.evidenceItems as any).where(eq(schema.evidenceItems.tenantId, tenantId) as any);
 
-        // 13. Delete Sites
-        await db.delete(schema.sites as any).where(eq(schema.sites.tenantId, tenantId) as any);
+            // 3. Delete Policy Approvals & Read Attestations (references tenants)
+            await db.delete(schema.policyReadAttestations as any).where(eq(schema.policyReadAttestations.tenantId, tenantId) as any);
+            await db.delete(schema.policyApprovals as any).where(eq(schema.policyApprovals.tenantId, tenantId) as any);
 
-        // 14. Finally, Delete Tenant
-        await db.delete(schema.tenants as any).where(eq(schema.tenants.id, tenantId) as any);
+            // 4. Delete Policy Versions & Policies
+            await db.delete(schema.policyVersions as any).where(eq(schema.policyVersions.tenantId, tenantId) as any);
+            await db.delete(schema.policies as any).where(eq(schema.policies.tenantId, tenantId) as any);
 
-        return { success: true };
+            // 5. Delete Action Approvals & Actions
+            await db.delete(schema.actionApprovals as any).where(eq(schema.actionApprovals.tenantId, tenantId) as any);
+            await db.delete(schema.actions as any).where(eq(schema.actions.tenantId, tenantId) as any);
+
+            // 6. Delete Inspection Pack Outputs & Packs
+            await db.delete(schema.inspectionPackOutputs as any).where(eq(schema.inspectionPackOutputs.tenantId, tenantId) as any);
+            await db.delete(schema.inspectionPacks as any).where(eq(schema.inspectionPacks.tenantId, tenantId) as any);
+
+            // 7. Delete QS Owners & Local Controls
+            await db.delete(schema.qsOwners as any).where(eq(schema.qsOwners.tenantId, tenantId) as any);
+            await db.delete(schema.localControls as any).where(eq(schema.localControls.tenantId, tenantId) as any);
+
+            // 8. Delete Invitations
+            await db.delete(schema.invitations as any).where(eq(schema.invitations.tenantId, tenantId) as any);
+
+            // 9. Delete Sessions & Accounts for Users in this Tenant
+            const tenantUsers = await db.select({ id: schema.users.id })
+                .from(schema.users as any)
+                .where(eq(schema.users.tenantId, tenantId) as any);
+            const userIds = tenantUsers.map((u: any) => u.id);
+
+            if (userIds.length > 0) {
+                await db.delete(schema.sessions as any).where(inArray(schema.sessions.userId, userIds) as any);
+                await db.delete(schema.accounts as any).where(inArray(schema.accounts.userId, userIds) as any);
+                await db.delete(schema.userRoles as any).where(inArray(schema.userRoles.userId, userIds) as any);
+            }
+
+            // 10. Delete Users
+            await db.delete(schema.users as any).where(eq(schema.users.tenantId, tenantId) as any);
+
+            // 11. Delete Sites
+            await db.delete(schema.sites as any).where(eq(schema.sites.tenantId, tenantId) as any);
+
+            // 12. Audit log before deleting tenant
+            await logUserEvent(db, {
+                tenantId,
+                actorUserId: user.id,
+                action: AUDIT_ACTIONS.TENANT_DELETED,
+                details: { tenantName: tenant.name },
+            });
+
+            // 13. Finally, Delete Tenant
+            await db.delete(schema.tenants as any).where(eq(schema.tenants.id, tenantId) as any);
+
+            return { success: true };
+        } catch (error) {
+            console.error("Error during tenant deletion:", error);
+            throw new Error("Failed to delete tenant. Partial cleanup may have occurred.");
+        }
     });
 
 const GetRolesSchema = z.object({
@@ -636,13 +845,29 @@ const GetRolesSchema = z.object({
 export const getRolesFn = createServerFn({ method: "GET" })
     .middleware([authMiddleware])
     .inputValidator((data: z.infer<typeof GetRolesSchema>) => GetRolesSchema.parse(data))
-    .handler(async () => {
+    .handler(async (ctx) => {
+        const { user, db } = ctx.context;
 
-        const roles = ROLES; // Return static list
-        // Could filter by context if we wanted to only show roles applicable to user context?
-        // But the dialog usually handles logic or we can trust the FE/BE validation.
-        // Let's just return all constants.
-        return roles;
+        // Authorization: Must be at least a tenant admin to view roles (needed for invite flows)
+        if (!user.isSystemAdmin) {
+            const userRoles = await db.select({
+                roleName: schema.userRoles.role,
+            })
+                .from(schema.userRoles)
+                .where(eq(schema.userRoles.userId, user.id));
+
+            const myRole = userRoles[0];
+            if (!myRole) {
+                throw new Error("Unauthorized: No role found");
+            }
+
+            const allowedRoles = ["Practice Manager", "Admin", "Compliance Officer", "GP Partner"];
+            if (!allowedRoles.includes(myRole.roleName)) {
+                throw new Error("Unauthorized: Insufficient permissions to view roles");
+            }
+        }
+
+        return ROLES;
     });
 
 const CreateSiteSchema = z.object({
@@ -658,17 +883,39 @@ export const createSiteFn = createServerFn({ method: "POST" })
         const { name, tenantId, address } = ctx.data;
         const { db, user } = ctx.context;
 
-        // AUTH CHECK
-        if (!(user as any).isSystemAdmin) {
-            const userRoles = await db.select({
-                name: schema.userRoles.role
-            })
-                .from(schema.userRoles as any)
-                .where(eq(schema.userRoles.userId, user.id) as any);
+        // Verify tenant exists
+        const tenant = await db.select({ id: schema.tenants.id })
+            .from(schema.tenants)
+            .where(eq(schema.tenants.id, tenantId))
+            .get();
 
-            const hasManagerRole = userRoles.some((r: any) => r.name === 'Practice Manager');
-            if (!hasManagerRole) {
+        if (!tenant) {
+            throw new Error("Tenant not found");
+        }
+
+        // AUTH CHECK: System admin or Practice Manager in the same tenant
+        if (!user.isSystemAdmin) {
+            const userRoles = await db.select({
+                roleName: schema.userRoles.role,
+                tenantId: schema.users.tenantId,
+            })
+                .from(schema.userRoles)
+                .innerJoin(schema.users, eq(schema.userRoles.userId, schema.users.id))
+                .where(eq(schema.userRoles.userId, user.id));
+
+            const myRole = userRoles[0];
+            if (!myRole) {
+                throw new Error("Unauthorized: No role found");
+            }
+
+            // Must be Practice Manager
+            if (myRole.roleName !== 'Practice Manager') {
                 throw new Error("Unauthorized: Only Practice Managers can create sites.");
+            }
+
+            // Must belong to the same tenant
+            if (myRole.tenantId !== tenantId) {
+                throw new Error("Unauthorized: Cannot create sites for other tenants.");
             }
         }
 
@@ -680,6 +927,14 @@ export const createSiteFn = createServerFn({ method: "POST" })
             name,
             address,
             createdAt: new Date(),
+        });
+
+        // Audit log
+        await logUserEvent(db, {
+            tenantId,
+            actorUserId: user.id,
+            action: AUDIT_ACTIONS.SITE_CREATED,
+            details: { siteName: name, siteId },
         });
 
         return { siteId };

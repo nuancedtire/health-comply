@@ -25,6 +25,16 @@ export const AUDIT_ACTIONS = {
   USER_ROLE_CHANGED: "user.role_changed",
   USER_DELETED: "user.deleted",
 
+  // Tenant lifecycle
+  TENANT_CREATED: "tenant.created",
+  TENANT_DELETED: "tenant.deleted",
+
+  // Site lifecycle
+  SITE_CREATED: "site.created",
+
+  // Security events
+  PASSWORD_RESET_GENERATED: "password_reset.generated",
+
   // Policy lifecycle
   POLICY_CREATED: "policy.created",
   POLICY_APPROVED: "policy.approved",
@@ -160,20 +170,36 @@ export async function logUserEvent(
   params: {
     tenantId: string;
     actorUserId: string;
-    targetUserId: string;
+    targetUserId?: string;
     action:
       | typeof AUDIT_ACTIONS.USER_INVITED
       | typeof AUDIT_ACTIONS.USER_ROLE_CHANGED
-      | typeof AUDIT_ACTIONS.USER_DELETED;
+      | typeof AUDIT_ACTIONS.USER_DELETED
+      | typeof AUDIT_ACTIONS.TENANT_CREATED
+      | typeof AUDIT_ACTIONS.TENANT_DELETED
+      | typeof AUDIT_ACTIONS.SITE_CREATED
+      | typeof AUDIT_ACTIONS.PASSWORD_RESET_GENERATED;
     details?: AuditDetails;
   }
 ): Promise<void> {
+  // Generate entity ID based on action type
+  let entityId: string;
+  if (params.targetUserId) {
+    entityId = params.targetUserId;
+  } else if (params.action === AUDIT_ACTIONS.TENANT_CREATED || params.action === AUDIT_ACTIONS.TENANT_DELETED) {
+    entityId = params.tenantId;
+  } else if (params.action === AUDIT_ACTIONS.SITE_CREATED && params.details?.siteId) {
+    entityId = params.details.siteId as string;
+  } else {
+    entityId = params.actorUserId;
+  }
+
   return logAuditEvent(db, {
     tenantId: params.tenantId,
     actorUserId: params.actorUserId,
     action: params.action,
     entityType: "user",
-    entityId: params.targetUserId,
+    entityId,
     details: params.details,
   });
 }
