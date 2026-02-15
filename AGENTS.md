@@ -44,7 +44,7 @@ This documentation provides essential context and guidelines for AI agents worki
 - **Lib/Utils:**
   - `src/lib/` for configuration and core logic.
   - `src/utils/` for pure helper functions.
-- **Database:** `src/db/` contains `schema.ts` and `relations.ts`.
+- **Database:** `src/db/` contains `schema.ts` (with relations) and `index.ts`.
 
 ### Naming Conventions
 - **Files:** Kebab-case (e.g., `user-profile.tsx`, `auth-utils.ts`).
@@ -76,8 +76,7 @@ This documentation provides essential context and guidelines for AI agents worki
 - **Mutations:** Use `useMutation` for server actions. Invalidating queries is preferred over manual state updates.
 
 ### Database (Drizzle ORM)
-- **Schema:** Defined in `src/db/schema.ts`.
-- **Relations:** Defined in `src/db/relations.ts`.
+- **Schema & Relations:** Defined in `src/db/schema.ts`.
 - **Queries:** Use the query builder syntax (e.g., `db.query.users.findFirst(...)`).
 - **Migrations:** Do not manually edit SQL files. Modify schema.ts and run `db:generate`.
 

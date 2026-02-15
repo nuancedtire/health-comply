@@ -109,7 +109,7 @@ export const userRoles = sqliteTable('user_roles', {
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 }, (table) => [
     primaryKey({ columns: [table.userId, table.role, table.siteId || 'userId'] }), // Composite PK
-    index('idx_user_roles_user_id').on(table.userId),
+    // idx_user_roles_user_id removed: userId is the first column in the composite PK
 ]);
 
 export const invitations = sqliteTable('invitations', {
@@ -125,7 +125,7 @@ export const invitations = sqliteTable('invitations', {
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 }, (table) => [
     index('idx_invitations_email').on(table.email),
-    index('idx_invitations_token').on(table.token),
+    // idx_invitations_token removed: .unique() on token already creates a unique index
     index('idx_invitations_tenant').on(table.tenantId),
 ]);
 
@@ -137,7 +137,6 @@ export const qsOwners = sqliteTable('qs_owners', {
     siteId: text('site_id').notNull().references(() => sites.id, { onDelete: 'cascade' }),
     qsId: text('qs_id').notNull().references(() => cqcQualityStatements.id),
     ownerUserId: text('owner_user_id').notNull().references(() => users.id),
-    reviewCadenceDays: integer('review_cadence_days'),
     status: text('status').notNull().default('assigned'), // 'assigned', 'in_progress', 'reviewed'
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
@@ -201,7 +200,6 @@ export const evidenceItems = sqliteTable('evidence_items', {
     // Time Machine Dates
     evidenceDate: integer('evidence_date', { mode: 'timestamp' }), // When it actually happened
     validUntil: integer('valid_until', { mode: 'timestamp' }),     // When it expires
-    isArchived: integer('is_archived', { mode: 'boolean' }).default(false), // Historical record
 
     // Review Workflow
     status: text('status').notNull().default('pending_review'), // 'draft', 'pending_review', 'approved', 'rejected', 'archived'
@@ -294,7 +292,7 @@ export const policyVersions = sqliteTable('policy_versions', {
     summary: text('summary'),
 }, (table) => [
     unique('uq_policy_versions').on(table.policyId, table.versionNo),
-    index('idx_policy_versions_policy').on(table.policyId),
+    // idx_policy_versions_policy removed: policyId is the first column in uq_policy_versions
 ]);
 
 export const policyApprovals = sqliteTable('policy_approvals', {
@@ -344,7 +342,7 @@ export const inspectionPackOutputs = sqliteTable('inspection_pack_outputs', {
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 }, (table) => [
     unique('uq_pack_outputs').on(table.packId, table.kind),
-    index('idx_pack_outputs_pack').on(table.packId),
+    // idx_pack_outputs_pack removed: packId is the first column in uq_pack_outputs
 ]);
 
 // ===== AUDIT LOG =====
