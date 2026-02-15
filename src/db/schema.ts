@@ -109,7 +109,6 @@ export const userRoles = sqliteTable('user_roles', {
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 }, (table) => [
     primaryKey({ columns: [table.userId, table.role, table.siteId || 'userId'] }), // Composite PK
-    index('idx_user_roles_user_id').on(table.userId),
 ]);
 
 export const invitations = sqliteTable('invitations', {
@@ -125,7 +124,6 @@ export const invitations = sqliteTable('invitations', {
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 }, (table) => [
     index('idx_invitations_email').on(table.email),
-    index('idx_invitations_token').on(table.token),
     index('idx_invitations_tenant').on(table.tenantId),
 ]);
 
@@ -170,8 +168,7 @@ export const localControls = sqliteTable('local_controls', {
     active: integer('active', { mode: 'boolean' }).notNull().default(true),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 
-    // Control Pack & Enhanced Evidence (added for Control Packs feature)
-    sourcePackId: text('source_pack_id'), // e.g., "safe_safeguarding" - tracks which pack this came from
+    // Control Pack & Enhanced Evidence
     evidenceExamples: text('evidence_examples'), // JSON: { good: string[], bad: string[] }
     cqcMythbusterUrl: text('cqc_mythbuster_url'), // External URL to CQC guidance
 }, (table) => [
@@ -201,7 +198,6 @@ export const evidenceItems = sqliteTable('evidence_items', {
     // Time Machine Dates
     evidenceDate: integer('evidence_date', { mode: 'timestamp' }), // When it actually happened
     validUntil: integer('valid_until', { mode: 'timestamp' }),     // When it expires
-    isArchived: integer('is_archived', { mode: 'boolean' }).default(false), // Historical record
 
     // Review Workflow
     status: text('status').notNull().default('pending_review'), // 'draft', 'pending_review', 'approved', 'rejected', 'archived'
@@ -294,7 +290,6 @@ export const policyVersions = sqliteTable('policy_versions', {
     summary: text('summary'),
 }, (table) => [
     unique('uq_policy_versions').on(table.policyId, table.versionNo),
-    index('idx_policy_versions_policy').on(table.policyId),
 ]);
 
 export const policyApprovals = sqliteTable('policy_approvals', {
@@ -344,7 +339,6 @@ export const inspectionPackOutputs = sqliteTable('inspection_pack_outputs', {
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 }, (table) => [
     unique('uq_pack_outputs').on(table.packId, table.kind),
-    index('idx_pack_outputs_pack').on(table.packId),
 ]);
 
 // ===== AUDIT LOG =====

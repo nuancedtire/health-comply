@@ -90,8 +90,7 @@ src/
 │   ├── middleware/     # Request middleware (auth, db, session)
 │   └── workflows/      # Cloudflare Workflows (evidence-ingest)
 ├── db/
-│   ├── schema.ts       # Drizzle schema definitions
-│   ├── relations.ts    # Drizzle relations
+│   ├── schema.ts       # Drizzle schema definitions + relations
 │   └── index.ts        # Database exports
 ├── hooks/              # Custom React hooks
 ├── integrations/       # Third-party integrations
