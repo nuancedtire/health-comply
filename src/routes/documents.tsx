@@ -1,4 +1,5 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import React from 'react'
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { MainLayout } from '@/components/main-layout'
 import { UploadModal } from '@/components/evidence/upload-modal'
 import { DocumentsView, EvidenceItem } from '@/components/evidence/documents-view'
@@ -6,10 +7,11 @@ import { DocumentsSidebar } from '@/components/evidence/documents-sidebar'
 import { getEvidenceForSiteFn, bulkDeleteEvidenceFn, deleteAllFailedEvidenceFn } from '@/core/functions/evidence'
 import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSite } from '@/components/site-context'
-import { useState, useEffect } from 'react'
-import { FileText, FileUp } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import { FileText, FileUp, CheckCircle2, AlertCircle, Clock, Building2, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 
 export const Route = createFileRoute('/documents')({
     beforeLoad: ({ context }) => {
@@ -29,8 +31,33 @@ export const Route = createFileRoute('/documents')({
 })
 
 function DocumentsPage() {
-    const { activeSite, isLoading: isSiteLoading } = useSite()
+    const { activeSite, sites, isLoading: isSiteLoading } = useSite()
+    const navigate = useNavigate()
     const [selectedEvidence, setSelectedEvidence] = useState<EvidenceItem | null>(null)
+
+    if (!isSiteLoading && sites.length === 0) {
+        return (
+            <MainLayout title="Documents">
+                <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
+                    <div className="max-w-md w-full text-center space-y-6">
+                        <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                            <Building2 className="w-10 h-10 text-primary" />
+                        </div>
+                        <div className="space-y-2">
+                            <h2 className="text-2xl font-bold">No Site Set Up Yet</h2>
+                            <p className="text-muted-foreground">
+                                You need to create a site before you can upload and manage evidence documents.
+                            </p>
+                        </div>
+                        <Button size="lg" className="w-full" onClick={() => navigate({ to: '/create-site' })}>
+                            Create Your First Site
+                            <ArrowRight className="ml-2 w-4 h-4" />
+                        </Button>
+                    </div>
+                </div>
+            </MainLayout>
+        )
+    }
     const [sidebarWidth, setSidebarWidth] = useState(600)
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
     const queryClient = useQueryClient()
@@ -134,16 +161,59 @@ function DocumentsPage() {
     const allEvidence = (evidence || []) as EvidenceItem[]
     const hasEvidence = allEvidence.length > 0
 
+    const stats = useMemo(() => {
+        const approved = allEvidence.filter(e => e.status === 'approved').length
+        const needsAttention = allEvidence.filter(e => e.status === 'draft' || e.status === 'failed').length
+        const inReview = allEvidence.filter(e => e.status === 'pending_review').length
+        return { approved, needsAttention, inReview, total: allEvidence.length }
+    }, [allEvidence])
+
     return (
         <MainLayout title="Documents">
             <div className="flex flex-col h-[calc(100vh-8rem)]">
                 {/* Header */}
-                <div className="flex items-center justify-between px-1 pb-4">
-                    <div>
-                        <h2 className="text-2xl font-bold tracking-tight">Evidence Library</h2>
-                        <p className="text-muted-foreground text-sm">
-                            Manage documents for <span className="font-medium text-foreground">{activeSite.name}</span>
-                        </p>
+                <div className="flex items-start justify-between px-1 pb-4 gap-4">
+                    <div className="space-y-3 flex-1">
+                        <div>
+                            <h2 className="text-2xl font-bold tracking-tight">Evidence Library</h2>
+                            <p className="text-muted-foreground text-sm">
+                                {activeSite.name}
+                            </p>
+                        </div>
+                        {hasEvidence && (
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <StatChip
+                                    icon={FileText}
+                                    label="Total"
+                                    value={stats.total}
+                                    className="text-muted-foreground border-border/60"
+                                />
+                                {stats.needsAttention > 0 && (
+                                    <StatChip
+                                        icon={AlertCircle}
+                                        label="Needs attention"
+                                        value={stats.needsAttention}
+                                        className="text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800 bg-amber-50/60 dark:bg-amber-950/20"
+                                    />
+                                )}
+                                {stats.inReview > 0 && (
+                                    <StatChip
+                                        icon={Clock}
+                                        label="In review"
+                                        value={stats.inReview}
+                                        className="text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800 bg-purple-50/60 dark:bg-purple-950/20"
+                                    />
+                                )}
+                                {stats.approved > 0 && (
+                                    <StatChip
+                                        icon={CheckCircle2}
+                                        label="Approved"
+                                        value={stats.approved}
+                                        className="text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-950/20"
+                                    />
+                                )}
+                            </div>
+                        )}
                     </div>
                     <UploadModal siteId={activeSite.id} />
                 </div>
@@ -152,7 +222,7 @@ function DocumentsPage() {
                 {!hasEvidence ? (
                     <EmptyState siteId={activeSite.id} />
                 ) : (
-                    <div className="flex-1 flex rounded-xl border bg-card overflow-hidden">
+                    <div className="flex-1 flex overflow-hidden">
                         {/* Documents List */}
                         <div className="flex-1 min-w-0">
                             <DocumentsView
@@ -189,6 +259,29 @@ function DocumentsPage() {
                 )}
             </div>
         </MainLayout>
+    )
+}
+
+function StatChip({
+    icon: Icon,
+    label,
+    value,
+    className,
+}: {
+    icon: React.ComponentType<{ className?: string }>
+    label: string
+    value: number
+    className?: string
+}) {
+    return (
+        <div className={cn(
+            "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium",
+            className
+        )}>
+            <Icon className="h-3.5 w-3.5" />
+            <span className="tabular-nums font-semibold">{value}</span>
+            <span className="opacity-70">{label}</span>
+        </div>
     )
 }
 

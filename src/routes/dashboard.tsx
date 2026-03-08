@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, Link } from '@tanstack/react-router'
+import { createFileRoute, redirect, Link, useNavigate } from '@tanstack/react-router'
 import { MainLayout } from '@/components/main-layout'
 import { KPICard } from '@/components/dashboard/kpi-card'
 import { ComplianceProgress } from '@/components/dashboard/compliance-progress'
@@ -7,7 +7,8 @@ import { EvidenceList } from '@/components/evidence/evidence-list'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Users, FileText, ShieldCheck, TrendingUp, Calendar, CheckCircle, AlertCircle, Upload, ClipboardList, Settings, UserPlus, Activity } from 'lucide-react'
+import { Users, FileText, ShieldCheck, TrendingUp, Calendar, CheckCircle, AlertCircle, Upload, ClipboardList, Settings, UserPlus, Activity, Building2, ArrowRight } from 'lucide-react'
+import { useSite } from '@/components/site-context'
 
 export const Route = createFileRoute('/dashboard')({
   beforeLoad: ({ context }) => {
@@ -20,6 +21,33 @@ export const Route = createFileRoute('/dashboard')({
 })
 
 function DashboardPage() {
+  const { sites, isLoading: sitesLoading } = useSite()
+  const navigate = useNavigate()
+
+  if (!sitesLoading && sites.length === 0) {
+    return (
+      <MainLayout title="Dashboard">
+        <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
+          <div className="max-w-md w-full text-center space-y-6">
+            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+              <Building2 className="w-10 h-10 text-primary" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold">Welcome to Compass</h2>
+              <p className="text-muted-foreground">
+                Before you can view your compliance dashboard, you need to set up your first site. Sites represent the physical locations your practice manages.
+              </p>
+            </div>
+            <Button size="lg" className="w-full" onClick={() => navigate({ to: '/create-site' })}>
+              Create Your First Site
+              <ArrowRight className="ml-2 w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </MainLayout>
+    )
+  }
+
   const evidence: any[] = [
     {
       id: 'ev-001',
@@ -293,19 +321,19 @@ function DashboardPage() {
               </CardHeader>
               <CardContent className="space-y-2">
                 <Button variant="outline" className="w-full justify-start gap-2" asChild>
-                  <Link to="/evidence">
+                  <Link to="/documents">
                     <Upload className="w-4 h-4" />
                     Upload Evidence
                   </Link>
                 </Button>
                 <Button variant="outline" className="w-full justify-start gap-2" asChild>
-                  <Link to="/controls">
+                  <Link to="/checklist">
                     <ClipboardList className="w-4 h-4" />
                     View Controls
                   </Link>
                 </Button>
                 <Button variant="outline" className="w-full justify-start gap-2" asChild>
-                  <Link to="/actions">
+                  <Link to="/checklist">
                     <CheckCircle className="w-4 h-4" />
                     Manage Actions
                   </Link>

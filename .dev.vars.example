@@ -1,0 +1,12 @@
+# Copy this file to .dev.vars and fill in your values
+# .dev.vars is gitignored
+
+# Better Auth secret
+BETTER_AUTH_SECRET=your-secret-here
+
+# Cerebras API key (for AI evidence classification)
+CEREBRAS_API_KEY=your-cerebras-key-here
+
+# Resend API key (for transactional emails – invitations etc.)
+# Get your key at https://resend.com
+RESEND_API_KEY=re_your_key_here

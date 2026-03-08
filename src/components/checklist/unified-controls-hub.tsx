@@ -45,6 +45,7 @@ import {
   updateLocalControlFn,
   seedLocalControlsFn,
   generateControlDetailsFn,
+  getControlEvidenceFn,
 } from "@/core/functions/local-control-functions";
 import { updateEvidenceFn } from "@/core/functions/evidence";
 
@@ -411,7 +412,7 @@ export function UnifiedControlsHub({
   const { overallProgress } = checklistData || { overallProgress: 0 };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-6">
       {/* Header Area */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div className="space-y-3 md:space-y-4 flex-1">
@@ -424,7 +425,7 @@ export function UnifiedControlsHub({
             </p>
           </div>
 
-          <div className="bg-card p-3 md:p-4 rounded-xl border shadow-sm max-w-xl transition-shadow hover:shadow-md">
+          <div className="bg-card p-3 md:p-4 rounded-sm border shadow-sm max-w-xl transition-shadow hover:shadow-md">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs md:text-sm font-medium">
                 Overall Compliance Status
@@ -486,10 +487,10 @@ export function UnifiedControlsHub({
           onValueChange={setActiveStatusTab}
           className="w-full"
         >
-          <TabsList className="bg-muted/50 p-0.5">
+          <TabsList className="bg-muted/40 p-0.5 gap-0.5">
             <TabsTrigger
               value="overdue"
-              className="data-[state=active]:bg-rose-500 data-[state=active]:text-white text-xs md:text-sm transition-all hover:bg-rose-50 dark:hover:bg-rose-950/20"
+              className="data-[state=active]:bg-rose-500 data-[state=active]:text-white data-[state=active]:shadow-none text-xs md:text-sm transition-all"
             >
               <XCircle className="h-3.5 w-3.5 mr-1.5" />
               <span className="hidden sm:inline">
@@ -499,7 +500,7 @@ export function UnifiedControlsHub({
             </TabsTrigger>
             <TabsTrigger
               value="due-soon"
-              className="data-[state=active]:bg-amber-500 data-[state=active]:text-white text-xs md:text-sm transition-all hover:bg-amber-50 dark:hover:bg-amber-950/20"
+              className="data-[state=active]:bg-amber-500/12 data-[state=active]:text-amber-700 data-[state=active]:shadow-none dark:data-[state=active]:text-amber-400 text-xs md:text-sm transition-all"
             >
               <AlertCircle className="h-3.5 w-3.5 mr-1.5" />
               <span className="hidden sm:inline">
@@ -509,7 +510,7 @@ export function UnifiedControlsHub({
             </TabsTrigger>
             <TabsTrigger
               value="on-track"
-              className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white text-xs md:text-sm transition-all hover:bg-emerald-50 dark:hover:bg-emerald-950/20"
+              className="data-[state=active]:bg-emerald-500/12 data-[state=active]:text-emerald-700 data-[state=active]:shadow-none dark:data-[state=active]:text-emerald-400 text-xs md:text-sm transition-all"
             >
               <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
               <span className="hidden sm:inline">
@@ -519,7 +520,7 @@ export function UnifiedControlsHub({
             </TabsTrigger>
             <TabsTrigger
               value="not-started"
-              className="data-[state=active]:bg-slate-500 data-[state=active]:text-white text-xs md:text-sm transition-all hover:bg-slate-50 dark:hover:bg-slate-950/20"
+              className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-none text-xs md:text-sm transition-all"
             >
               <CircleDot className="h-3.5 w-3.5 mr-1.5" />
               <span className="hidden sm:inline">
@@ -529,7 +530,7 @@ export function UnifiedControlsHub({
             </TabsTrigger>
             <TabsTrigger
               value="all"
-              className="text-xs md:text-sm transition-all hover:bg-accent"
+              className="text-xs md:text-sm transition-all"
             >
               <List className="h-3.5 w-3.5 mr-1.5" />
               <span className="hidden sm:inline">All ({statusCounts.all})</span>
@@ -538,7 +539,7 @@ export function UnifiedControlsHub({
           </TabsList>
         </Tabs>
 
-        <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center bg-card p-3 rounded-lg border shadow-sm transition-shadow hover:shadow-md">
+        <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center bg-card p-3 rounded-sm border shadow-sm transition-shadow hover:shadow-md">
           <div className="relative w-full md:flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -1027,21 +1028,29 @@ function ControlHubRow({
   const [isExpanded, setIsExpanded] = useState(false);
 
   const statusConfig = {
-    overdue: { dot: "bg-rose-500", text: "text-rose-600", label: "Overdue" },
+    overdue: {
+      dot: "bg-rose-500",
+      text: "text-rose-600",
+      label: "Overdue",
+      badgeVariant: "danger" as const,
+    },
     "due-soon": {
       dot: "bg-amber-500",
       text: "text-amber-600",
       label: "Due Soon",
+      badgeVariant: "warning" as const,
     },
     "on-track": {
       dot: "bg-emerald-500",
       text: "text-emerald-600",
       label: "On Track",
+      badgeVariant: "success" as const,
     },
     "not-started": {
       dot: "bg-slate-300 dark:bg-slate-600",
       text: "text-muted-foreground",
       label: "Not Started",
+      badgeVariant: "muted" as const,
     },
   };
 
@@ -1062,13 +1071,12 @@ function ControlHubRow({
       )}
     >
       <div className="px-2 md:px-3 py-2 md:py-2.5 flex items-start md:items-center gap-2 md:gap-3">
-        <div
-          className={cn(
-            "w-1.5 h-1.5 rounded-full shrink-0 mt-1.5 md:mt-0",
-            config.dot,
-          )}
-          title={config.label}
-        />
+        <Badge
+          variant={config.badgeVariant}
+          className="shrink-0 mt-0.5 md:mt-0 text-[10px] py-0.5 px-1.5"
+        >
+          {config.label}
+        </Badge>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -1121,6 +1129,18 @@ function ControlHubRow({
         </div>
 
         <div className="flex items-center gap-0.5 md:opacity-0 md:group-hover:opacity-100 transition-opacity shrink-0">
+          {control.lastEvidenceAt && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="h-7 px-1.5 md:px-2 text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-all"
+              title="View evidence"
+            >
+              <FileText className="w-3 h-3 md:w-3.5 md:h-3.5 md:mr-1" />
+              <span className="hidden md:inline text-[10px]">Evidence</span>
+            </Button>
+          )}
           <UploadModal
             siteId={siteId}
             initialQsId={control.qsId}
@@ -1218,9 +1238,91 @@ function ControlHubRow({
                 </a>
               )}
             </div>
+
+            {control.lastEvidenceAt && (
+              <div className="pt-2">
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-1.5">
+                  Uploaded Evidence
+                </div>
+                <EvidenceForControl controlId={control.id} />
+              </div>
+            )}
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function EvidenceForControl({ controlId }: { controlId: string }) {
+  const navigate = useNavigate();
+  const { data, isLoading } = useQuery({
+    queryKey: ["control-evidence", controlId],
+    queryFn: () => getControlEvidenceFn({ data: { controlId } }),
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
+        <Loader2 className="h-3 w-3 animate-spin" />
+        <span>Loading evidence...</span>
+      </div>
+    );
+  }
+
+  const items = data?.evidence || [];
+
+  if (items.length === 0) {
+    return (
+      <p className="text-xs text-muted-foreground italic py-1">
+        No evidence uploaded yet.
+      </p>
+    );
+  }
+
+  const statusVariant: Record<
+    string,
+    "success" | "warning" | "muted" | "danger"
+  > = {
+    approved: "success",
+    pending: "warning",
+    processing: "muted",
+    failed: "danger",
+  };
+
+  return (
+    <div className="space-y-1.5">
+      {items.map((item: any) => (
+        <div
+          key={item.id}
+          className="flex items-center gap-2 py-1.5 px-2 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
+          onClick={() => navigate({ to: "/documents" })}
+        >
+          <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <span className="flex-1 text-xs truncate">
+            {item.title || "Untitled"}
+          </span>
+          {item.status && (
+            <Badge
+              variant={statusVariant[item.status] || "muted"}
+              className="text-[10px] py-0 px-1.5"
+            >
+              {item.status}
+            </Badge>
+          )}
+          {item.uploadedAt && (
+            <span className="text-[10px] text-muted-foreground shrink-0">
+              {format(new Date(item.uploadedAt), "MMM d")}
+            </span>
+          )}
+        </div>
+      ))}
+      <button
+        className="text-[11px] text-primary hover:underline mt-1 flex items-center gap-1"
+        onClick={() => navigate({ to: "/documents" })}
+      >
+        <ArrowRight className="h-3 w-3" /> View all in Documents
+      </button>
     </div>
   );
 }

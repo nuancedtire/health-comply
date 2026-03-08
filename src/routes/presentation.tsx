@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { MainLayout } from '@/components/main-layout'
@@ -42,6 +42,8 @@ import {
   Loader2,
   RefreshCw,
   Sparkles,
+  Building2,
+  ArrowRight,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import ReactMarkdown from 'react-markdown'
@@ -96,7 +98,32 @@ const MarkdownComponents = {
 
 function InspectionPacksPage() {
   const queryClient = useQueryClient()
-  const { activeSite } = useSite()
+  const { activeSite, sites, isLoading: sitesLoading } = useSite()
+  const navigate = useNavigate()
+
+  if (!sitesLoading && sites.length === 0) {
+    return (
+      <MainLayout title="CQC Inspection Packs">
+        <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
+          <div className="max-w-md w-full text-center space-y-6">
+            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+              <Building2 className="w-10 h-10 text-primary" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold">No Site Set Up Yet</h2>
+              <p className="text-muted-foreground">
+                You need to create a site before you can prepare CQC inspection packs. Sites represent the physical locations your practice manages.
+              </p>
+            </div>
+            <Button size="lg" className="w-full" onClick={() => navigate({ to: '/create-site' })}>
+              Create Your First Site
+              <ArrowRight className="ml-2 w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </MainLayout>
+    )
+  }
   const [selectedPackId, setSelectedPackId] = useState<string | null>(null)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)

@@ -6,7 +6,7 @@ import { EVIDENCE_CATEGORIES } from "@/core/data/taxonomy";
 import EXTENDED_CONTROLS from "@/core/data/extended_controls.json";
 import { logControlEvent, AUDIT_ACTIONS } from "@/lib/audit";
 
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 
 // Fallback mapping if QS IDs don't match exactly what's in DB
 const QS_MAP: Record<string, string> = {
@@ -973,4 +973,34 @@ export const getQualityStatementsFn = createServerFn({ method: "GET" })
         keyQuestionTitle: kqMap.get(qs.keyQuestionId) || qs.keyQuestionId,
       })),
     };
+  });
+
+export const getControlEvidenceFn = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .inputValidator((data: unknown) =>
+    z.object({ controlId: z.string() }).parse(data),
+  )
+  .handler(async (ctx) => {
+    const { db, user } = ctx.context;
+    const tenantId = (user as any).tenantId as string;
+    const { controlId } = ctx.data;
+
+    const evidence = await db.query.evidenceItems.findMany({
+      where: and(
+        eq(schema.evidenceItems.localControlId, controlId),
+        eq(schema.evidenceItems.tenantId, tenantId),
+      ),
+      orderBy: [desc(schema.evidenceItems.uploadedAt)],
+      columns: {
+        id: true,
+        title: true,
+        status: true,
+        uploadedAt: true,
+        mimeType: true,
+        sizeBytes: true,
+        summary: true,
+      },
+    });
+
+    return { evidence };
   });

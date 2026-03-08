@@ -5,46 +5,17 @@ import { z } from "zod";
 import { authMiddleware } from "@/core/middleware/auth-middleware";
 import { logUserEvent, AUDIT_ACTIONS } from "@/lib/audit";
 import { ROLES, getRole } from "@/lib/config/roles";
+import { sendInvitationEmail } from "@/lib/email";
 
 // Admin functions are protected by authMiddleware
 // Middleware provides: user, session, db
 
 // Authorization helper functions
-async function requireSystemAdmin(db: any, user: any): Promise<void> {
+async function requireSystemAdmin(user: any): Promise<void> {
     if (user.isSystemAdmin) {
         return;
     }
     throw new Error("Unauthorized: System admin access required");
-}
-
-async function requireTenantAdmin(db: any, user: any, targetTenantId?: string): Promise<{ tenantId: string; isSystemAdmin: boolean }> {
-    if (user.isSystemAdmin) {
-        return { tenantId: targetTenantId || user.tenantId, isSystemAdmin: true };
-    }
-
-    const userRoles = await db.select({
-        roleName: schema.userRoles.role,
-        tenantId: schema.users.tenantId,
-    })
-        .from(schema.userRoles)
-        .innerJoin(schema.users, eq(schema.userRoles.userId, schema.users.id))
-        .where(eq(schema.userRoles.userId, user.id));
-
-    const myRole = userRoles[0];
-    if (!myRole) {
-        throw new Error("Unauthorized: No role found");
-    }
-
-    const adminRoles = ["Practice Manager", "Admin", "Compliance Officer"];
-    if (!adminRoles.includes(myRole.roleName)) {
-        throw new Error("Unauthorized: Admin role required");
-    }
-
-    if (targetTenantId && myRole.tenantId !== targetTenantId) {
-        throw new Error("Unauthorized: Cannot access other tenants");
-    }
-
-    return { tenantId: myRole.tenantId, isSystemAdmin: false };
 }
 
 const CreateTenantSchema = z.object({
@@ -60,7 +31,7 @@ export const createTenantFn = createServerFn({ method: "POST" })
         const { db, user } = ctx.context;
 
         // Authorization: Only system admins can create tenants
-        await requireSystemAdmin(db, user);
+        await requireSystemAdmin(user);
 
         // Create Tenant
         const tenantId = `t_${crypto.randomUUID().split('-')[0]}`;
@@ -182,6 +153,40 @@ export const inviteUserFn = createServerFn({ method: "POST" })
                 newRole: data.role,
             },
         });
+
+        // Send invitation email via Resend (non-blocking – log failure but don't throw)
+        const resendApiKey = (ctx.context.env as any)?.RESEND_API_KEY as string | undefined;
+        if (resendApiKey) {
+            try {
+                // Fetch tenant name and site name for the email
+                const tenant = await db.select({ name: schema.tenants.name })
+                    .from(schema.tenants)
+                    .where(eq(schema.tenants.id, data.tenantId))
+                    .get();
+
+                let siteName: string | undefined;
+                if (data.siteId) {
+                    const site = await db.select({ name: schema.sites.name })
+                        .from(schema.sites)
+                        .where(eq(schema.sites.id, data.siteId))
+                        .get();
+                    siteName = site?.name;
+                }
+
+                await sendInvitationEmail(resendApiKey, {
+                    to: data.email,
+                    inviterName: user.name || user.email,
+                    organizationName: tenant?.name || data.tenantId,
+                    role: data.role,
+                    token,
+                    siteName,
+                });
+            } catch (emailErr) {
+                console.error("Failed to send invitation email:", emailErr);
+            }
+        } else {
+            console.warn("RESEND_API_KEY not configured – invitation email not sent.");
+        }
 
         return { token };
     });
@@ -382,7 +387,7 @@ export const deleteUserFn = createServerFn({ method: "POST" })
         }
 
         // Authorization check
-        if (!currentUser.isSystemAdmin) {
+        if (!(currentUser as any).isSystemAdmin) {
             // Get current user's role
             const userRoles = await db.select({
                 roleName: schema.userRoles.role,
@@ -420,7 +425,7 @@ export const deleteUserFn = createServerFn({ method: "POST" })
         await db.delete(schema.users).where(eq(schema.users.id, userId));
 
         // Audit log
-        const tenantId = targetUser.tenantId || currentUser.tenantId;
+        const tenantId = targetUser.tenantId || (currentUser as any).tenantId;
         if (tenantId) {
             await logUserEvent(db, {
                 tenantId,
@@ -463,7 +468,7 @@ export const updateUserFn = createServerFn({ method: "POST" })
 
         // Users can update their own email, admins can update users in their tenant
         if (userId !== currentUser.id) {
-            if (!currentUser.isSystemAdmin) {
+            if (!(currentUser as any).isSystemAdmin) {
                 const userRoles = await db.select({
                     roleName: schema.userRoles.role,
                     tenantId: schema.users.tenantId,
@@ -631,7 +636,7 @@ export const generatePasswordResetLinkFn = createServerFn({ method: "POST" })
         }
 
         // Authorization check
-        if (!currentUser.isSystemAdmin) {
+        if (!(currentUser as any).isSystemAdmin) {
             const userRoles = await db.select({
                 roleName: schema.userRoles.role,
                 tenantId: schema.users.tenantId,
@@ -679,7 +684,7 @@ export const generatePasswordResetLinkFn = createServerFn({ method: "POST" })
         }
 
         // Audit log
-        const tenantId = targetUser.tenantId || currentUser.tenantId;
+        const tenantId = targetUser.tenantId || (currentUser as any).tenantId;
         if (tenantId) {
             await logUserEvent(db, {
                 tenantId,
@@ -699,7 +704,7 @@ export const getTenantsFn = createServerFn({ method: "GET" })
         const { db, user } = ctx.context;
 
         // Authorization: Only system admins can list all tenants
-        await requireSystemAdmin(db, user);
+        await requireSystemAdmin(user);
 
         // 1. Get all tenants
         const tenants = await db.select().from(schema.tenants as any);
@@ -755,7 +760,7 @@ export const deleteTenantFn = createServerFn({ method: "POST" })
         const { db, user } = ctx.context;
 
         // Authorization: Only system admins can delete tenants
-        await requireSystemAdmin(db, user);
+        await requireSystemAdmin(user);
 
         // Verify tenant exists
         const tenant = await db.select({ name: schema.tenants.name })
@@ -847,7 +852,7 @@ export const getRolesFn = createServerFn({ method: "GET" })
         const { user, db } = ctx.context;
 
         // Authorization: Must be at least a tenant admin to view roles (needed for invite flows)
-        if (!user.isSystemAdmin) {
+        if (!(user as any).isSystemAdmin) {
             const userRoles = await db.select({
                 roleName: schema.userRoles.role,
             })
@@ -892,7 +897,7 @@ export const createSiteFn = createServerFn({ method: "POST" })
         }
 
         // AUTH CHECK: System admin or Practice Manager in the same tenant
-        if (!user.isSystemAdmin) {
+        if (!(user as any).isSystemAdmin) {
             const userRoles = await db.select({
                 roleName: schema.userRoles.role,
                 tenantId: schema.users.tenantId,

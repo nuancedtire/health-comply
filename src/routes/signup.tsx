@@ -92,17 +92,23 @@ function SignupComponent() {
         }
     }, [inviteData, form])
 
+    const TENANT_ROLE_IDS = ["Practice Manager", "Admin", "Compliance Officer"]
+
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setError(null)
+        // PMs and tenant-scoped roles need to create a site before using the app
+        const isTenantRole = TENANT_ROLE_IDS.includes(inviteData?.roleName ?? "")
+        const redirectTo = token && isTenantRole ? '/create-site' : '/dashboard'
+
         await authClient.signUp.email({
             email: values.email,
             password: values.password,
             name: values.name,
-            callbackURL: "/dashboard"
+            callbackURL: redirectTo
         }, {
             onSuccess: async () => {
                 router.invalidate()
-                await router.navigate({ to: '/dashboard' })
+                await router.navigate({ to: redirectTo })
             },
             onError: (ctx) => {
                 setError(ctx.error.message);
