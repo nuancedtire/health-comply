@@ -396,7 +396,10 @@ function SettingsPage() {
                   Change your account password
                 </p>
               </div>
-              <Button variant="outline" onClick={() => setPasswordDialogOpen(true)}>
+              <Button
+                variant="outline"
+                onClick={() => setPasswordDialogOpen(true)}
+              >
                 Change Password
               </Button>
             </div>
@@ -408,7 +411,10 @@ function SettingsPage() {
                   Manage devices where you're logged in
                 </p>
               </div>
-              <Button variant="outline" onClick={() => setSessionsDialogOpen(true)}>
+              <Button
+                variant="outline"
+                onClick={() => setSessionsDialogOpen(true)}
+              >
                 View Sessions
               </Button>
             </div>
@@ -422,7 +428,8 @@ function SettingsPage() {
           <DialogHeader>
             <DialogTitle>Change Password</DialogTitle>
             <DialogDescription>
-              Enter your current password and a new password to update your credentials.
+              Enter your current password and a new password to update your
+              credentials.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleChangePassword} className="space-y-4">
@@ -477,10 +484,7 @@ function SettingsPage() {
               >
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={changePasswordMutation.isPending}
-              >
+              <Button type="submit" disabled={changePasswordMutation.isPending}>
                 {changePasswordMutation.isPending && (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 )}
@@ -500,7 +504,8 @@ function SettingsPage() {
               Active Sessions
             </DialogTitle>
             <DialogDescription>
-              Manage your active sessions across all devices. Revoke sessions you don't recognize.
+              Manage your active sessions across all devices. Revoke sessions
+              you don't recognize.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -513,17 +518,23 @@ function SettingsPage() {
                 <div className="space-y-3">
                   {sessions.map((sessionItem) => {
                     const sessionToken = sessionItem.token;
-                    const isCurrentSession = sessionToken === session?.session?.token;
+                    const isCurrentSession = !!(
+                      sessionToken &&
+                      session?.session?.token &&
+                      sessionToken === session.session.token
+                    );
                     return (
                       <div
                         key={sessionToken || sessionItem.id}
                         className="flex items-center justify-between p-3 border rounded-lg"
                       >
                         <div className="flex items-center gap-3">
-                           {getDeviceIcon(sessionItem.userAgent ?? undefined)}
+                          {getDeviceIcon(sessionItem.userAgent ?? undefined)}
                           <div>
                             <p className="text-sm font-medium">
-                              {isCurrentSession ? "Current Session" : "Active Session"}
+                              {isCurrentSession
+                                ? "Current Session"
+                                : "Active Session"}
                             </p>
                             <p className="text-xs text-muted-foreground">
                               {formatDate(sessionItem.createdAt)}
@@ -539,8 +550,15 @@ function SettingsPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => revokeSessionMutation.mutate(sessionToken as string)}
-                            disabled={revokeSessionMutation.isPending}
+                            onClick={() =>
+                              revokeSessionMutation.mutate(
+                                sessionToken as string,
+                              )
+                            }
+                            disabled={
+                              revokeSessionMutation.isPending ||
+                              revokeOtherSessionsMutation.isPending
+                            }
                           >
                             {revokeSessionMutation.isPending ? (
                               <Loader2 className="w-4 h-4 animate-spin" />
@@ -561,7 +579,10 @@ function SettingsPage() {
                     variant="destructive"
                     className="w-full"
                     onClick={() => revokeOtherSessionsMutation.mutate()}
-                    disabled={revokeOtherSessionsMutation.isPending}
+                    disabled={
+                      revokeOtherSessionsMutation.isPending ||
+                      revokeSessionMutation.isPending
+                    }
                   >
                     {revokeOtherSessionsMutation.isPending ? (
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -579,7 +600,10 @@ function SettingsPage() {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSessionsDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setSessionsDialogOpen(false)}
+            >
               Close
             </Button>
           </DialogFooter>

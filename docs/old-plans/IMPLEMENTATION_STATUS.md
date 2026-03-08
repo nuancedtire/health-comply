@@ -75,7 +75,7 @@ Features:
 **Files:** `src/core/workflows/evidence-ingest.ts` (350 lines)
 
 - ✅ Cloudflare Workflow for durable processing
-- ✅ Cerebras API integration (`zai-glm-4.7` model via Cloudflare AI Gateway)
+- ✅ Cerebras API integration (`gpt-oss-120b` model via Cloudflare AI Gateway)
 - ✅ PDF/image to Markdown conversion using Cloudflare AI
 - ✅ Automatic quality statement matching
 - ✅ Evidence category classification

@@ -390,9 +390,14 @@ Rules:
       const cached = await this.state.storage.get<{
         data: T;
         timestamp: number;
+        ttl: number;
       }>(key);
-      if (cached) {
+      if (cached && Date.now() - cached.timestamp < cached.ttl) {
         return cached.data;
+      }
+      // Expired — delete lazily so storage doesn't accumulate stale entries
+      if (cached) {
+        this.state.storage.delete(key).catch(() => {});
       }
     } catch (e) {
       console.warn("Cache get error:", e);
@@ -402,14 +407,8 @@ Rules:
 
   private async setCache<T>(key: string, data: T, ttl: number): Promise<void> {
     try {
-      await this.state.storage.put(key, {
-        data,
-        timestamp: Date.now(),
-      });
-      // Set expiration (Durable Objects don't auto-expire, but we check on read)
-      setTimeout(() => {
-        this.state.storage.delete(key).catch(() => {});
-      }, ttl);
+      // Store TTL alongside data so getCached can validate on read without setTimeout
+      await this.state.storage.put(key, { data, timestamp: Date.now(), ttl });
     } catch (e) {
       console.warn("Cache set error:", e);
     }
@@ -424,9 +423,15 @@ Rules:
   // Rate limiting check
   checkRateLimit(userId: string): { allowed: boolean; retryAfter?: number } {
     const now = Date.now();
+
+    // Prune expired entries on every check to prevent unbounded Map growth
+    for (const [id, e] of this.rateLimits.entries()) {
+      if (now > e.resetAt) this.rateLimits.delete(id);
+    }
+
     const entry = this.rateLimits.get(userId);
 
-    if (!entry || now > entry.resetAt) {
+    if (!entry) {
       this.rateLimits.set(userId, {
         count: 1,
         resetAt: now + RATE_LIMIT.windowMs,
@@ -504,34 +509,74 @@ Rules:
           return await this.queryComplianceStatus(args.qsId, args.keyQuestion);
         },
       },
-      // Tool 3: Query Evidence Metadata
+      // Tool 3: Query Evidence Items — row-level data with real dates
       {
         definition: {
           type: "function",
           function: {
-            name: "query_evidence_metadata",
+            name: "query_evidence_items",
             description:
-              "Query metadata about evidence items (counts, status, dates, reviews). Use this for questions about evidence statistics or workflow status.",
+              "List actual evidence items with their real dates (evidenceDate = when it happened, validUntil = expiry). Use this for: 'what documents are outdated', 'what is expiring soon', 'what needs review', 'when was X last done', 'show me evidence for X'. Returns individual items — NOT just counts.",
             parameters: {
               type: "object",
               properties: {
-                status: {
+                filter: {
+                  type: "string",
+                  enum: ["all", "outdated", "expiring", "pending_review", "recent"],
+                  description:
+                    "outdated = stale by evidenceDate vs control frequency, or validUntil passed. expiring = validUntil within N days. pending_review = awaiting approval. recent = uploaded in last N days. all = no filter.",
+                },
+                qsId: {
                   type: "string",
                   description:
-                    "Optional: Filter by status (draft, pending_review, approved, rejected, archived)",
+                    "Optional: Filter by Quality Statement ID (e.g. 'safe.safeguarding')",
                 },
                 days: {
                   type: "number",
                   description:
-                    "Optional: Filter by evidence uploaded in the last N days",
+                    "For 'expiring': days ahead to look (default 30). For 'recent': days back (default 30). For 'outdated': minimum age threshold (default uses control frequency).",
                 },
               },
-              required: [],
+              required: ["filter"],
             },
           },
         },
         handler: async (args: any) => {
-          return await this.queryEvidenceMetadata(args.status, args.days);
+          return await this.queryEvidenceItems(
+            args.filter || "all",
+            args.qsId,
+            args.days,
+          );
+        },
+      },
+      // Tool 4: Query Actions
+      {
+        definition: {
+          type: "function",
+          function: {
+            name: "query_actions",
+            description:
+              "List gap remediation actions and their status. Use this when asked about: 'overdue actions', 'open actions', 'what do I need to do', 'action plan', 'outstanding tasks'. Returns title, due date, owner, and status per action.",
+            parameters: {
+              type: "object",
+              properties: {
+                filter: {
+                  type: "string",
+                  enum: ["all", "open", "overdue", "closed"],
+                  description:
+                    "overdue = past due date and not closed. open = open or in_progress. closed = completed. all = no filter.",
+                },
+                qsId: {
+                  type: "string",
+                  description: "Optional: Filter by Quality Statement ID",
+                },
+              },
+              required: ["filter"],
+            },
+          },
+        },
+        handler: async (args: any) => {
+          return await this.queryActions(args.filter || "open", args.qsId);
         },
       },
     ];
@@ -642,6 +687,7 @@ ${m.text}`,
           r2Key: true,
           status: true,
         },
+        limit: 100,
       });
 
       // Simple keyword matching on textContent and summary
@@ -861,154 +907,209 @@ ${item.summary || item.textContent || "(No text content)"}`,
     }
   }
 
-  // Query evidence metadata for statistics
-  async queryEvidenceMetadata(
-    status?: string,
+  // Query individual evidence items with real dates — replaces aggregate metadata tool
+  async queryEvidenceItems(
+    filter: "all" | "outdated" | "expiring" | "pending_review" | "recent",
+    qsId?: string,
     days?: number,
   ): Promise<{ text: string; sources: any[] }> {
     const tenantId = this.context!.tenantId;
     const siteId = this.context!.siteId;
-
-    // P2: Check cache first (metadata changes more frequently but still worth caching)
-    const cacheKey = this.getCacheKey(
-      "metadata",
-      `${status || "all"}:${days || "30"}`,
-    );
-    const cachedResult = await this.getCached<{ text: string; sources: any[] }>(
-      cacheKey,
-    );
-    if (cachedResult) {
-      return cachedResult;
-    }
-
     const db = drizzle(this.env.DB, { schema });
+    const now = new Date();
+    const horizonDays = days || 30;
 
     try {
-      // Build base conditions with tenant/site filter
-      let baseConditions = [
+      const conditions: any[] = [
         eq(schema.evidenceItems.tenantId, tenantId),
         eq(schema.evidenceItems.siteId, siteId),
       ];
+      if (qsId) conditions.push(eq(schema.evidenceItems.qsId, qsId));
 
-      // Apply status filter if provided
-      if (status) {
-        baseConditions.push(eq(schema.evidenceItems.status, status));
+      // Fetch items with their linked control (for frequencyDays staleness check)
+      const items = await db.query.evidenceItems.findMany({
+        where: (_, { and }) => and(...conditions),
+        columns: {
+          id: true,
+          title: true,
+          status: true,
+          evidenceDate: true,
+          validUntil: true,
+          uploadedAt: true,
+          qsId: true,
+          localControlId: true,
+          summary: true,
+        },
+        with: {
+          localControl: {
+            columns: { title: true, frequencyDays: true },
+          },
+        },
+        limit: 100,
+        orderBy: (table, { desc }) => [desc(table.uploadedAt)],
+      });
+
+      // Apply filter in TypeScript — allows richer logic than SQL alone
+      const horizon = new Date(
+        now.getTime() + horizonDays * 24 * 60 * 60 * 1000,
+      );
+      const recentCutoff = new Date(
+        now.getTime() - horizonDays * 24 * 60 * 60 * 1000,
+      );
+
+      let filtered = items;
+      if (filter === "outdated") {
+        filtered = items.filter((item) => {
+          // Explicitly expired by validUntil
+          if (item.validUntil && item.validUntil < now) return true;
+          // Stale based on control's recurring frequency
+          if (item.evidenceDate && item.localControl?.frequencyDays) {
+            const staleAt = new Date(
+              item.evidenceDate.getTime() +
+                item.localControl.frequencyDays * 24 * 60 * 60 * 1000,
+            );
+            if (staleAt < now) return true;
+          }
+          // Fallback: evidenceDate set but no frequency — flag if older than 1 year
+          if (
+            item.evidenceDate &&
+            !item.localControl?.frequencyDays &&
+            item.evidenceDate < new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000)
+          )
+            return true;
+          return false;
+        });
+      } else if (filter === "expiring") {
+        filtered = items.filter(
+          (item) =>
+            item.validUntil &&
+            item.validUntil >= now &&
+            item.validUntil <= horizon,
+        );
+      } else if (filter === "pending_review") {
+        filtered = items.filter((item) => item.status === "pending_review");
+      } else if (filter === "recent") {
+        filtered = items.filter((item) => item.uploadedAt >= recentCutoff);
       }
 
-      // Apply days filter if provided (uploaded in last N days)
-      if (days && days > 0) {
-        const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - days);
-        baseConditions.push(gte(schema.evidenceItems.uploadedAt, cutoffDate));
+      if (filtered.length === 0) {
+        return {
+          text: `No evidence items found for filter: ${filter}${qsId ? ` (QS: ${qsId})` : ""}.`,
+          sources: [],
+        };
       }
 
-      // Get counts by status (respecting other filters but not status itself for the breakdown)
-      let statusCountConditions = [
-        eq(schema.evidenceItems.tenantId, tenantId),
-        eq(schema.evidenceItems.siteId, siteId),
+      const fmt = (d?: Date | null) =>
+        d ? d.toLocaleDateString("en-GB") : "Not recorded";
+
+      const lines: string[] = [
+        `**Evidence Items — ${filter} (${filtered.length} found, ${this.context?.siteName}):**\n`,
       ];
-      if (days && days > 0) {
-        const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - days);
-        statusCountConditions.push(
-          gte(schema.evidenceItems.uploadedAt, cutoffDate),
+
+      for (const item of filtered.slice(0, 30)) {
+        const expired = item.validUntil && item.validUntil < now;
+        lines.push(`**${item.title}**`);
+        lines.push(
+          `- QS: ${item.qsId}${item.localControl ? ` | Control: ${item.localControl.title}` : ""}`,
+        );
+        lines.push(`- Status: ${item.status}`);
+        lines.push(
+          `- Evidence Date: ${fmt(item.evidenceDate)} ${item.localControl?.frequencyDays ? `(renew every ${item.localControl.frequencyDays} days)` : ""}`,
+        );
+        if (item.validUntil)
+          lines.push(
+            `- Valid Until: ${fmt(item.validUntil)}${expired ? " ⚠️ EXPIRED" : ""}`,
+          );
+        lines.push(`- Uploaded: ${fmt(item.uploadedAt)}`);
+        lines.push("");
+      }
+
+      return { text: lines.join("\n"), sources: [] };
+    } catch (e: any) {
+      console.error("Evidence items query error:", e);
+      return { text: `Error querying evidence items: ${e.message}`, sources: [] };
+    }
+  }
+
+  // Query actions (gap remediation tasks)
+  async queryActions(
+    filter: "all" | "open" | "overdue" | "closed",
+    qsId?: string,
+  ): Promise<{ text: string; sources: any[] }> {
+    const tenantId = this.context!.tenantId;
+    const siteId = this.context!.siteId;
+    const db = drizzle(this.env.DB, { schema });
+    const now = new Date();
+
+    try {
+      const conditions: any[] = [
+        eq(schema.actions.tenantId, tenantId),
+        eq(schema.actions.siteId, siteId),
+      ];
+      if (qsId) conditions.push(eq(schema.actions.qsId, qsId));
+      if (filter === "closed") {
+        conditions.push(eq(schema.actions.status, "closed"));
+      } else if (filter === "open" || filter === "overdue") {
+        conditions.push(
+          inArray(schema.actions.status, ["open", "in_progress"]),
         );
       }
 
-      const statusCounts = await db
-        .select({
-          status: schema.evidenceItems.status,
-          count: count(schema.evidenceItems.id),
-        })
-        .from(schema.evidenceItems)
-        .where(and(...statusCountConditions))
-        .groupBy(schema.evidenceItems.status);
+      const actionRows = await db.query.actions.findMany({
+        where: (_, { and }) => and(...conditions),
+        columns: {
+          id: true,
+          title: true,
+          description: true,
+          status: true,
+          dueAt: true,
+          qsId: true,
+        },
+        with: {
+          owner: { columns: { name: true } },
+        },
+        limit: 50,
+        orderBy: (table, { asc, desc }) => [asc(table.dueAt)],
+      });
 
-      // Get total count (with all filters applied)
-      const totalResult = await db
-        .select({
-          count: count(schema.evidenceItems.id),
-        })
-        .from(schema.evidenceItems)
-        .where(and(...baseConditions));
+      // For "overdue" narrow further in TypeScript (dueAt < now)
+      const rows =
+        filter === "overdue"
+          ? actionRows.filter((a) => a.dueAt && a.dueAt < now)
+          : actionRows;
 
-      const total = totalResult[0]?.count || 0;
+      if (rows.length === 0) {
+        return {
+          text: `No ${filter} actions found${qsId ? ` for QS: ${qsId}` : ""}.`,
+          sources: [],
+        };
+      }
 
-      // Get recent evidence (last 30 days, or custom days if provided)
-      const recentDays = days || 30;
-      const recentCutoff = new Date();
-      recentCutoff.setDate(recentCutoff.getDate() - recentDays);
+      const fmt = (d?: Date | null) =>
+        d ? d.toLocaleDateString("en-GB") : "No due date";
 
-      let recentConditions = [
-        eq(schema.evidenceItems.tenantId, tenantId),
-        eq(schema.evidenceItems.siteId, siteId),
-        gte(schema.evidenceItems.uploadedAt, recentCutoff),
+      const lines: string[] = [
+        `**Actions — ${filter} (${rows.length} found, ${this.context?.siteName}):**\n`,
       ];
-      if (status) {
-        recentConditions.push(eq(schema.evidenceItems.status, status));
+
+      for (const action of rows) {
+        const isOverdue =
+          action.dueAt && action.dueAt < now && action.status !== "closed";
+        lines.push(
+          `**${action.title}**${isOverdue ? " ⚠️ OVERDUE" : ""}`,
+        );
+        lines.push(`- QS: ${action.qsId} | Status: ${action.status}`);
+        lines.push(`- Due: ${fmt(action.dueAt)}`);
+        if (action.owner) lines.push(`- Owner: ${action.owner.name}`);
+        if (action.description)
+          lines.push(`- ${action.description.slice(0, 120)}`);
+        lines.push("");
       }
 
-      const recentCount = await db
-        .select({
-          count: count(schema.evidenceItems.id),
-        })
-        .from(schema.evidenceItems)
-        .where(and(...recentConditions));
-
-      // Get expiring evidence (validUntil in next 30 days)
-      const thirtyDaysFromNow = new Date();
-      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-
-      let expiringConditions = [
-        eq(schema.evidenceItems.tenantId, tenantId),
-        eq(schema.evidenceItems.siteId, siteId),
-        lte(schema.evidenceItems.validUntil, thirtyDaysFromNow),
-        gte(schema.evidenceItems.validUntil, new Date()),
-      ];
-      if (status) {
-        expiringConditions.push(eq(schema.evidenceItems.status, status));
-      }
-
-      const expiringCount = await db
-        .select({
-          count: count(schema.evidenceItems.id),
-        })
-        .from(schema.evidenceItems)
-        .where(and(...expiringConditions));
-
-      // Build report
-      const report: string[] = [];
-      const filterDesc = [];
-      if (status) filterDesc.push(`status: ${status}`);
-      if (days) filterDesc.push(`last ${days} days`);
-
-      report.push(
-        `**Evidence Statistics for ${this.context?.siteName}${filterDesc.length > 0 ? ` (${filterDesc.join(", ")})` : ""}**\n`,
-      );
-      report.push(`Total Evidence Items: ${total}`);
-
-      if (statusCounts.length > 0 && !status) {
-        report.push(`\nBy Status:`);
-        statusCounts.forEach((sc) => {
-          report.push(`- ${sc.status}: ${sc.count}`);
-        });
-      }
-
-      report.push(`\nRecent Activity:`);
-      report.push(
-        `- Uploaded in last ${recentDays} days: ${recentCount[0]?.count || 0}`,
-      );
-      report.push(
-        `- Expiring in next 30 days: ${expiringCount[0]?.count || 0}`,
-      );
-
-      return { text: report.join("\n"), sources: [] };
+      return { text: lines.join("\n"), sources: [] };
     } catch (e: any) {
-      console.error("Evidence metadata query error:", e);
-      return {
-        text: `Error querying evidence metadata: ${e.message}`,
-        sources: [],
-      };
+      console.error("Actions query error:", e);
+      return { text: `Error querying actions: ${e.message}`, sources: [] };
     }
   }
 
@@ -1063,22 +1164,35 @@ ${item.summary || item.textContent || "(No text content)"}`,
     const c = this.context!;
     if (!c) return "You are a helpful assistant.";
 
-    return `You are Compass, the CQC compliance assistant for ${c.tenantName} (${c.siteName}).
+    return `You are Compass, an AI compliance assistant built into the Compass platform used by ${c.tenantName} (${c.siteName}).
 User: ${c.userName} (${c.role}).
-Current Page: ${c.pageContext.title}
-${c.pageContext.qsId ? `Focus: Quality Statement ${c.pageContext.qsId}` : ""}
+Current Page: ${c.pageContext.title}${c.pageContext.qsId ? ` | Quality Statement: ${c.pageContext.qsId}` : ""}
+
+ABOUT THIS PLATFORM:
+Compass is a CQC compliance management system. Everything happens inside it — users don't need spreadsheets or external tools.
+Key features users can act on right now:
+- **Evidence**: Upload documents to specific Quality Statement controls. AI auto-classifies and links them. Set evidence dates and expiry.
+- **Controls**: Each Quality Statement has controls with frequency schedules. Controls track what evidence is needed and when it's due.
+- **Actions**: Create gap remediation tasks with owners, due dates, and priorities. Track progress to closure.
+- **QS Owners**: Assign ownership of each Quality Statement to a named staff member.
+- **Inspection Pack**: Generate a ready-to-present CQC inspection pack from the current evidence.
+
+YOUR ROLE:
+You are embedded inside this system. When users ask what to do about gaps or missing evidence, guide them to act within Compass — not to build spreadsheets, PowerBI dashboards, or Outlook reminders. Be specific: tell them which page to go to, what to upload, what action to create.
 
 AVAILABLE TOOLS:
-1. search_evidence - Search uploaded compliance documents and evidence files
-2. query_compliance_status - Check compliance coverage, gaps, and what's missing for Quality Statements
-3. query_evidence_metadata - Get statistics about evidence (counts, pending reviews, expiring)
-${this.env.EXA_API_KEY ? "4. web_search - Search external CQC regulations, guidelines, and best practices" : ""}
+1. search_evidence - Search uploaded compliance documents by content
+2. query_compliance_status - Check compliance coverage, gaps, and missing controls per Quality Statement
+3. query_evidence_items - List evidence items with real dates (evidenceDate = when it happened, validUntil = expiry). Use for outdated, expiring, pending review, or recent evidence
+4. query_actions - List gap remediation actions with due dates and owners. Use for overdue, open, or all actions
+${this.env.EXA_API_KEY ? "5. web_search - Search CQC regulations and external guidance" : ""}
 
 INSTRUCTIONS:
-1. Use the available tools via function calls when needed to answer user questions
-2. Call multiple tools in parallel if they provide complementary information
-3. Synthesize tool results into natural, helpful responses - never echo raw JSON or tool arguments
-4. Be friendly, professional, and concise`;
+1. Always use tools to ground your response in the user's real data — never guess at their compliance state
+2. Call multiple tools in parallel when the query spans different data (e.g. gaps + actions)
+3. When surfacing gaps or missing evidence, tell the user exactly how to fix it in Compass (upload here, create an action, assign an owner)
+4. Never suggest building external tracking systems — Compass already does this
+5. Be concise. Lead with the key finding, then action steps`;
   }
 
   // LLM-based Router (Anthropic Pattern: Routing)
@@ -1101,17 +1215,22 @@ INSTRUCTIONS:
       {
         name: "search_evidence",
         description:
-          "Search user's uploaded compliance evidence files and documents. Use for: finding files, checking what evidence exists, looking up documents, 'my files', 'our evidence'",
+          "Search inside uploaded compliance documents by content. Use for: finding specific files, 'do we have evidence for X', looking up document contents, 'my files', 'our evidence'",
       },
       {
         name: "query_compliance_status",
         description:
-          "Check compliance coverage, gaps, what's missing, which Quality Statements have evidence. Use for: 'missing evidence', 'what do I need', 'gaps', 'coverage', 'compliance achieved'",
+          "Check compliance coverage and gaps per Quality Statement. Use for: 'what's missing', 'what do I need', 'compliance gaps', 'coverage %', 'am I ready for inspection'",
       },
       {
-        name: "query_evidence_metadata",
+        name: "query_evidence_items",
         description:
-          "Get statistics about evidence: counts, pending reviews, expiring items, dates. Use for: 'how many', 'counts', 'statistics', 'status of evidence'",
+          "List evidence items with real dates (evidenceDate = when it happened, validUntil = expiry). Use for: 'what documents are outdated', 'what is expiring', 'what needs review', 'when was X last done', 'show my evidence for Y'. NOT for counts — for actual items with dates.",
+      },
+      {
+        name: "query_actions",
+        description:
+          "List gap remediation actions with due dates and owners. Use for: 'what actions are overdue', 'open action plan', 'outstanding tasks', 'what do I still need to do'",
       },
       {
         name: "web_search",
@@ -1136,13 +1255,18 @@ Respond in JSON format:
 }
 
 Rules:
-1. Call MULTIPLE tools when the query involves both internal evidence AND external research
+1. Call MULTIPLE tools when the query spans different data sources
 2. Examples of multi-tool queries:
-   - "Research online about my missing evidence" → ["web_search", "query_compliance_status"]
-   - "What do I need for safeguarding?" → ["query_compliance_status", "web_search"]
+   - "What documents are outdated?" → ["query_evidence_items"] (filter: outdated)
+   - "What's expiring soon?" → ["query_evidence_items"] (filter: expiring)
+   - "What needs review?" → ["query_evidence_items"] (filter: pending_review)
+   - "What are my overdue actions?" → ["query_actions"] (filter: overdue)
+   - "Am I ready for inspection?" → ["query_compliance_status", "query_actions"]
+   - "Research online about my missing evidence" → ["query_compliance_status", "web_search"]
    - "Find my training records and CQC requirements" → ["search_evidence", "web_search"]
-3. Suggest at least one tool for any query about evidence, compliance, or regulations
-4. Keep rewrittenQuery concise and search-friendly`;
+3. IMPORTANT: For "outdated", "expiring", "when was X last done" → use query_evidence_items, NOT query_compliance_status
+4. Suggest at least one tool for any query about evidence, compliance, or regulations
+5. Keep rewrittenQuery concise and search-friendly`;
 
     try {
       const routerResponse: any = await this.runLLM([
@@ -1183,7 +1307,7 @@ Rules:
     if (!apiKey) throw new Error("CEREBRAS_API_KEY is missing");
 
     const body: any = {
-      model: "zai-glm-4.7", // Better tool calling support than gpt-oss-120b
+      model: "gpt-oss-120b", // Better tool calling support than gpt-oss-120b
       messages: messages,
       temperature: 0.1,
     };
