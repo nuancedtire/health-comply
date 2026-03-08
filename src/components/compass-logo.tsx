@@ -44,11 +44,11 @@ export function CompassLogo({ className, ...props }: CompassLogoProps) {
                 />
 
                 {/* Needle Shape: Modern Diamond */}
-                {/* North (Blue) */}
-                <path d="M12 4L15.5 12H8.5L12 4Z" fill="#007AFF" stroke="none" />
+                {/* North (Primary) */}
+                <path d="M12 4L15.5 12H8.5L12 4Z" className="fill-primary" stroke="none" />
 
-                {/* South (Slate/Silver) */}
-                <path d="M12 20L15.5 12H8.5L12 20Z" fill="#8E8E93" stroke="none" />
+                {/* South (Muted) */}
+                <path d="M12 20L15.5 12H8.5L12 20Z" className="fill-muted-foreground/50" stroke="none" />
             </g>
         </svg>
     )

@@ -50,9 +50,11 @@ export const MessageContent = ({
 }: MessageContentProps) => (
   <div
     className={cn(
-      "is-user:dark flex w-fit max-w-full min-w-0 flex-col gap-2 overflow-hidden text-sm",
-      "group-[.is-user]:ml-auto group-[.is-user]:rounded-lg group-[.is-user]:bg-secondary group-[.is-user]:px-4 group-[.is-user]:py-3 group-[.is-user]:text-foreground",
-      "group-[.is-assistant]:text-foreground",
+      "flex w-fit max-w-full min-w-0 flex-col gap-2 overflow-hidden text-sm",
+      // User messages: no bubble, right-aligned, slightly bold
+      "group-[.is-user]:ml-auto group-[.is-user]:text-foreground group-[.is-user]:font-medium group-[.is-user]:text-right",
+      // Assistant messages: no bubble, clean reading experience
+      "group-[.is-assistant]:text-foreground group-[.is-assistant]:leading-relaxed",
       className
     )}
     {...props}

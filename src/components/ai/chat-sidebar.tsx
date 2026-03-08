@@ -46,6 +46,7 @@ import {
     type TaskStatus,
 } from "@/components/ai/task";
 import { GlobeIcon, MessageSquare, X, Terminal } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { nanoid } from "nanoid";
 import { useCallback, useEffect, useState, useRef } from "react";
 import { useLocation } from "@tanstack/react-router";
@@ -304,7 +305,7 @@ export function ChatSidebar() {
             const assistantMessage: MessageType = {
                 key: assistantMsgKey,
                 from: "assistant",
-                versions: [{ id: assistantMsgKey, content: "Thinking..." }],
+                versions: [{ id: assistantMsgKey, content: "···" }],
             };
             setMessages((prev) => [...prev, assistantMessage]);
 
@@ -397,7 +398,7 @@ export function ChatSidebar() {
                     <Button
                         onClick={() => setIsOpen(true)}
                         size="icon"
-                        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-xl bg-indigo-600 hover:bg-indigo-700 text-white z-50 animate-in fade-in zoom-in"
+                        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground z-50 animate-in fade-in zoom-in"
                     >
                         <MessageSquare className="h-7 w-7" />
                     </Button>
@@ -409,7 +410,7 @@ export function ChatSidebar() {
                 <Button
                     onClick={() => setIsOpen(true)}
                     size="icon"
-                    className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-xl bg-indigo-600 hover:bg-indigo-700 text-white z-50 animate-in fade-in zoom-in"
+                    className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground z-50 animate-in fade-in zoom-in"
                 >
                     <MessageSquare className="h-7 w-7" />
                 </Button>
@@ -436,9 +437,9 @@ export function ChatSidebar() {
                     </div>
 
                     {/* Header */}
-                    <div className="flex items-center justify-between p-4 border-b">
-                        <h2 className="font-semibold text-lg flex items-center gap-2">
-                            <span className="p-1.5 bg-indigo-100 text-indigo-700 rounded-md">
+                    <div className="flex items-center justify-between px-4 py-3 border-b">
+                        <h2 className="font-semibold text-base flex items-center gap-2.5">
+                            <span className="p-1.5 bg-primary/10 text-primary rounded-md">
                                 <MessageSquare className="w-4 h-4" />
                             </span>
                             Compass AI
@@ -487,6 +488,14 @@ export function ChatSidebar() {
                                                     key={`${message.key}-${version.id}`}
                                                 >
                                                     <div>
+                                                        <div className={cn(
+                                                            "text-[10px] font-semibold uppercase tracking-wider mb-1",
+                                                            message.from === 'user'
+                                                                ? "text-right text-muted-foreground"
+                                                                : "text-primary"
+                                                        )}>
+                                                            {message.from === 'user' ? 'You' : 'Compass'}
+                                                        </div>
                                                         <MessageContent>
                                                             <MessageResponse>{version.content}</MessageResponse>
                                                         </MessageContent>
@@ -596,7 +605,7 @@ export function ChatSidebar() {
                             <PromptInputFooter>
                                 <PromptInputTools>
                                     <div className="flex items-center gap-1 text-xs text-muted-foreground ml-2">
-                                        <GlobeIcon size={14} className="text-indigo-400" />
+                                        <GlobeIcon size={14} className="text-primary/60" />
                                         <span>Compass AI</span>
                                     </div>
                                 </PromptInputTools>

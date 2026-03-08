@@ -46,6 +46,13 @@ export type TaskTriggerProps = ComponentProps<typeof CollapsibleTrigger> & {
   icon?: ReactNode;
 };
 
+const statusChipStyles: Record<TaskStatus, string> = {
+  running: "bg-primary/8 text-primary dark:bg-primary/15",
+  completed: "bg-emerald-500/8 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400",
+  result: "bg-emerald-500/8 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400",
+  failed: "bg-rose-500/8 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400",
+};
+
 export const TaskTrigger = ({
   children,
   className,
@@ -58,24 +65,27 @@ export const TaskTrigger = ({
     if (icon) return icon;
     switch (status) {
       case "running":
-        return <Loader2 className="size-3 animate-spin text-indigo-500" />;
+        return <Loader2 className="size-3 animate-spin" />;
       case "completed":
       case "result":
-        return <CheckCircle2 className="size-3 text-emerald-500" />;
+        return <CheckCircle2 className="size-3" />;
       case "failed":
-        return <XCircle className="size-3 text-red-500" />;
+        return <XCircle className="size-3" />;
       default:
-        return <SearchIcon className="size-3" />;
+        return <SearchIcon className="size-3 opacity-60" />;
     }
   };
 
   return (
     <CollapsibleTrigger asChild className={cn("group", className)} {...props}>
       {children ?? (
-        <div className="flex inline-flex items-center gap-2 rounded-full border bg-background px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-all hover:bg-muted hover:text-foreground cursor-pointer w-fit max-w-full shadow-sm hover:shadow-md active:scale-[0.98]">
+        <div className={cn(
+          "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium cursor-pointer w-fit max-w-full transition-all active:scale-[0.98] hover:opacity-75",
+          statusChipStyles[status] ?? "bg-muted text-muted-foreground"
+        )}>
           {getStatusIcon()}
-          <span className="truncate max-w-[150px]">{title}</span>
-          <ChevronRight className="size-3 transition-transform group-data-[state=open]:rotate-90 text-muted-foreground/50" />
+          <span className="truncate max-w-[160px]">{title}</span>
+          <ChevronRight className="size-3 transition-transform group-data-[state=open]:rotate-90 opacity-50 ml-0.5" />
         </div>
       )}
     </CollapsibleTrigger>
