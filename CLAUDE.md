@@ -119,9 +119,16 @@ src/
 │   ├── create-site.tsx # Site creation flow
 │   ├── dashboard.tsx   # Dashboard page
 │   ├── documents.tsx   # Documents management page
+│   ├── forgot-password.tsx # Password reset request
+│   ├── login.tsx       # Login page
+│   ├── notifications.tsx # Notifications page
 │   ├── onboarding.tsx  # User onboarding flow
 │   ├── presentation.tsx # Presentation/inspection page
-│   └── (additional routes as needed)
+│   ├── reset-password.tsx # Password reset confirmation
+│   ├── settings.tsx    # User settings (profile, theme, security)
+│   ├── signoff.tsx     # Evidence sign-off/review workflow
+│   ├── signup.tsx      # Registration page
+│   └── team.tsx        # Team management page
 ├── types/              # TypeScript type definitions
 ├── utils/              # Utility functions
 │   ├── seo.ts          # SEO helper functions
@@ -168,6 +175,12 @@ src/
 - `inspectionPacks` - Inspection preparation packages
 - `inspectionPackOutputs` - Generated pack files (ZIP, PDF)
 - `auditLog` - System-wide audit trail
+
+### Evidence Status Lifecycle
+Evidence items flow through: `pending_review` → `approved` | `rejected`
+- Rejection requires `reviewNotes` (mandatory reason sent back to uploader)
+- Approval optionally accepts `reviewNotes`; `reviewedAt` is set on both outcomes
+- The `/signoff` route handles this workflow; server filters pending items by user role
 
 ## Key Patterns
 
@@ -281,11 +294,12 @@ Roles are defined statically in `src/lib/config/roles.ts`:
 ### Additional UI Libraries
 - `@tabler/icons-react` - Additional icons
 - `motion` (Framer Motion) - Animations
-- `next-themes` - Theme provider (light/dark mode toggle)
+- `@/components/theme/theme-provider` - Custom theme provider (light/dark/system toggle via `useTheme`)
 - `cmdk` - Command palette
 - `sonner` - Toast notifications
-- `react-markdown` - Markdown rendering
-- `remark-gfm` - GitHub-flavored markdown support
+- `react-markdown` + `remark-gfm` - Markdown rendering with GitHub-flavored markdown
+- `react-hook-form` + `@hookform/resolvers` - Form state management with Zod validation
+- `date-fns` - Date formatting throughout the app
 
 ### Path Aliases
 - `@/*` maps to `src/*`
