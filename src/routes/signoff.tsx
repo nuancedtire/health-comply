@@ -53,7 +53,16 @@ import {
   AlertTriangle,
   Building2,
   ArrowRight,
+  Sparkles,
+  CalendarDays,
+  ShieldCheck,
+  FileSpreadsheet,
+  BookOpen,
 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { parseCsv } from "@/utils/csv";
+import { Separator } from "@/components/ui/separator";
 
 export const Route = createFileRoute("/signoff")({
   beforeLoad: ({ context }) => {
@@ -71,30 +80,6 @@ function SignoffPage() {
   const { activeSite, sites, isLoading: isSiteLoading } = useSite();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-
-  if (!isSiteLoading && sites.length === 0) {
-    return (
-      <MainLayout title="Document Sign-off">
-        <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
-          <div className="max-w-md w-full text-center space-y-6">
-            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-              <Building2 className="w-10 h-10 text-primary" />
-            </div>
-            <div className="space-y-2">
-              <h2 className="text-2xl font-bold">No Site Set Up Yet</h2>
-              <p className="text-muted-foreground">
-                You need to create a site before you can review and sign off documents.
-              </p>
-            </div>
-            <Button size="lg" className="w-full" onClick={() => navigate({ to: '/create-site' })}>
-              Create Your First Site
-              <ArrowRight className="ml-2 w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      </MainLayout>
-    );
-  }
 
   const [selectedEvidence, setSelectedEvidence] = useState<any>(null);
   const [reviewNotes, setReviewNotes] = useState("");
@@ -172,6 +157,30 @@ function SignoffPage() {
       toast.error(error.message || "Failed to reject evidence");
     },
   });
+
+  if (!isSiteLoading && sites.length === 0) {
+    return (
+      <MainLayout title="Document Sign-off">
+        <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
+          <div className="max-w-md w-full text-center space-y-6">
+            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+              <Building2 className="w-10 h-10 text-primary" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold">No Site Set Up Yet</h2>
+              <p className="text-muted-foreground">
+                You need to create a site before you can review and sign off documents.
+              </p>
+            </div>
+            <Button size="lg" className="w-full" onClick={() => navigate({ to: '/create-site' })}>
+              Create Your First Site
+              <ArrowRight className="ml-2 w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   if (isSiteLoading) {
     return (
@@ -476,72 +485,174 @@ function SignoffPage() {
         open={!!selectedEvidence && !approveDialogOpen && !rejectDialogOpen}
         onOpenChange={(open) => !open && setSelectedEvidence(null)}
       >
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{selectedEvidence?.title}</DialogTitle>
-            <DialogDescription>
-              Uploaded by {selectedEvidence?.uploaderName} on{" "}
-              {selectedEvidence?.uploadedAt &&
-                format(new Date(selectedEvidence.uploadedAt), "MMMM d, yyyy")}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            {/* Summary */}
-            {selectedEvidence?.summary && (
-              <div>
-                <h4 className="text-sm font-medium mb-2">AI Summary</h4>
-                <p className="text-sm text-muted-foreground bg-muted p-3 rounded">
-                  {selectedEvidence.summary}
-                </p>
+        <DialogContent className="max-w-5xl p-0 gap-0 max-h-[90vh] flex flex-col">
+          {/* Header */}
+          <div className="px-6 pt-6 pb-4 border-b bg-card shrink-0">
+            <div className="flex items-start gap-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary shrink-0 mt-0.5">
+                {selectedEvidence?.mimeType?.includes("csv") || selectedEvidence?.title?.endsWith(".csv")
+                  ? <FileSpreadsheet className="h-5 w-5" />
+                  : <FileText className="h-5 w-5" />}
               </div>
-            )}
-
-            {/* Control Assignment */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <h4 className="text-sm font-medium mb-1">Assigned Control</h4>
-                <p className="text-sm text-muted-foreground">
-                  {selectedEvidence?.localControl?.title || "Not assigned"}
-                </p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium mb-1">Quality Statement</h4>
-                <p className="text-sm text-muted-foreground">
-                  {selectedEvidence?.qs?.title || selectedEvidence?.qsId}
-                </p>
-              </div>
-            </div>
-
-            {/* Text Content Preview */}
-            {selectedEvidence?.textContent && (
-              <div>
-                <h4 className="text-sm font-medium mb-2">Document Content</h4>
-                <div className="text-sm text-muted-foreground bg-muted p-3 rounded max-h-[200px] overflow-y-auto whitespace-pre-wrap">
-                  {selectedEvidence.textContent.substring(0, 1000)}
-                  {selectedEvidence.textContent.length > 1000 && "..."}
+              <div className="flex-1 min-w-0">
+                <DialogTitle className="text-base font-semibold leading-snug truncate">
+                  {selectedEvidence?.title}
+                </DialogTitle>
+                <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                  <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <User className="h-3 w-3" />
+                    {selectedEvidence?.uploaderName}
+                  </span>
+                  <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <CalendarDays className="h-3 w-3" />
+                    {selectedEvidence?.uploadedAt &&
+                      format(new Date(selectedEvidence.uploadedAt), "d MMM yyyy")}
+                  </span>
+                  {selectedEvidence?.aiConfidence && (
+                    <span className="flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                      <Sparkles className="h-3 w-3" />
+                      {selectedEvidence.aiConfidence}% confidence
+                    </span>
+                  )}
                 </div>
               </div>
-            )}
+            </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSelectedEvidence(null)}>
+
+          {/* Scrollable body */}
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            <div className="px-6 py-5 space-y-5">
+
+              {/* Metadata row */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg border bg-muted/30 p-3.5">
+                  <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
+                    <ShieldCheck className="h-3 w-3" />
+                    Assigned Control
+                  </div>
+                  <p className="text-sm font-medium leading-snug">
+                    {selectedEvidence?.localControl?.title || (
+                      <span className="text-muted-foreground font-normal italic">Not assigned</span>
+                    )}
+                  </p>
+                </div>
+                <div className="rounded-lg border bg-muted/30 p-3.5">
+                  <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
+                    <BookOpen className="h-3 w-3" />
+                    Quality Statement
+                  </div>
+                  <p className="text-sm font-medium leading-snug">
+                    {selectedEvidence?.qs?.title || selectedEvidence?.qsId || (
+                      <span className="text-muted-foreground font-normal italic">Unknown</span>
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              {/* AI Summary */}
+              {selectedEvidence?.summary && (
+                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+                  <div className="flex items-center gap-1.5 text-[11px] font-medium text-primary uppercase tracking-wide mb-2">
+                    <Sparkles className="h-3 w-3" />
+                    AI Summary
+                  </div>
+                  <p className="text-sm text-foreground/80 leading-relaxed">
+                    {selectedEvidence.summary}
+                  </p>
+                </div>
+              )}
+
+              {/* Document Content */}
+              {selectedEvidence?.textContent && (
+                <div>
+                  <Separator className="mb-4" />
+                  <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground uppercase tracking-wide mb-3">
+                    <FileText className="h-3 w-3" />
+                    Document Content
+                  </div>
+
+                  {/* CSV → render as table */}
+                  {(selectedEvidence.mimeType?.includes("csv") || selectedEvidence.title?.endsWith(".csv")) ? (
+                    <div className="rounded-lg border bg-background">
+                      <div className="overflow-x-auto overflow-y-auto max-h-[420px] scrollbar-thin">
+                        <table className="w-max min-w-full text-xs border-collapse">
+                          <thead className="sticky top-0 z-10">
+                            <tr>
+                              {parseCsv(selectedEvidence.textContent)[0]?.map((header: string, i: number) => (
+                                <th key={i} className="px-3 py-2 text-left font-semibold whitespace-nowrap bg-muted/60 border-b border-border">
+                                  {header}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {parseCsv(selectedEvidence.textContent).slice(1).map((row: string[], i: number) => (
+                              <tr key={i} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
+                                {row.map((cell: string, j: number) => (
+                                  <td key={j} className="px-3 py-2 align-top whitespace-nowrap text-foreground/80">
+                                    {cell || <span className="text-muted-foreground/30">—</span>}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      {parseCsv(selectedEvidence.textContent).length > 1 && (
+                        <div className="px-3 py-2 border-t bg-muted/20 text-xs text-muted-foreground">
+                          {parseCsv(selectedEvidence.textContent).length - 1} rows
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    /* Markdown / plain text */
+                    <div className="rounded-lg border bg-muted/20 overflow-auto">
+                      <div className="p-4 prose prose-sm dark:prose-invert max-w-none">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {selectedEvidence.textContent.substring(0, 3000)}
+                        </ReactMarkdown>
+                        {selectedEvidence.textContent.length > 3000 && (
+                          <p className="text-xs text-muted-foreground mt-3 pt-3 border-t">
+                            … content truncated for preview
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Footer actions — always visible */}
+          <div className="px-6 py-4 border-t bg-card shrink-0 flex items-center justify-between gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedEvidence(null)}
+              className="text-muted-foreground"
+            >
               Close
             </Button>
-            <Button
-              className="bg-green-600 hover:bg-green-700"
-              onClick={() => setApproveDialogOpen(true)}
-            >
-              <CheckCircle className="h-4 w-4 mr-1" />
-              Approve
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => setRejectDialogOpen(true)}
-            >
-              <XCircle className="h-4 w-4 mr-1" />
-              Reject
-            </Button>
-          </DialogFooter>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setRejectDialogOpen(true)}
+              >
+                <XCircle className="h-4 w-4 mr-1.5" />
+                Reject
+              </Button>
+              <Button
+                size="sm"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                onClick={() => setApproveDialogOpen(true)}
+              >
+                <CheckCircle className="h-4 w-4 mr-1.5" />
+                Approve
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </MainLayout>

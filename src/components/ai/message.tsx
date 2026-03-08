@@ -317,7 +317,7 @@ export const MessageResponse = memo(
   ({ className, children, ...props }: MessageResponseProps) => (
     <div
       className={cn(
-        "prose prose-sm dark:prose-invert max-w-none size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
+        "prose prose-sm dark:prose-invert max-w-none w-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 prose-p:leading-relaxed prose-headings:font-semibold prose-li:my-0.5 prose-ul:my-2 prose-ol:my-2",
         className
       )}
     >
