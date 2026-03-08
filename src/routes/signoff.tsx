@@ -11,7 +11,7 @@ import {
   updateEvidenceFn,
 } from "@/core/functions/evidence";
 import { useSite } from "@/components/site-context";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { format } from "date-fns";
 import {
   Table,
@@ -85,6 +85,11 @@ function SignoffPage() {
   const [reviewNotes, setReviewNotes] = useState("");
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+
+  const csvData = useMemo(
+    () => selectedEvidence?.textContent ? parseCsv(selectedEvidence.textContent) : [],
+    [selectedEvidence?.textContent]
+  );
 
   // Fetch evidence pending review that the current user is authorized to review
   const { data: pendingEvidence } = useSuspenseQuery({
@@ -578,7 +583,7 @@ function SignoffPage() {
                         <table className="w-max min-w-full text-xs border-collapse">
                           <thead className="sticky top-0 z-10">
                             <tr>
-                              {parseCsv(selectedEvidence.textContent)[0]?.map((header: string, i: number) => (
+                              {csvData[0]?.map((header: string, i: number) => (
                                 <th key={i} className="px-3 py-2 text-left font-semibold whitespace-nowrap bg-muted/60 border-b border-border">
                                   {header}
                                 </th>
@@ -586,7 +591,7 @@ function SignoffPage() {
                             </tr>
                           </thead>
                           <tbody>
-                            {parseCsv(selectedEvidence.textContent).slice(1).map((row: string[], i: number) => (
+                            {csvData.slice(1).map((row: string[], i: number) => (
                               <tr key={i} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                                 {row.map((cell: string, j: number) => (
                                   <td key={j} className="px-3 py-2 align-top whitespace-nowrap text-foreground/80">
@@ -598,9 +603,9 @@ function SignoffPage() {
                           </tbody>
                         </table>
                       </div>
-                      {parseCsv(selectedEvidence.textContent).length > 1 && (
+                      {csvData.length > 1 && (
                         <div className="px-3 py-2 border-t bg-muted/20 text-xs text-muted-foreground">
-                          {parseCsv(selectedEvidence.textContent).length - 1} rows
+                          {csvData.length - 1} rows
                         </div>
                       )}
                     </div>
