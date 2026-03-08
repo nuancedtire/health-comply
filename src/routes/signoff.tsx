@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { MainLayout } from "@/components/main-layout";
 import {
   useSuspenseQuery,
@@ -51,6 +51,8 @@ import {
   Clock,
   User,
   AlertTriangle,
+  Building2,
+  ArrowRight,
 } from "lucide-react";
 
 export const Route = createFileRoute("/signoff")({
@@ -66,8 +68,33 @@ export const Route = createFileRoute("/signoff")({
 });
 
 function SignoffPage() {
-  const { activeSite, isLoading: isSiteLoading } = useSite();
+  const { activeSite, sites, isLoading: isSiteLoading } = useSite();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  if (!isSiteLoading && sites.length === 0) {
+    return (
+      <MainLayout title="Document Sign-off">
+        <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
+          <div className="max-w-md w-full text-center space-y-6">
+            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+              <Building2 className="w-10 h-10 text-primary" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold">No Site Set Up Yet</h2>
+              <p className="text-muted-foreground">
+                You need to create a site before you can review and sign off documents.
+              </p>
+            </div>
+            <Button size="lg" className="w-full" onClick={() => navigate({ to: '/create-site' })}>
+              Create Your First Site
+              <ArrowRight className="ml-2 w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   const [selectedEvidence, setSelectedEvidence] = useState<any>(null);
   const [reviewNotes, setReviewNotes] = useState("");

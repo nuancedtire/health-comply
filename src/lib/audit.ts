@@ -83,6 +83,11 @@ export interface AuditDetails {
   targetUserId?: string;
   targetUserEmail?: string;
 
+  // For tenant/site context in audit details
+  tenantName?: string;
+  siteName?: string;
+  siteId?: string;
+
   // Generic
   reason?: string;
   metadata?: Record<string, unknown>;

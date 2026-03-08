@@ -412,7 +412,7 @@ export function UnifiedControlsHub({
   const { overallProgress } = checklistData || { overallProgress: 0 };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-6">
       {/* Header Area */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div className="space-y-3 md:space-y-4 flex-1">

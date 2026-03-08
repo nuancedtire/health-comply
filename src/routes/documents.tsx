@@ -1,5 +1,5 @@
 import React from 'react'
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { MainLayout } from '@/components/main-layout'
 import { UploadModal } from '@/components/evidence/upload-modal'
 import { DocumentsView, EvidenceItem } from '@/components/evidence/documents-view'
@@ -8,7 +8,7 @@ import { getEvidenceForSiteFn, bulkDeleteEvidenceFn, deleteAllFailedEvidenceFn }
 import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSite } from '@/components/site-context'
 import { useState, useEffect, useMemo } from 'react'
-import { FileText, FileUp, CheckCircle2, AlertCircle, Clock } from 'lucide-react'
+import { FileText, FileUp, CheckCircle2, AlertCircle, Clock, Building2, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -31,8 +31,33 @@ export const Route = createFileRoute('/documents')({
 })
 
 function DocumentsPage() {
-    const { activeSite, isLoading: isSiteLoading } = useSite()
+    const { activeSite, sites, isLoading: isSiteLoading } = useSite()
+    const navigate = useNavigate()
     const [selectedEvidence, setSelectedEvidence] = useState<EvidenceItem | null>(null)
+
+    if (!isSiteLoading && sites.length === 0) {
+        return (
+            <MainLayout title="Documents">
+                <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
+                    <div className="max-w-md w-full text-center space-y-6">
+                        <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                            <Building2 className="w-10 h-10 text-primary" />
+                        </div>
+                        <div className="space-y-2">
+                            <h2 className="text-2xl font-bold">No Site Set Up Yet</h2>
+                            <p className="text-muted-foreground">
+                                You need to create a site before you can upload and manage evidence documents.
+                            </p>
+                        </div>
+                        <Button size="lg" className="w-full" onClick={() => navigate({ to: '/create-site' })}>
+                            Create Your First Site
+                            <ArrowRight className="ml-2 w-4 h-4" />
+                        </Button>
+                    </div>
+                </div>
+            </MainLayout>
+        )
+    }
     const [sidebarWidth, setSidebarWidth] = useState(600)
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
     const queryClient = useQueryClient()
