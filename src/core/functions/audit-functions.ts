@@ -3,6 +3,7 @@ import * as schema from "@/db/schema";
 import { authMiddleware } from "@/core/middleware/auth-middleware";
 import { z } from "zod";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/sqlite-core";
 
 /**
  * Get audit logs for the current tenant
@@ -91,7 +92,14 @@ export const getAuditLogsFn = createServerFn({ method: "GET" })
             conditions.push(lte(schema.auditLog.createdAt, new Date(data.toDate)));
         }
 
-        // Fetch logs with actor user info
+        // Aliases for entity-type-specific joins to resolve human-readable names
+        const entityUser = alias(schema.users, "entity_user");
+        const entityEvidence = alias(schema.evidenceItems, "entity_evidence");
+        const entityControl = alias(schema.localControls, "entity_control");
+        const entityPolicy = alias(schema.policies, "entity_policy");
+        const entityInvitation = alias(schema.invitations, "entity_invitation");
+
+        // Fetch logs with actor user info and resolved entity names
         const logs = await db.select({
             id: schema.auditLog.id,
             tenantId: schema.auditLog.tenantId,
@@ -103,9 +111,37 @@ export const getAuditLogsFn = createServerFn({ method: "GET" })
             entityId: schema.auditLog.entityId,
             jsonDiff: schema.auditLog.jsonDiff,
             createdAt: schema.auditLog.createdAt,
+            // Resolve entity name from whichever joined table matches
+            entityName: sql<string | null>`COALESCE(
+                ${entityEvidence.title},
+                ${entityControl.title},
+                ${entityPolicy.title},
+                ${entityUser.name},
+                ${entityInvitation.email}
+            )`,
         })
             .from(schema.auditLog)
             .leftJoin(schema.users, eq(schema.auditLog.actorUserId, schema.users.id))
+            .leftJoin(entityEvidence, and(
+                eq(schema.auditLog.entityId, entityEvidence.id),
+                eq(schema.auditLog.entityType, "evidence")
+            ))
+            .leftJoin(entityControl, and(
+                eq(schema.auditLog.entityId, entityControl.id),
+                eq(schema.auditLog.entityType, "local_control")
+            ))
+            .leftJoin(entityPolicy, and(
+                eq(schema.auditLog.entityId, entityPolicy.id),
+                eq(schema.auditLog.entityType, "policy")
+            ))
+            .leftJoin(entityUser, and(
+                eq(schema.auditLog.entityId, entityUser.id),
+                eq(schema.auditLog.entityType, "user")
+            ))
+            .leftJoin(entityInvitation, and(
+                eq(schema.auditLog.entityId, entityInvitation.id),
+                eq(schema.auditLog.entityType, "invitation")
+            ))
             .where(and(...conditions))
             .orderBy(desc(schema.auditLog.createdAt))
             .limit(data?.limit || 100)

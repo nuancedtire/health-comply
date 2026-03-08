@@ -62,10 +62,10 @@ export function KPICard({
             {/* Left accent bar */}
             <div className={cn("absolute left-0 top-0 bottom-0 w-0.5", config.bar)} />
 
-            <CardContent className="pt-5 pb-4 pl-5 pr-4">
+            <CardContent className="pt-3 pb-3 pl-5 pr-4">
                 <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
                             {title}
                         </p>
                         <p className="text-2xl font-semibold tracking-tight text-foreground tabular-nums">
