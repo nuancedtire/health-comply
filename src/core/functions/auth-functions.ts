@@ -4,6 +4,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { authMiddleware } from "@/core/middleware/auth-middleware";
+import { sendPasswordResetEmail } from "@/lib/email";
 
 const getDb = (env: any) => drizzle(env.DB, { schema: schema as any });
 
@@ -179,23 +180,44 @@ export const requestPasswordResetFn = createServerFn({ method: "POST" })
         const { email } = ctx.data;
         const env = (ctx.context as any).env;
         const db = getDb(env) as any;
-        const { createAuth } = await import("@/lib/auth");
-        const auth = createAuth(db, env);
+        const resendApiKey = env.RESEND_API_KEY as string | undefined;
 
-        // Trigger Better Auth's forget password
-        // This sends an email with the reset link
+        if (!resendApiKey) {
+            console.warn("RESEND_API_KEY not configured – password reset email not sent.");
+            return {
+                success: true,
+                emailServiceConfigured: false,
+            };
+        }
+
+        const { createAuth } = await import("@/lib/auth");
+        const auth = createAuth(db, env, {
+            sendResetPassword: async (data: any) => {
+                try {
+                    await sendPasswordResetEmail(resendApiKey, {
+                        to: email,
+                        token: data.token,
+                        resetUrl: data.url,
+                        appUrl: env.BETTER_AUTH_URL,
+                    });
+                } catch (error) {
+                    console.error("Password reset email delivery failed:", error);
+                }
+            }
+        });
+
         try {
-            await (auth.api as any).forgetPassword({
+            await auth.api.requestPasswordReset({
                 body: { email, redirectTo: "/reset-password" }
             });
         } catch (e) {
-            // Log error but don't expose whether email exists for security
             console.error("Password reset request failed:", e);
         }
 
-        // SECURITY: Never return the token in the API response
-        // The token is sent via email only
-        return { success: true };
+        return {
+            success: true,
+            emailServiceConfigured: true,
+        };
     });
 
 const ResetPasswordSchema = z.object({
@@ -225,4 +247,3 @@ export const resetPasswordFn = createServerFn({ method: "POST" })
 
         return { success: true };
     });
-

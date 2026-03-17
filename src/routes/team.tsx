@@ -7,9 +7,11 @@ import {
     deleteUserFn,
     generatePasswordResetLinkFn
 } from '@/core/functions/admin-functions'
+import { getEmailConfigurationFn } from "@/core/functions/email-functions"
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ResendStatusAlert } from '@/components/email/resend-status-alert'
 import {
     Dialog,
     DialogContent,
@@ -50,6 +52,10 @@ import { useSite } from '@/components/site-context'
 function TeamPage() {
     // -- Global State for Dialogs --
     const [selectedItem, setSelectedItem] = useState<any>(null);
+    const [resetPwdResult, setResetPwdResult] = useState<{
+        url: string;
+        reason: 'missing-config' | 'send-failed';
+    } | null>(null);
 
     // Context
     const { activeSite } = useSite();
@@ -57,7 +63,6 @@ function TeamPage() {
     // Dialog Open States
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [revokeDialogOpen, setRevokeDialogOpen] = useState(false);
-    const [resetPwdResult, setResetPwdResult] = useState<string | null>(null);
     const [changeEmailDialogOpen, setChangeEmailDialogOpen] = useState(false);
     const [changeRoleDialogOpen, setChangeRoleDialogOpen] = useState(false);
     const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
@@ -66,6 +71,10 @@ function TeamPage() {
         queryKey: ['team-users-and-invites', activeSite?.id], // Add activeSite.id to key
         queryFn: () => getUsersAndInvitesFn({ data: { siteId: activeSite?.id } }),
         // No strict enabled check needed, as all auth users can access this (scoped by server)
+    });
+    const { data: emailConfig } = useQuery({
+        queryKey: ['email-configuration'],
+        queryFn: () => getEmailConfigurationFn(),
     });
 
     // -- Mutations --
@@ -95,8 +104,31 @@ function TeamPage() {
     const resetPwdMutation = useMutation({
         mutationFn: generatePasswordResetLinkFn,
         onSuccess: (res) => {
-            const link = `${window.location.origin}/reset-password?token=${res.token}`;
-            setResetPwdResult(link);
+            if (res.emailDelivery.sent) {
+                toast.success("Password reset email sent", {
+                    description: `${selectedItem?.email} will receive a reset link shortly.`,
+                });
+                return;
+            }
+
+            if (res.emailDelivery.fallbackUrl) {
+                navigator.clipboard.writeText(res.emailDelivery.fallbackUrl);
+                setResetPwdResult({
+                    url: res.emailDelivery.fallbackUrl,
+                    reason: res.emailDelivery.configured ? 'send-failed' : 'missing-config',
+                });
+                toast(
+                    res.emailDelivery.configured
+                        ? "Password reset created, but email delivery failed."
+                        : "Password reset link generated without automatic email delivery.",
+                    {
+                        description: "The reset link has been copied so you can share it manually.",
+                    }
+                );
+                return;
+            }
+
+            toast.error("Password reset could not be prepared.");
         },
         onError: (err) => toast.error(err.message)
     });
@@ -231,6 +263,11 @@ function TeamPage() {
                     {canInvite && <InviteUserDialog onSuccess={refetch} />}
                 </div>
 
+                <ResendStatusAlert
+                    configured={emailConfig?.resendConfigured}
+                    description="`RESEND_API_KEY` is missing in this environment. Invites and admin-triggered password resets will need to be shared manually."
+                />
+
                 <div className="flex flex-col space-y-4">
                     {/* Toolbar */}
                     <div className="flex flex-col sm:flex-row gap-4 justify-between bg-card p-4 rounded-lg border shadow-sm">
@@ -354,13 +391,15 @@ function TeamPage() {
                     <DialogHeader>
                         <DialogTitle>Reset Password</DialogTitle>
                         <DialogDescription>
-                            Create a password reset link for <span className="font-medium text-foreground">{selectedItem?.name || selectedItem?.email}</span>?
+                            {emailConfig?.resendConfigured
+                                ? <>Email a password reset link to <span className="font-medium text-foreground">{selectedItem?.name || selectedItem?.email}</span>?</>
+                                : <>Generate a password reset link for <span className="font-medium text-foreground">{selectedItem?.name || selectedItem?.email}</span>? The link will need to be shared manually.</>}
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setResetConfirmOpen(false)}>Cancel</Button>
                         <Button onClick={confirmReset} disabled={resetPwdMutation.isPending}>
-                            {resetPwdMutation.isPending ? "Generating..." : "Generate Link"}
+                            {resetPwdMutation.isPending ? "Preparing..." : emailConfig?.resendConfigured ? "Send Reset Email" : "Generate Link"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -370,16 +409,18 @@ function TeamPage() {
             <Dialog open={!!resetPwdResult} onOpenChange={(open) => !open && setResetPwdResult(null)}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Password Reset Link</DialogTitle>
+                        <DialogTitle>Share Password Reset Link</DialogTitle>
                         <DialogDescription>
-                            Share this link with the user manually.
+                            {resetPwdResult?.reason === 'missing-config'
+                                ? "Automatic email delivery is unavailable, so share this link manually."
+                                : "Resend could not deliver the email. Share this link manually instead."}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="flex items-center space-x-2 mt-2">
-                        <Input readOnly value={resetPwdResult || ''} />
+                        <Input readOnly value={resetPwdResult?.url || ''} />
                         <Button size="icon" onClick={() => {
-                            if (resetPwdResult) {
-                                navigator.clipboard.writeText(resetPwdResult);
+                            if (resetPwdResult?.url) {
+                                navigator.clipboard.writeText(resetPwdResult.url);
                                 toast.success("Copied to clipboard");
                             }
                         }}>

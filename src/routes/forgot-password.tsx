@@ -7,10 +7,11 @@ import { Link } from "@tanstack/react-router"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
+import { getEmailConfigurationFn } from "@/core/functions/email-functions"
 import { requestPasswordResetFn } from "@/core/functions/auth-functions"
+import { ResendStatusAlert } from "@/components/email/resend-status-alert"
 import { toast } from "sonner"
-import { useState } from "react"
 
 export const Route = createFileRoute('/forgot-password')({
     component: ForgotPasswordPage,
@@ -21,7 +22,10 @@ const schema = z.object({
 })
 
 function ForgotPasswordPage() {
-    const [resetLink, setResetLink] = useState<string | null>(null);
+    const { data: emailConfig } = useQuery({
+        queryKey: ['email-configuration'],
+        queryFn: () => getEmailConfigurationFn(),
+    });
 
     const form = useForm({
         resolver: zodResolver(schema),
@@ -32,14 +36,15 @@ function ForgotPasswordPage() {
 
     const mutation = useMutation({
         mutationFn: requestPasswordResetFn,
-        onSuccess: () => {
-            // res is { success: true }
-            toast.success("Reset link sent!");
-            // Demo link logic removed since token is not returned
-            setResetLink(null);
+        onSuccess: (result) => {
+            if (!result.emailServiceConfigured) {
+                toast.error("Password reset email is unavailable in this environment.");
+                return;
+            }
+
+            toast.success("If that account exists, a reset email is on the way.");
         },
         onError: (err) => {
-            // For security, don't reveal much, but for debugging:
             console.error(err);
             toast.error("An error occurred.");
         }
@@ -57,30 +62,24 @@ function ForgotPasswordPage() {
                     <CardDescription>Enter your email to reset your password.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {!resetLink ? (
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                            <div className="space-y-2">
-                                <Label>Email</Label>
-                                <Input {...form.register("email")} placeholder="name@example.com" />
-                                {form.formState.errors.email && (
-                                    <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>
-                                )}
-                            </div>
-                            <Button type="submit" className="w-full" disabled={mutation.isPending}>
-                                {mutation.isPending ? "Sending..." : "Send Reset Link"}
-                            </Button>
-                        </form>
-                    ) : (
-                        <div className="space-y-4">
-                            <div className="p-4 bg-green-50 text-green-700 rounded-md text-sm border border-green-200">
-                                <p className="font-semibold mb-2">Demo Mode: Reset Link Generated</p>
-                                <p className="break-all font-mono">{resetLink}</p>
-                            </div>
-                            <Button className="w-full" asChild>
-                                <a href={resetLink}>Go to Reset Page</a>
-                            </Button>
+                    <ResendStatusAlert
+                        configured={emailConfig?.resendConfigured}
+                        description="`RESEND_API_KEY` is not configured in this environment, so password reset emails cannot be sent right now."
+                        className="mb-4"
+                    />
+
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <div className="space-y-2">
+                            <Label>Email</Label>
+                            <Input {...form.register("email")} placeholder="name@example.com" />
+                            {form.formState.errors.email && (
+                                <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>
+                            )}
                         </div>
-                    )}
+                        <Button type="submit" className="w-full" disabled={mutation.isPending}>
+                            {mutation.isPending ? "Sending..." : "Send Reset Link"}
+                        </Button>
+                    </form>
 
                     <div className="mt-4 text-center">
                         <Link to="/login" className="text-sm text-muted-foreground hover:underline">

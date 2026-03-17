@@ -5,7 +5,12 @@ import { z } from "zod";
 import { authMiddleware } from "@/core/middleware/auth-middleware";
 import { logUserEvent, AUDIT_ACTIONS } from "@/lib/audit";
 import { ROLES, getRole } from "@/lib/config/roles";
-import { sendInvitationEmail } from "@/lib/email";
+import {
+    buildInvitationUrl,
+    buildPasswordResetUrl,
+    sendInvitationEmail,
+    sendPasswordResetEmail,
+} from "@/lib/email";
 
 // Admin functions are protected by authMiddleware
 // Middleware provides: user, session, db
@@ -66,6 +71,7 @@ export const inviteUserFn = createServerFn({ method: "POST" })
     .handler(async (ctx) => {
         const data = ctx.data;
         const { db, user } = ctx.context;
+        const appUrl = (ctx.context.env as any)?.BETTER_AUTH_URL as string | undefined;
 
         // Validate Role exists in config
         const targetRoleConfig = getRole(data.role);
@@ -154,8 +160,15 @@ export const inviteUserFn = createServerFn({ method: "POST" })
             },
         });
 
-        // Send invitation email via Resend (non-blocking – log failure but don't throw)
+        const inviteUrl = buildInvitationUrl(appUrl, token);
         const resendApiKey = (ctx.context.env as any)?.RESEND_API_KEY as string | undefined;
+        const emailDelivery = {
+            configured: Boolean(resendApiKey),
+            sent: false,
+            error: null as string | null,
+            inviteUrl,
+        };
+
         if (resendApiKey) {
             try {
                 // Fetch tenant name and site name for the email
@@ -180,15 +193,18 @@ export const inviteUserFn = createServerFn({ method: "POST" })
                     role: data.role,
                     token,
                     siteName,
+                    appUrl,
                 });
+                emailDelivery.sent = true;
             } catch (emailErr) {
                 console.error("Failed to send invitation email:", emailErr);
+                emailDelivery.error = emailErr instanceof Error ? emailErr.message : "Unknown email delivery error.";
             }
         } else {
             console.warn("RESEND_API_KEY not configured – invitation email not sent.");
         }
 
-        return { token };
+        return { token, emailDelivery };
     });
 
 const GetUsersAndInvitesSchema = z.object({
@@ -625,6 +641,7 @@ export const generatePasswordResetLinkFn = createServerFn({ method: "POST" })
         const targetUser = await db.select({
             id: schema.users.id,
             email: schema.users.email,
+            name: schema.users.name,
             tenantId: schema.users.tenantId,
         })
             .from(schema.users)
@@ -661,17 +678,36 @@ export const generatePasswordResetLinkFn = createServerFn({ method: "POST" })
         }
 
         const { createAuth } = await import("@/lib/auth");
+        const resendApiKey = env.RESEND_API_KEY;
+        const appUrl = env.BETTER_AUTH_URL;
 
         let capturedToken: string | undefined;
+        let deliveryError: string | null = null;
+        let emailSent = false;
 
-        // Create a local auth instance that captures the token
         const auth = createAuth(db, env, {
             sendResetPassword: async (data: any) => {
                 capturedToken = data.token;
+                if (!resendApiKey) {
+                    return;
+                }
+
+                try {
+                    await sendPasswordResetEmail(resendApiKey, {
+                        to: targetUser.email,
+                        token: data.token,
+                        resetUrl: data.url,
+                        appUrl,
+                        userName: targetUser.name,
+                    });
+                    emailSent = true;
+                } catch (error) {
+                    console.error("Failed to send password reset email:", error);
+                    deliveryError = error instanceof Error ? error.message : "Unknown email delivery error.";
+                }
             }
         });
 
-        // Trigger Better Auth forgetPassword
         await auth.api.requestPasswordReset({
             body: {
                 email: targetUser.email,
@@ -679,7 +715,15 @@ export const generatePasswordResetLinkFn = createServerFn({ method: "POST" })
             }
         });
 
-        if (!capturedToken) {
+        const fallbackUrl = capturedToken ? buildPasswordResetUrl(appUrl, capturedToken) : null;
+        const emailDelivery = {
+            configured: Boolean(resendApiKey),
+            sent: emailSent,
+            error: deliveryError,
+            fallbackUrl,
+        };
+
+        if (!capturedToken && !emailDelivery.sent) {
             throw new Error("Failed to generate token: Callback was not triggered.");
         }
 
@@ -695,7 +739,7 @@ export const generatePasswordResetLinkFn = createServerFn({ method: "POST" })
             });
         }
 
-        return { token: capturedToken };
+        return { emailDelivery };
     });
 
 export const getTenantsFn = createServerFn({ method: "GET" })
