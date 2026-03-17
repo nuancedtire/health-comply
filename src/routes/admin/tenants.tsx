@@ -1,6 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createTenantFn, getTenantsFn, deleteTenantFn, inviteUserFn } from '@/core/functions/admin-functions'
+import { getEmailConfigurationFn } from '@/core/functions/email-functions'
+import { ResendStatusAlert } from '@/components/email/resend-status-alert'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -39,6 +41,11 @@ function TenantsPage() {
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false)
   const [selectedTenant, setSelectedTenant] = useState<any>(null)
   const [inviteEmail, setInviteEmail] = useState('')
+  const [manualInviteResult, setManualInviteResult] = useState<{
+    email: string
+    url: string
+    reason: 'missing-config' | 'send-failed'
+  } | null>(null)
 
   // Delete Modal State
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -56,6 +63,10 @@ function TenantsPage() {
     queryKey: ['tenants'],
     queryFn: () => getTenantsFn(),
     enabled: !!isSystemAdmin
+  });
+  const { data: emailConfig } = useQuery({
+    queryKey: ['email-configuration'],
+    queryFn: () => getEmailConfigurationFn(),
   });
 
   const form = useForm<z.infer<typeof createTenantSchema>>({
@@ -98,12 +109,32 @@ function TenantsPage() {
 
   const inviteMutation = useMutation({
     mutationFn: inviteUserFn,
-    onSuccess: () => {
+    onSuccess: (result, variables) => {
       setInviteDialogOpen(false)
       setInviteEmail('')
-      toast.success("Invitation sent successfully")
-      // Optionally refetch to specific showing pending? Not needed for checking *existence* unless we show invited state.
-      // But we only check for existing users in the list.
+      queryClient.invalidateQueries({ queryKey: ['tenants'] });
+
+      if (result.emailDelivery.sent) {
+        toast.success("Invitation emailed", {
+          description: `${variables.data.email} will receive a signup link shortly.`,
+        })
+        return
+      }
+
+      navigator.clipboard.writeText(result.emailDelivery.inviteUrl)
+      setManualInviteResult({
+        email: variables.data.email,
+        url: result.emailDelivery.inviteUrl,
+        reason: result.emailDelivery.configured ? 'send-failed' : 'missing-config'
+      })
+      toast(
+        result.emailDelivery.configured
+          ? "Invitation created, but email delivery failed."
+          : "Invitation created without automatic email delivery.",
+        {
+          description: "The invite link has been copied so you can share it manually.",
+        }
+      )
     },
     onError: (error) => {
       toast.error(`Failed to send invite: ${error.message}`)
@@ -152,6 +183,11 @@ function TenantsPage() {
           </p>
         </div>
       </div>
+
+      <ResendStatusAlert
+        configured={emailConfig?.resendConfigured}
+        description="`RESEND_API_KEY` is missing in this environment. Practice manager invites will need to be shared manually."
+      />
 
       <Card className="border-l-4 border-l-primary">
         <CardHeader>
@@ -303,9 +339,15 @@ function TenantsPage() {
           <DialogHeader>
             <DialogTitle>Invite Practice Manager</DialogTitle>
             <DialogDescription>
-              Send an invitation email to a new Practice Manager for <span className="font-medium text-foreground">{selectedTenant?.name}</span>.
+              Create an invitation for <span className="font-medium text-foreground">{selectedTenant?.name}</span> and email it when delivery is available.
             </DialogDescription>
           </DialogHeader>
+
+          <ResendStatusAlert
+            configured={emailConfig?.resendConfigured}
+            description="`RESEND_API_KEY` is not configured here. This invite will be created, and you'll receive a shareable link instead of an email being sent."
+          />
+
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
@@ -320,8 +362,39 @@ function TenantsPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setInviteDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleInviteSubmit} disabled={inviteMutation.isPending || !inviteEmail}>
-              {inviteMutation.isPending ? "Sending..." : "Send Invitation"}
+              {inviteMutation.isPending ? "Preparing..." : emailConfig?.resendConfigured ? "Send Invitation" : "Create Invitation"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!manualInviteResult} onOpenChange={(open) => !open && setManualInviteResult(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Share Invitation Link</DialogTitle>
+            <DialogDescription>
+              {manualInviteResult?.reason === 'missing-config'
+                ? "Automatic email delivery is unavailable, so share this invite link manually."
+                : "The invite was created, but Resend could not deliver it. Share this link manually instead."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="rounded-lg border border-dashed border-border/80 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+              Recipient: <span className="font-medium text-foreground">{manualInviteResult?.email}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Input readOnly value={manualInviteResult?.url || ''} />
+              <Button size="icon" onClick={() => {
+                if (!manualInviteResult?.url) return
+                navigator.clipboard.writeText(manualInviteResult.url)
+                toast.success("Invitation link copied")
+              }}>
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setManualInviteResult(null)}>Done</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

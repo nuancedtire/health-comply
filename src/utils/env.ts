@@ -10,4 +10,5 @@ export interface Env {
     BETTER_AUTH_SECRET: string;
     BETTER_AUTH_URL?: string;
     BETTER_AUTH_TRUSTED_ORIGINS?: string;
+    RESEND_API_KEY?: string;
 }
