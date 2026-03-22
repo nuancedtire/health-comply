@@ -19,6 +19,7 @@ export function ResendStatusAlert({
 
     return (
         <Alert
+            data-testid="resend-status-alert"
             className={cn(
                 "border-amber-300 bg-amber-50/90 text-amber-950 [&>svg]:text-amber-700 *:data-[slot=alert-description]:text-amber-900/80",
                 className

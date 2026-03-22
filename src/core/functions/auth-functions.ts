@@ -4,7 +4,11 @@ import { drizzle } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { authMiddleware } from "@/core/middleware/auth-middleware";
-import { sendPasswordResetEmail } from "@/lib/email";
+import { getPasswordResetEmailSubject, sendPasswordResetEmail } from "@/lib/email";
+import {
+    deliverPasswordResetEmailForEnvironment,
+    getEffectiveResendMode,
+} from "@/lib/e2e-test-support";
 
 const getDb = (env: any) => drizzle(env.DB, { schema: schema as any });
 
@@ -182,7 +186,7 @@ export const requestPasswordResetFn = createServerFn({ method: "POST" })
         const db = getDb(env) as any;
         const resendApiKey = env.RESEND_API_KEY as string | undefined;
 
-        if (!resendApiKey) {
+        if (await getEffectiveResendMode(env) === "missing") {
             console.warn("RESEND_API_KEY not configured – password reset email not sent.");
             return {
                 success: true,
@@ -193,15 +197,27 @@ export const requestPasswordResetFn = createServerFn({ method: "POST" })
         const { createAuth } = await import("@/lib/auth");
         const auth = createAuth(db, env, {
             sendResetPassword: async (data: any) => {
-                try {
-                    await sendPasswordResetEmail(resendApiKey, {
-                        to: email,
-                        token: data.token,
-                        resetUrl: data.url,
-                        appUrl: env.BETTER_AUTH_URL,
-                    });
-                } catch (error) {
-                    console.error("Password reset email delivery failed:", error);
+                const delivery = await deliverPasswordResetEmailForEnvironment(env, {
+                    to: email,
+                    subject: getPasswordResetEmailSubject(),
+                    url: data.url,
+                    token: data.token,
+                    send: async () => {
+                        if (!resendApiKey) {
+                            throw new Error("RESEND_API_KEY not configured");
+                        }
+
+                        await sendPasswordResetEmail(resendApiKey, {
+                            to: email,
+                            token: data.token,
+                            resetUrl: data.url,
+                            appUrl: env.BETTER_AUTH_URL,
+                        });
+                    },
+                });
+
+                if (!delivery.sent && delivery.error) {
+                    console.error("Password reset email delivery failed:", delivery.error);
                 }
             }
         });

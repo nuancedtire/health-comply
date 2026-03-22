@@ -387,7 +387,7 @@ function TeamPage() {
 
             {/* Reset Password Confirmation */}
             <Dialog open={resetConfirmOpen} onOpenChange={setResetConfirmOpen}>
-                <DialogContent>
+                <DialogContent data-testid="reset-password-dialog">
                     <DialogHeader>
                         <DialogTitle>Reset Password</DialogTitle>
                         <DialogDescription>
@@ -407,7 +407,7 @@ function TeamPage() {
 
             {/* Reset Password Result */}
             <Dialog open={!!resetPwdResult} onOpenChange={(open) => !open && setResetPwdResult(null)}>
-                <DialogContent>
+                <DialogContent data-testid="manual-reset-dialog">
                     <DialogHeader>
                         <DialogTitle>Share Password Reset Link</DialogTitle>
                         <DialogDescription>

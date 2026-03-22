@@ -33,6 +33,7 @@ import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminTenantsRouteImport } from './routes/admin/tenants'
 import { Route as AdminDebugRouteImport } from './routes/admin/debug'
 import { Route as AdminAuditRouteImport } from './routes/admin/audit'
+import { Route as ApiTestE2eRouteImport } from './routes/api/test/e2e'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const TeamRoute = TeamRouteImport.update({
@@ -155,6 +156,11 @@ const AdminAuditRoute = AdminAuditRouteImport.update({
   path: '/audit',
   getParentRoute: () => AdminRoute,
 } as any)
+const ApiTestE2eRoute = ApiTestE2eRouteImport.update({
+  id: '/api/test/e2e',
+  path: '/api/test/e2e',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -187,6 +193,7 @@ export interface FileRoutesByFullPath {
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/test/e2e': typeof ApiTestE2eRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -214,6 +221,7 @@ export interface FileRoutesByTo {
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/test/e2e': typeof ApiTestE2eRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -242,6 +250,7 @@ export interface FileRoutesById {
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/test/e2e': typeof ApiTestE2eRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -271,6 +280,7 @@ export interface FileRouteTypes {
     | '/legal/privacy'
     | '/legal/terms'
     | '/api/auth/$'
+    | '/api/test/e2e'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -298,6 +308,7 @@ export interface FileRouteTypes {
     | '/legal/privacy'
     | '/legal/terms'
     | '/api/auth/$'
+    | '/api/test/e2e'
   id:
     | '__root__'
     | '/'
@@ -325,6 +336,7 @@ export interface FileRouteTypes {
     | '/legal/privacy'
     | '/legal/terms'
     | '/api/auth/$'
+    | '/api/test/e2e'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -349,6 +361,7 @@ export interface RootRouteChildren {
   LegalPrivacyRoute: typeof LegalPrivacyRoute
   LegalTermsRoute: typeof LegalTermsRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiTestE2eRoute: typeof ApiTestE2eRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -521,6 +534,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAuditRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/api/test/e2e': {
+      id: '/api/test/e2e'
+      path: '/api/test/e2e'
+      fullPath: '/api/test/e2e'
+      preLoaderRoute: typeof ApiTestE2eRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -569,6 +589,7 @@ const rootRouteChildren: RootRouteChildren = {
   LegalPrivacyRoute: LegalPrivacyRoute,
   LegalTermsRoute: LegalTermsRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiTestE2eRoute: ApiTestE2eRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -15,11 +15,18 @@ export const createAuth = (db: any, env: Env, options?: {
     const trustedOrigins = env.BETTER_AUTH_TRUSTED_ORIGINS
         ? env.BETTER_AUTH_TRUSTED_ORIGINS.split(',').map(origin => origin.trim())
         : [];
+    trustedOrigins.push(
+        "http://localhost:3000",
+        "http://localhost:3100",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3100",
+    );
+    const resolvedTrustedOrigins = Array.from(new Set(trustedOrigins.filter(Boolean)));
 
     return betterAuth({
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.BETTER_AUTH_URL,
-    trustedOrigins: trustedOrigins.length > 0 ? trustedOrigins : undefined,
+    trustedOrigins: resolvedTrustedOrigins.length > 0 ? resolvedTrustedOrigins : undefined,
     database: drizzleAdapter(db, {
         provider: "sqlite",
         schema: {

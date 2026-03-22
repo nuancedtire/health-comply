@@ -36,6 +36,20 @@ export interface PasswordResetEmailOptions {
     userName?: string;
 }
 
+export function getInvitationLocationText(options: Pick<InvitationEmailOptions, "organizationName" | "siteName">): string {
+    return options.siteName
+        ? `${options.organizationName} – ${options.siteName}`
+        : options.organizationName;
+}
+
+export function getInvitationEmailSubject(options: Pick<InvitationEmailOptions, "organizationName" | "siteName">): string {
+    return `You've been invited to join ${getInvitationLocationText(options)} on Compass`;
+}
+
+export function getPasswordResetEmailSubject(): string {
+    return "Reset your Compass password";
+}
+
 export async function sendInvitationEmail(
     apiKey: string,
     options: InvitationEmailOptions
@@ -43,9 +57,7 @@ export async function sendInvitationEmail(
     const resend = getResend(apiKey);
     const signupUrl = buildInvitationUrl(options.appUrl, options.token);
 
-    const locationText = options.siteName
-        ? `${options.organizationName} – ${options.siteName}`
-        : options.organizationName;
+    const locationText = getInvitationLocationText(options);
 
     const html = `<!DOCTYPE html>
 <html>
@@ -125,7 +137,7 @@ export async function sendInvitationEmail(
     const { error } = await resend.emails.send({
         from: "Compass <noreply@compass.aiigent.io>",
         to: options.to,
-        subject: `You've been invited to join ${locationText} on Compass`,
+        subject: getInvitationEmailSubject(options),
         html,
     });
 
@@ -210,7 +222,7 @@ export async function sendPasswordResetEmail(
     const { error } = await resend.emails.send({
         from: "Compass <noreply@compass.aiigent.io>",
         to: options.to,
-        subject: "Reset your Compass password",
+        subject: getPasswordResetEmailSubject(),
         html,
     });
 

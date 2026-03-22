@@ -11,4 +11,7 @@ export interface Env {
     BETTER_AUTH_URL?: string;
     BETTER_AUTH_TRUSTED_ORIGINS?: string;
     RESEND_API_KEY?: string;
+    E2E_TEST_MODE?: string;
+    E2E_TEST_SECRET?: string;
+    E2E_RESEND_MODE?: "configured" | "missing" | "failing";
 }

@@ -5,6 +5,13 @@ import viteTsConfigPaths from "vite-tsconfig-paths";
 import tailwindcss from "@tailwindcss/vite";
 import { cloudflare } from "@cloudflare/vite-plugin";
 
+const inspectorPort = process.env.CLOUDFLARE_INSPECTOR_PORT === "false"
+  ? false
+  : undefined;
+const remoteBindings = process.env.CLOUDFLARE_REMOTE_BINDINGS === "false"
+  ? false
+  : undefined;
+
 const config = defineConfig({
   server: {
     allowedHosts: ["test.fazeen.dev"],
@@ -22,6 +29,8 @@ const config = defineConfig({
     }),
     viteReact(),
     cloudflare({
+      inspectorPort,
+      remoteBindings,
       viteEnvironment: {
         name: "ssr",
       },

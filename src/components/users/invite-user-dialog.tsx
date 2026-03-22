@@ -183,12 +183,12 @@ export function InviteUserDialog({ onSuccess }: { onSuccess: () => void }) {
         <>
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
-                    <Button>
+                    <Button data-testid="invite-user-trigger">
                         <Mail className="mr-2 h-4 w-4" />
                         Invite User
                     </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent data-testid="invite-user-dialog">
                     <DialogHeader>
                         <DialogTitle>Invite New User</DialogTitle>
                         <DialogDescription>
@@ -323,7 +323,7 @@ export function InviteUserDialog({ onSuccess }: { onSuccess: () => void }) {
             </Dialog>
 
             <Dialog open={!!manualInviteResult} onOpenChange={(nextOpen) => !nextOpen && setManualInviteResult(null)}>
-                <DialogContent>
+                <DialogContent data-testid="manual-invite-dialog">
                     <DialogHeader>
                         <DialogTitle>Share Invitation Link</DialogTitle>
                         <DialogDescription>

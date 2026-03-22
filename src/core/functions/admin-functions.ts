@@ -8,9 +8,15 @@ import { ROLES, getRole } from "@/lib/config/roles";
 import {
     buildInvitationUrl,
     buildPasswordResetUrl,
+    getInvitationEmailSubject,
+    getPasswordResetEmailSubject,
     sendInvitationEmail,
     sendPasswordResetEmail,
 } from "@/lib/email";
+import {
+    deliverInvitationEmailForEnvironment,
+    deliverPasswordResetEmailForEnvironment,
+} from "@/lib/e2e-test-support";
 
 // Admin functions are protected by authMiddleware
 // Middleware provides: user, session, db
@@ -163,27 +169,37 @@ export const inviteUserFn = createServerFn({ method: "POST" })
         const inviteUrl = buildInvitationUrl(appUrl, token);
         const resendApiKey = (ctx.context.env as any)?.RESEND_API_KEY as string | undefined;
         const emailDelivery = {
-            configured: Boolean(resendApiKey),
+            configured: false,
             sent: false,
             error: null as string | null,
             inviteUrl,
         };
 
-        if (resendApiKey) {
-            try {
-                // Fetch tenant name and site name for the email
-                const tenant = await db.select({ name: schema.tenants.name })
-                    .from(schema.tenants)
-                    .where(eq(schema.tenants.id, data.tenantId))
-                    .get();
+        const tenant = await db.select({ name: schema.tenants.name })
+            .from(schema.tenants)
+            .where(eq(schema.tenants.id, data.tenantId))
+            .get();
 
-                let siteName: string | undefined;
-                if (data.siteId) {
-                    const site = await db.select({ name: schema.sites.name })
-                        .from(schema.sites)
-                        .where(eq(schema.sites.id, data.siteId))
-                        .get();
-                    siteName = site?.name;
+        let siteName: string | undefined;
+        if (data.siteId) {
+            const site = await db.select({ name: schema.sites.name })
+                .from(schema.sites)
+                .where(eq(schema.sites.id, data.siteId))
+                .get();
+            siteName = site?.name;
+        }
+
+        const invitationDelivery = await deliverInvitationEmailForEnvironment(ctx.context.env, {
+            to: data.email,
+            subject: getInvitationEmailSubject({
+                organizationName: tenant?.name || data.tenantId,
+                siteName,
+            }),
+            url: inviteUrl,
+            token,
+            send: async () => {
+                if (!resendApiKey) {
+                    throw new Error("RESEND_API_KEY not configured");
                 }
 
                 await sendInvitationEmail(resendApiKey, {
@@ -195,14 +211,12 @@ export const inviteUserFn = createServerFn({ method: "POST" })
                     siteName,
                     appUrl,
                 });
-                emailDelivery.sent = true;
-            } catch (emailErr) {
-                console.error("Failed to send invitation email:", emailErr);
-                emailDelivery.error = emailErr instanceof Error ? emailErr.message : "Unknown email delivery error.";
-            }
-        } else {
-            console.warn("RESEND_API_KEY not configured – invitation email not sent.");
-        }
+            },
+        });
+
+        emailDelivery.configured = invitationDelivery.configured;
+        emailDelivery.sent = invitationDelivery.sent;
+        emailDelivery.error = invitationDelivery.error;
 
         return { token, emailDelivery };
     });
@@ -684,27 +698,34 @@ export const generatePasswordResetLinkFn = createServerFn({ method: "POST" })
         let capturedToken: string | undefined;
         let deliveryError: string | null = null;
         let emailSent = false;
+        let deliveryConfigured = false;
 
         const auth = createAuth(db, env, {
             sendResetPassword: async (data: any) => {
                 capturedToken = data.token;
-                if (!resendApiKey) {
-                    return;
-                }
+                const delivery = await deliverPasswordResetEmailForEnvironment(env, {
+                    to: targetUser.email,
+                    subject: getPasswordResetEmailSubject(),
+                    url: data.url,
+                    token: data.token,
+                    send: async () => {
+                        if (!resendApiKey) {
+                            throw new Error("RESEND_API_KEY not configured");
+                        }
 
-                try {
-                    await sendPasswordResetEmail(resendApiKey, {
-                        to: targetUser.email,
-                        token: data.token,
-                        resetUrl: data.url,
-                        appUrl,
-                        userName: targetUser.name,
-                    });
-                    emailSent = true;
-                } catch (error) {
-                    console.error("Failed to send password reset email:", error);
-                    deliveryError = error instanceof Error ? error.message : "Unknown email delivery error.";
-                }
+                        await sendPasswordResetEmail(resendApiKey, {
+                            to: targetUser.email,
+                            token: data.token,
+                            resetUrl: data.url,
+                            appUrl,
+                            userName: targetUser.name,
+                        });
+                    },
+                });
+
+                emailSent = delivery.sent;
+                deliveryError = delivery.error;
+                deliveryConfigured = delivery.configured;
             }
         });
 
@@ -717,7 +738,7 @@ export const generatePasswordResetLinkFn = createServerFn({ method: "POST" })
 
         const fallbackUrl = capturedToken ? buildPasswordResetUrl(appUrl, capturedToken) : null;
         const emailDelivery = {
-            configured: Boolean(resendApiKey),
+            configured: deliveryConfigured,
             sent: emailSent,
             error: deliveryError,
             fallbackUrl,

@@ -117,7 +117,11 @@ function UserRow({ item, onDelete, onRevoke, onChangeEmail, onChangeRole, onRese
     // Let's just render what we have.
 
     return (
-        <tr className="hover:bg-muted/30 transition-colors group text-sm">
+        <tr
+            className="hover:bg-muted/30 transition-colors group text-sm"
+            data-testid={`user-row-${item.id}`}
+            data-user-email={item.email}
+        >
             <td className="p-3 pl-4">
                 <div className="flex flex-col">
                     <span className="font-medium text-foreground">{item.name || item.email}</span>
@@ -137,7 +141,13 @@ function UserRow({ item, onDelete, onRevoke, onChangeEmail, onChangeRole, onRese
             <td className="p-3 text-right pr-4">
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                            aria-label={`Open actions for ${item.email}`}
+                            data-testid={`user-actions-${item.id}`}
+                        >
                             <MoreHorizontal className="h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>

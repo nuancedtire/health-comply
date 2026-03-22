@@ -245,7 +245,12 @@ function TenantsPage() {
                 </thead>
                 <tbody className="divide-y">
                   {tenants.map((tenant: any) => (
-                    <tr key={tenant.id} className="hover:bg-muted/50 transition-colors">
+                    <tr
+                      key={tenant.id}
+                      className="hover:bg-muted/50 transition-colors"
+                      data-testid={`tenant-row-${tenant.id}`}
+                      data-tenant-name={tenant.name}
+                    >
                       <td className="p-4 align-top">
                         <div className="font-medium text-base mb-1">{tenant.name}</div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono bg-muted w-fit px-1.5 py-0.5 rounded">
@@ -302,6 +307,7 @@ function TenantsPage() {
                               size="sm"
                               className="h-7 text-xs gap-1 mt-1"
                               onClick={() => openInviteDialog(tenant)}
+                              data-testid={`tenant-invite-manager-${tenant.id}`}
                             >
                               <UserPlus className="h-3 w-3" />
                               {tenant.pendingInvitations && tenant.pendingInvitations.length > 0 ? "Resend Invite" : "Invite Manager"}
@@ -335,7 +341,7 @@ function TenantsPage() {
       </Card>
 
       <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
-        <DialogContent>
+        <DialogContent data-testid="tenant-invite-dialog">
           <DialogHeader>
             <DialogTitle>Invite Practice Manager</DialogTitle>
             <DialogDescription>
@@ -369,7 +375,7 @@ function TenantsPage() {
       </Dialog>
 
       <Dialog open={!!manualInviteResult} onOpenChange={(open) => !open && setManualInviteResult(null)}>
-        <DialogContent>
+        <DialogContent data-testid="manual-invite-dialog">
           <DialogHeader>
             <DialogTitle>Share Invitation Link</DialogTitle>
             <DialogDescription>
@@ -400,7 +406,7 @@ function TenantsPage() {
       </Dialog>
 
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent data-testid="delete-tenant-dialog">
           <DialogHeader>
             <DialogTitle>Delete Organization</DialogTitle>
             <DialogDescription>

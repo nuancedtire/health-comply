@@ -452,7 +452,7 @@ function UsersPage() {
 
             {/* Reset Password Confirmation */}
             <Dialog open={resetConfirmOpen} onOpenChange={setResetConfirmOpen}>
-                <DialogContent>
+                <DialogContent data-testid="reset-password-dialog">
                     <DialogHeader>
                         <DialogTitle>Reset Password</DialogTitle>
                         <DialogDescription>
@@ -472,7 +472,7 @@ function UsersPage() {
 
             {/* Reset Password Result - Show Link */}
             <Dialog open={!!resetPwdResult} onOpenChange={(open) => !open && setResetPwdResult(null)}>
-                <DialogContent>
+                <DialogContent data-testid="manual-reset-dialog">
                     <DialogHeader>
                         <DialogTitle>Share Password Reset Link</DialogTitle>
                         <DialogDescription>
