@@ -15,7 +15,7 @@ import {
 
 // Reviewer display helper
 export function getReviewerLabel(role?: string | null) {
-    if (!role) return "Practice Manager";
+    if (!role) return "Director";
     return role;
 }
 
@@ -65,8 +65,8 @@ export const getEvidenceForReviewFn = createServerFn({ method: "GET" })
         const userRoleIds = userRolesResult.map(r => r.role);
         const isSystemAdmin = (user as any).isSystemAdmin;
 
-        // Practice Manager and Admin can see all pending evidence
-        const canSeeAll = isSystemAdmin || userRoleIds.includes('Practice Manager') || userRoleIds.includes('Admin');
+        // Director and Admin can see all pending evidence
+        const canSeeAll = isSystemAdmin || userRoleIds.includes('Director') || userRoleIds.includes('Admin');
 
         const suggestedControls = alias(schema.localControls, 'suggested_controls');
 
@@ -122,17 +122,17 @@ export const getEvidenceForReviewFn = createServerFn({ method: "GET" })
 
         // Filter based on user's roles
         const filteredEvidence = rawEvidence.filter(item => {
-            // Admin/Practice Manager sees everything
+            // Admin/Director sees everything
             if (canSeeAll) return true;
 
-            // If no control assigned, only Practice Manager sees it (already handled above)
+            // If no control assigned, only Director sees it (already handled above)
             if (!item.localControlId) return false;
 
             // Check if user's role matches the control's reviewer roles
             const defaultReviewer = item.controlDefaultReviewer;
             const fallbackReviewer = item.controlFallbackReviewer;
 
-            // If control has no reviewer role assigned, only Practice Manager sees it
+            // If control has no reviewer role assigned, only Director sees it
             if (!defaultReviewer && !fallbackReviewer) return false;
 
             // Check if any of the user's roles matches
@@ -266,7 +266,7 @@ export const getEvidenceForSiteFn = createServerFn({ method: "GET" })
             reviewedBy: item.reviewedBy,
 
             reviewerName: item.reviewerName,
-            assigneeRole: item.controlDefaultReviewer || item.controlFallbackReviewer || 'Practice Manager',
+            assigneeRole: item.controlDefaultReviewer || item.controlFallbackReviewer || 'Director',
 
 
             localControl: item.localControlTitle ? { title: item.localControlTitle } : null,

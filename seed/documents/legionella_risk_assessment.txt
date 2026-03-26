@@ -1,8 +1,8 @@
 # Water Safety & Legionella Risk Assessment
 
 **Site:** Uptown Surgery
-**Assessment Date:** October 5, 2025
-**Review Date:** October 2027
+**Assessment Date:** February 5, 2026
+**Review Date:** February 2028
 **Assessor:** HydroSafe Services
 
 ## 1. System Description

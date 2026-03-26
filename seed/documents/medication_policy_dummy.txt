@@ -1,8 +1,8 @@
 # Southside Medical Practice (Uptown Surgery): Cold Chain & Medication Management Policy
 
 **Version:** 4.2
-**Date:** January 15, 2026
-**Review Date:** January 15, 2027
+**Date:** March 15, 2026
+**Review Date:** March 15, 2027
 **Author:** Dr. Sarah Smith, Clinical Lead
 **Status:** Active | Ratified
 
@@ -16,7 +16,7 @@ This policy outlines the procedures for the safe storage, handling, prescribing,
 ### 2.1 Storage Equipment
 - **Specialized Refrigerators:** All vaccines must be stored in the designated medical grade refrigerators (Labcold IntelliCold). Domestic fridges are NOT permitted for vaccine storage.
 - **Monitoring:** Fridges are equipped with integral thermometers and secondary data loggers.
-- **Maintenance:** Fridges are serviced and calibrated annually (Next due: May 2026).
+- **Maintenance:** Fridges are serviced and calibrated annually (Next due: July 2026).
 
 ### 2.2 Temperature Monitoring Protocol
 - Temperatures must be read and recorded **twice daily** (start and end of the clinical day).
@@ -30,7 +30,7 @@ This policy outlines the procedures for the safe storage, handling, prescribing,
 ### 2.3 Managing Excursions (Breach of Cold Chain)
 If the temperature falls below +2°C or rises above +8°C:
 1. **Quarantine:** Immediately quarantine the stock. Do NOT discard until advised. Mark as "Do Not Use".
-2. **Report:** Notify the Practice Manager and Lead Nurse immediately.
+2. **Report:** Notify the Director and Lead Nurse immediately.
 3. **Investigation:** Identify the cause (e.g., door left open, power failure).
 4. **Advice:** Contact the local Immunisation Coordinator or Vaccine Manufacturer for stability advice.
 5. **Incident Form:** Complete a Significant Event Analysis (SEA) form.
@@ -78,5 +78,5 @@ All clinical staff must complete:
 - **Annually:** Full Infection Control & Meds Management Audit
 
 ---
-*Signed:* Alice Manager (Practice Manager)
-*Date:* January 16, 2026
+*Signed:* Alice Manager (Director)
+*Date:* March 16, 2026

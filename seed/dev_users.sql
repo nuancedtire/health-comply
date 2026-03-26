@@ -1,11 +1,11 @@
 INSERT INTO tenants (id, name, created_at) VALUES ('t_demo', 'Demo Practice Group', strftime('%s', 'now')) ON CONFLICT DO NOTHING;
 INSERT INTO sites (id, tenant_id, name, address, created_at) VALUES ('s_demo', 't_demo', 'Demo Surgery', '123 Main Street', strftime('%s', 'now')) ON CONFLICT DO NOTHING;
-INSERT INTO roles (id, tenant_id, name) VALUES ('r_practice_manager', 't_demo', 'Practice Manager') ON CONFLICT DO NOTHING;
+INSERT INTO roles (id, tenant_id, name) VALUES ('r_practice_manager', 't_demo', 'Director') ON CONFLICT DO NOTHING;
 INSERT INTO roles (id, tenant_id, name) VALUES ('r_gp_partner', 't_demo', 'GP Partner') ON CONFLICT DO NOTHING;
 INSERT INTO roles (id, tenant_id, name) VALUES ('r_nurse_lead', 't_demo', 'Nurse Lead') ON CONFLICT DO NOTHING;
 INSERT INTO roles (id, tenant_id, name) VALUES ('r_safeguarding_lead', 't_demo', 'Safeguarding Lead') ON CONFLICT DO NOTHING;
 INSERT INTO roles (id, tenant_id, name) VALUES ('r_admin', 't_demo', 'Admin') ON CONFLICT DO NOTHING;
-INSERT INTO users (id, tenant_id, email, password_hash, name, created_at) VALUES ('u_pm', 't_demo', 'pm@example.com', 'pbkdf2_sha256$100000$+FZ8ppKYwzqMK3SIKJNwzw==$AM1R/HVJr5l3gfrVEMtCeT8kHfqvndvTyS3P0bNifbc=', 'Practice Manager', strftime('%s', 'now')) ON CONFLICT(tenant_id, email) DO UPDATE SET password_hash='pbkdf2_sha256$100000$+FZ8ppKYwzqMK3SIKJNwzw==$AM1R/HVJr5l3gfrVEMtCeT8kHfqvndvTyS3P0bNifbc=';
+INSERT INTO users (id, tenant_id, email, password_hash, name, created_at) VALUES ('u_pm', 't_demo', 'pm@example.com', 'pbkdf2_sha256$100000$+FZ8ppKYwzqMK3SIKJNwzw==$AM1R/HVJr5l3gfrVEMtCeT8kHfqvndvTyS3P0bNifbc=', 'Director', strftime('%s', 'now')) ON CONFLICT(tenant_id, email) DO UPDATE SET password_hash='pbkdf2_sha256$100000$+FZ8ppKYwzqMK3SIKJNwzw==$AM1R/HVJr5l3gfrVEMtCeT8kHfqvndvTyS3P0bNifbc=';
 INSERT INTO user_roles (user_id, role_id, site_id, created_at) VALUES ('u_pm', 'r_practice_manager', 's_demo', strftime('%s', 'now')) ON CONFLICT DO NOTHING;
 INSERT INTO users (id, tenant_id, email, password_hash, name, created_at) VALUES ('u_gp', 't_demo', 'gp@example.com', 'pbkdf2_sha256$100000$7Qke19GWPgyhWdNt+6zr3Q==$95F2ocophyO2JjGGXbJH1oSdijZHp12xS1CWm9q16n4=', 'GP Partner', strftime('%s', 'now')) ON CONFLICT(tenant_id, email) DO UPDATE SET password_hash='pbkdf2_sha256$100000$7Qke19GWPgyhWdNt+6zr3Q==$95F2ocophyO2JjGGXbJH1oSdijZHp12xS1CWm9q16n4=';
 INSERT INTO user_roles (user_id, role_id, site_id, created_at) VALUES ('u_gp', 'r_gp_partner', 's_demo', strftime('%s', 'now')) ON CONFLICT DO NOTHING;

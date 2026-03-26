@@ -32,7 +32,7 @@ async function createDevUsers() {
 
     // Roles
     const roles = [
-        'Practice Manager',
+        'Director',
         'GP Partner',
         'Nurse Lead',
         'Safeguarding Lead',
@@ -48,7 +48,7 @@ async function createDevUsers() {
 
     // Users
     const users = [
-        { id: 'u_pm', email: 'pm@example.com', name: 'Practice Manager', role: 'r_practice_manager' },
+        { id: 'u_pm', email: 'pm@example.com', name: 'Director', role: 'r_practice_manager' },
         { id: 'u_gp', email: 'gp@example.com', name: 'GP Partner', role: 'r_gp_partner' },
         { id: 'u_nurse', email: 'nurse@example.com', name: 'Nurse Lead', role: 'r_nurse_lead' },
         { id: 'u_safe', email: 'safeguarding@example.com', name: 'Safeguarding Lead', role: 'r_safeguarding_lead' },

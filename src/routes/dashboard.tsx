@@ -69,7 +69,7 @@ function DashboardPage() {
     enabled: !!activeSite?.id,
   })
 
-  // Tenant-wide audit log — restricted to Practice Manager / Admin / Compliance Officer.
+  // Tenant-wide audit log — restricted to Director / Admin / Compliance Officer.
   // For other roles the query throws; leaving auditData undefined is the intended fallback.
   const { data: auditData } = useQuery({
     queryKey: ['audit-logs-dashboard', tenantId],
@@ -318,7 +318,7 @@ function DashboardPage() {
               <CardContent>
                 {teamActivity.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    Team activity is only visible to Practice Managers, Admins, and Compliance Officers.
+                    Team activity is only visible to Directors, Admins, and Compliance Officers.
                   </p>
                 ) : (
                   <div className="divide-y">

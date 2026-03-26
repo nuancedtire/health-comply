@@ -84,7 +84,7 @@ export function AppSidebar() {
                     />
                     <div className="flex flex-col overflow-hidden">
                         <span className="truncate text-sm font-semibold">Sarah Johnson</span>
-                        <span className="truncate text-xs text-muted-foreground">Practice Manager</span>
+                        <span className="truncate text-xs text-muted-foreground">Director</span>
                     </div>
                 </div>
             </div>

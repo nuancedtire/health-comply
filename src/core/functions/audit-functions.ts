@@ -7,7 +7,7 @@ import { alias } from "drizzle-orm/sqlite-core";
 
 /**
  * Get audit logs for the current tenant
- * Only Practice Managers, Admins, and Compliance Officers can view audit logs
+ * Only Directors, Admins, and Compliance Officers can view audit logs
  */
 export const getAuditLogsFn = createServerFn({ method: "GET" })
     .middleware([authMiddleware])
@@ -46,12 +46,12 @@ export const getAuditLogsFn = createServerFn({ method: "GET" })
                 .from(schema.userRoles)
                 .where(eq(schema.userRoles.userId, user.id));
 
-            const allowedRoles = ["Practice Manager", "Admin", "Compliance Officer"];
+            const allowedRoles = ["Director", "Admin", "Compliance Officer"];
             hasPermission = userRoles.some(r => allowedRoles.includes(r.role));
         }
 
         if (!hasPermission) {
-            throw new Error("Unauthorized: Only Practice Managers, Admins, and Compliance Officers can view audit logs");
+            throw new Error("Unauthorized: Only Directors, Admins, and Compliance Officers can view audit logs");
         }
 
         // Build query conditions

@@ -357,7 +357,7 @@ INSERT INTO
 VALUES (
         'r_pm',
         't_demo',
-        'Practice Manager'
+        'Director'
     ),
     (
         'r_gp',

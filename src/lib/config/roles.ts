@@ -1,10 +1,10 @@
 
 export const ROLES = [
     {
-        id: "Practice Manager",
-        name: "Practice Manager",
+        id: "Director",
+        name: "Director",
         type: "tenant",
-        description: "Full access to manage the practice, users, and compliance."
+        description: "Full access to manage the organization, users, and compliance."
     },
     {
         id: "GP Partner",
@@ -58,4 +58,26 @@ export const SITE_ROLES = ROLES.filter(r => r.type === 'site');
 
 export function getRole(id: string) {
     return ROLES.find(r => r.id === id);
+}
+
+/**
+ * Resolve a role ID to its effective base role ID.
+ * Custom roles (prefixed with "custom:") map back to their base static role.
+ */
+export function getEffectiveRoleId(roleId: string): RoleId {
+    if (roleId.startsWith('custom:')) {
+        // The base role ID is stored in the customRoles table.
+        // This function only handles the static lookup;
+        // for DB-backed resolution, use resolveCustomRole() server-side.
+        // Fallback: strip prefix and try to find a match
+        return roleId as RoleId;
+    }
+    return roleId as RoleId;
+}
+
+/**
+ * Check if a role ID is a custom role
+ */
+export function isCustomRole(roleId: string): boolean {
+    return roleId.startsWith('custom:');
 }

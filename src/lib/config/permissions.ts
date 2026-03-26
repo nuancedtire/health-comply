@@ -49,22 +49,22 @@ export const PERMISSIONS = {
   // User Management
   "users:view": {
     scope: "users" as PermissionScope,
-    roles: ["Practice Manager", "Admin", "Compliance Officer", "GP Partner"] as RoleId[],
+    roles: ["Director", "Admin", "Compliance Officer", "GP Partner"] as RoleId[],
     description: "View team members and their roles",
   },
   "users:invite": {
     scope: "users" as PermissionScope,
-    roles: ["Practice Manager", "Admin"] as RoleId[],
+    roles: ["Director", "Admin"] as RoleId[],
     description: "Invite new team members",
   },
   "users:edit": {
     scope: "users" as PermissionScope,
-    roles: ["Practice Manager", "Admin"] as RoleId[],
+    roles: ["Director", "Admin"] as RoleId[],
     description: "Edit user details and roles",
   },
   "users:delete": {
     scope: "users" as PermissionScope,
-    roles: ["Practice Manager"] as RoleId[],
+    roles: ["Director"] as RoleId[],
     description: "Remove team members",
   },
 
@@ -76,17 +76,17 @@ export const PERMISSIONS = {
   },
   "controls:create": {
     scope: "controls" as PermissionScope,
-    roles: ["Practice Manager", "Admin", "Compliance Officer"] as RoleId[],
+    roles: ["Director", "Admin", "Compliance Officer"] as RoleId[],
     description: "Create new local controls",
   },
   "controls:edit": {
     scope: "controls" as PermissionScope,
-    roles: ["Practice Manager", "Admin", "Compliance Officer"] as RoleId[],
+    roles: ["Director", "Admin", "Compliance Officer"] as RoleId[],
     description: "Edit existing local controls",
   },
   "controls:delete": {
     scope: "controls" as PermissionScope,
-    roles: ["Practice Manager", "Admin"] as RoleId[],
+    roles: ["Director", "Admin"] as RoleId[],
     description: "Delete local controls",
   },
 
@@ -103,12 +103,12 @@ export const PERMISSIONS = {
   },
   "evidence:edit": {
     scope: "evidence" as PermissionScope,
-    roles: ["Practice Manager", "Admin", "Compliance Officer", "Nurse Lead"] as RoleId[],
+    roles: ["Director", "Admin", "Compliance Officer", "Nurse Lead"] as RoleId[],
     description: "Edit evidence metadata",
   },
   "evidence:delete": {
     scope: "evidence" as PermissionScope,
-    roles: ["Practice Manager", "Admin"] as RoleId[],
+    roles: ["Director", "Admin"] as RoleId[],
     description: "Delete evidence documents",
   },
 
@@ -127,12 +127,12 @@ export const PERMISSIONS = {
   // Reports
   "reports:view": {
     scope: "reports" as PermissionScope,
-    roles: ["Practice Manager", "Admin", "Compliance Officer", "GP Partner"] as RoleId[],
+    roles: ["Director", "Admin", "Compliance Officer", "GP Partner"] as RoleId[],
     description: "View compliance reports",
   },
   "reports:generate": {
     scope: "reports" as PermissionScope,
-    roles: ["Practice Manager", "Admin", "Compliance Officer"] as RoleId[],
+    roles: ["Director", "Admin", "Compliance Officer"] as RoleId[],
     description: "Generate new inspection packs",
   },
 } as const;

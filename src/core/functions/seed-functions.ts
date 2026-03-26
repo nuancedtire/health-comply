@@ -41,7 +41,7 @@ export const seedDatabaseFn = createServerFn({ method: "POST" })
                 name: "Health Core Ltd",
                 sites: ["Downtown Clinic", "Uptown Surgery", "Westside Health"],
                 users: [
-                    { email: "manager@healthcore.com", name: "Alice Manager", role: "Practice Manager" },
+                    { email: "manager@healthcore.com", name: "Alice Manager", role: "Director" },
                     { email: "gp1@healthcore.com", name: "Dr. Bob GP", role: "GP Partner", siteIndex: 0 },
                     { email: "gp2@healthcore.com", name: "Dr. Sarah Smith", role: "GP Partner", siteIndex: 1 },
                     { email: "nurse1@healthcore.com", name: "Charlie Nurse", role: "Nurse Lead", siteIndex: 1 },
@@ -57,7 +57,7 @@ export const seedDatabaseFn = createServerFn({ method: "POST" })
                 name: "Rural Health Trust",
                 sites: ["Village Practice", "Remote Outpost"],
                 users: [
-                    { email: "manager@rural.com", name: "David Manager", role: "Practice Manager" },
+                    { email: "manager@rural.com", name: "David Manager", role: "Director" },
                     { email: "admin@rural.com", name: "Isabella Admin", role: "Admin" },
                     { email: "compliance@rural.com", name: "Jack Compliance", role: "Compliance Officer" },
                     { email: "gp@rural.com", name: "Dr. Eve GP", role: "GP Partner", siteIndex: 0 },
@@ -72,7 +72,7 @@ export const seedDatabaseFn = createServerFn({ method: "POST" })
                 name: "Metropolitan Medical",
                 sites: ["Central Hospital", "East Wing Clinic", "West Wing Clinic"],
                 users: [
-                    { email: "manager@metromed.com", name: "Julian Manager", role: "Practice Manager" },
+                    { email: "manager@metromed.com", name: "Julian Manager", role: "Director" },
                     { email: "admin@metromed.com", name: "Monica Admin", role: "Admin" },
                     { email: "compliance@metromed.com", name: "Nathan Compliance", role: "Compliance Officer" },
                     { email: "gp@metromed.com", name: "Dr. Kevin Director", role: "GP Partner", siteIndex: 0 },

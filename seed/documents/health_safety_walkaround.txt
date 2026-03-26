@@ -1,6 +1,6 @@
 # Health & Safety Walkaround Checklist
 
-**Date:** Feb 1, 2026
+**Date:** Mar 10, 2026
 **Inspector:** Alice Manager & Charlie Nurse
 **Location:** Uptown Surgery
 
@@ -15,7 +15,7 @@
 - [x] **Call Points:** Accessible? (Yes).
 
 ## 3. Clinical Rooms
-- [x] **Privacy Curtains:** Changed within last 6 months? (Yes, marked Jan 2026).
+- [x] **Privacy Curtains:** Changed within last 6 months? (Yes, marked Mar 2026).
 - [x] **Consumables:** No expired stock on shelves? (Found one box of expired gloves - discarded).
 - [x] **Sharps Bins:** Assembly correct? (Yes).
 

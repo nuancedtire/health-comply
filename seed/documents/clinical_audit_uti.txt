@@ -2,16 +2,16 @@
 
 **Topic:** Adherence to NICE Guidelines (NG109) for treating uncomplicated UTIs in non-pregnant women under 65.
 **Auditor:** Dr. Sarah Smith
-**Dates:** Cycle 1 (Jan 2025) -> Cycle 2 (July 2025)
+**Dates:** Cycle 1 (July 2025) -> Cycle 2 (March 2026)
 
 ## 1. Standards (Criteria)
 1. **First Line:** Nitrofurantoin 100mg MR BD for 3 days (or Trimethoprim if low resistance risk).
 2. **Duration:** Prescription duration should be exactly 3 days.
 3. **Urine Culture:** Should *not* be routinely sent for uncomplicated cases unless risk factors present.
 
-## 2. Cycle 1: Baseline Data (Jan 2025)
+## 2. Cycle 1: Baseline Data (July 2025)
 - **Sample Size:** 20 patients.
-- **Micro-teaching:** Conducted Feb 2025 to review NG109.
+- **Micro-teaching:** Conducted Aug 2025 to review NG109.
 
 **Results:**
 - **First Line Choice:** 90% compliant (2 prescribed Cephalexin inappropriately).
@@ -22,11 +22,11 @@
 GPs were habitually prescribing for 5 or 7 days based on old guidance.
 
 **Intervention:**
-1. Presented audit findings at clinical meeting (Feb 15, 2025).
+1. Presented audit findings at clinical meeting (Aug 15, 2025).
 2. Updated "Ardens" template in EMIS to default to 3 days for this code.
 3. Distributed cheat sheet for antibiotic choices.
 
-## 3. Cycle 2: Re-Audit (July 2025)
+## 3. Cycle 2: Re-Audit (March 2026)
 - **Sample Size:** 20 patients (new cohort).
 
 **Results:**
@@ -40,4 +40,4 @@ The intervention to update the clinical system templates was highly effective (6
 
 ---
 *Signed:* Dr. Sarah Smith
-*Date:* July 20, 2025
+*Date:* March 20, 2026

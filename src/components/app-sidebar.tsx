@@ -99,7 +99,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   // Logic:
   // If isSystemAdmin (Superadmin): Show ONLY Debug, Tenants, Users, Settings.
-  // Else (Practice Manager/User): Show Dashboard, Checklist, Documents, Team, Sign-off, Presentation, Settings, Tenants.
+  // Else (Director/User): Show Dashboard, Checklist, Documents, Team, Sign-off, Presentation, Settings, Tenants.
 
   // Explicitly cast user to allow access to custom fields not yet in client type
   const isSystemAdmin = (session?.user as any)?.isSystemAdmin;
@@ -111,7 +111,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     if (isSystemAdmin) {
       return ["Debug", "Tenants", "Users", "Audit Log"].includes(item.title);
     } else {
-      // Standard/Practice Manager view: 
+      // Standard/Director view: 
       // MUST NOT include superAdminItems
       return !superAdminItems.includes(item.title);
     }

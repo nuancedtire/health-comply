@@ -141,6 +141,87 @@ export const createSystemAdminFn = createServerFn({ method: "POST" })
 
 import { getRole } from "@/lib/config/roles";
 
+// ===== SIGNUP + CREATE TENANT (New Organization Flow) =====
+
+const SignupAndCreateTenantSchema = z.object({
+    name: z.string().min(2),
+    email: z.string().email(),
+    password: z.string().min(8),
+    organizationName: z.string().min(2, "Organization name must be at least 2 characters"),
+});
+
+export const signupAndCreateTenantFn = createServerFn({ method: "POST" })
+    .inputValidator((data: z.infer<typeof SignupAndCreateTenantSchema>) => SignupAndCreateTenantSchema.parse(data))
+    .handler(async (ctx) => {
+        const { name, email, password, organizationName } = ctx.data;
+        const env = (ctx.context as any).env;
+        const db = getDb(env) as any;
+
+        // Check if email is already taken
+        const existingUser = await db.query.users.findFirst({
+            where: eq(schema.users.email, email),
+        });
+        if (existingUser) {
+            throw new Error("An account with this email already exists.");
+        }
+
+        // 1. Create the tenant
+        const tenantId = `t_${crypto.randomUUID().split('-')[0]}`;
+        await db.insert(schema.tenants).values({
+            id: tenantId,
+            name: organizationName,
+            createdAt: new Date(),
+        });
+
+        // 2. Create a self-invite so the Better Auth databaseHook allows registration.
+        //    We use a temporary userId for invitedBy, then update after user creation.
+        const inviteId = `inv_${crypto.randomUUID().split('-')[0]}`;
+        const token = crypto.randomUUID();
+
+        // Temporarily insert invite without invitedBy (we'll fix this after user creation)
+        // Since invitedBy is NOT NULL, we need to work around it.
+        // Approach: Insert user first via auth, which will find this invite.
+        // We use a raw SQL to bypass the NOT NULL constraint temporarily.
+        await db.run(
+            `INSERT INTO invitations (id, email, tenant_id, site_id, role, token, expires_at, status, invited_by, created_at)
+             VALUES (?, ?, ?, NULL, 'Director', ?, ?, 'pending', '__self__', ?)`,
+            [inviteId, email, tenantId, token,
+             Math.floor(Date.now() / 1000) + 86400,
+             Math.floor(Date.now() / 1000)]
+        );
+
+        // 3. Create the user via Better Auth (the databaseHook will find the invite
+        //    and assign tenantId + Director role automatically)
+        const { createAuth } = await import("@/lib/auth");
+        const auth = createAuth(db, env);
+
+        let result;
+        try {
+            result = await auth.api.signUpEmail({
+                body: { email, password, name }
+            });
+        } catch (err) {
+            // Clean up on failure
+            await db.run(`DELETE FROM invitations WHERE id = ?`, [inviteId]);
+            await db.delete(schema.tenants).where(eq(schema.tenants.id, tenantId));
+            throw err;
+        }
+
+        if (!result) {
+            await db.run(`DELETE FROM invitations WHERE id = ?`, [inviteId]);
+            await db.delete(schema.tenants).where(eq(schema.tenants.id, tenantId));
+            throw new Error("Failed to create user account.");
+        }
+
+        // 4. Fix the invitedBy to point to the newly created user
+        await db.run(
+            `UPDATE invitations SET invited_by = ? WHERE id = ?`,
+            [result.user.id, inviteId]
+        );
+
+        return { success: true, tenantId, userId: result.user.id };
+    });
+
 export const getCurrentUserRoleFn = createServerFn({ method: "GET" })
     .middleware([authMiddleware])
     .handler(async (ctx) => {

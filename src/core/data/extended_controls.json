@@ -10,7 +10,7 @@
         "evidenceHint": "Upload dated policy document with review signature",
         "frequencyType": "recurring",
         "frequencyDays": 365,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "Signed policy with review date",
@@ -62,7 +62,7 @@
         "evidenceHint": "Safeguarding referral log and escalation records",
         "frequencyType": "recurring",
         "frequencyDays": 90,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "Completed referral forms",
@@ -88,7 +88,7 @@
         "evidenceHint": "Training matrix showing completion dates and levels",
         "frequencyType": "recurring",
         "frequencyDays": 365,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "Complete training matrix",
@@ -140,7 +140,7 @@
         "evidenceHint": "Signed cleaning logs and schedule documents",
         "frequencyType": "recurring",
         "frequencyDays": 30,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "Daily signed logs",
@@ -218,7 +218,7 @@
         "evidenceHint": "Staff immunisation register with dates and statuses",
         "frequencyType": "recurring",
         "frequencyDays": 365,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "Complete register",
@@ -348,7 +348,7 @@
         "evidenceHint": "Prescription tracking log and security checklist",
         "frequencyType": "recurring",
         "frequencyDays": 90,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "Serial numbers tracked",
@@ -374,7 +374,7 @@
         "evidenceHint": "Fire equipment check log with engineer certificates",
         "frequencyType": "recurring",
         "frequencyDays": 30,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "Monthly visual checks",
@@ -400,7 +400,7 @@
         "evidenceHint": "Fire drill record with times and action points",
         "frequencyType": "recurring",
         "frequencyDays": 180,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "Evacuation time recorded",
@@ -426,7 +426,7 @@
         "evidenceHint": "Signed H&S risk assessment with review date",
         "frequencyType": "recurring",
         "frequencyDays": 365,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "Comprehensive assessment",
@@ -452,7 +452,7 @@
         "evidenceHint": "PAT test certificates and asset register",
         "frequencyType": "recurring",
         "frequencyDays": 365,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "All items tested",
@@ -478,7 +478,7 @@
         "evidenceHint": "Legionella risk assessment and temperature logs",
         "frequencyType": "recurring",
         "frequencyDays": 30,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "Monthly temperature checks",
@@ -530,7 +530,7 @@
         "evidenceHint": "Complaints log with responses and action tracking",
         "frequencyType": "recurring",
         "frequencyDays": 30,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "Timely responses",
@@ -608,7 +608,7 @@
         "evidenceHint": "BCP document with test results and review signature",
         "frequencyType": "recurring",
         "frequencyDays": 365,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "Plan tested",
@@ -712,7 +712,7 @@
         "evidenceHint": "QOF dashboard and improvement action plan",
         "frequencyType": "recurring",
         "frequencyDays": 30,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "Performance tracked",
@@ -764,7 +764,7 @@
         "evidenceHint": "Appraisal completion tracker with dates",
         "frequencyType": "recurring",
         "frequencyDays": 365,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "All staff appraised",
@@ -842,7 +842,7 @@
         "evidenceHint": "Training records for MCA/capacity assessment",
         "frequencyType": "recurring",
         "frequencyDays": 365,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "All clinical staff trained",
@@ -868,7 +868,7 @@
         "evidenceHint": "Survey results and improvement action plan",
         "frequencyType": "recurring",
         "frequencyDays": 90,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "Survey results analysed",
@@ -894,7 +894,7 @@
         "evidenceHint": "FFT report with response rates and comments",
         "frequencyType": "recurring",
         "frequencyDays": 30,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "Good response rate",
@@ -920,7 +920,7 @@
         "evidenceHint": "Privacy audit checklist with observations",
         "frequencyType": "recurring",
         "frequencyDays": 180,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "All areas audited",
@@ -946,7 +946,7 @@
         "evidenceHint": "Training matrix showing E&D completion",
         "frequencyType": "recurring",
         "frequencyDays": 365,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "All staff trained",
@@ -972,7 +972,7 @@
         "evidenceHint": "AIS compliance checklist and patient communication records",
         "frequencyType": "recurring",
         "frequencyDays": 180,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "Needs recorded on system",
@@ -998,7 +998,7 @@
         "evidenceHint": "Access report showing availability and utilisation",
         "frequencyType": "recurring",
         "frequencyDays": 30,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "Demand/capacity analysis",
@@ -1050,7 +1050,7 @@
         "evidenceHint": "Website review checklist with updates made",
         "frequencyType": "recurring",
         "frequencyDays": 90,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "All info current",
@@ -1076,7 +1076,7 @@
         "evidenceHint": "Leaflet review log with updates",
         "frequencyType": "recurring",
         "frequencyDays": 365,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "Reading age appropriate",
@@ -1102,7 +1102,7 @@
         "evidenceHint": "PPG meeting minutes and action log",
         "frequencyType": "recurring",
         "frequencyDays": 90,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "Regular meetings",
@@ -1128,7 +1128,7 @@
         "evidenceHint": "Compliments log and team sharing evidence",
         "frequencyType": "recurring",
         "frequencyDays": 30,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "Systematic logging",
@@ -1180,7 +1180,7 @@
         "evidenceHint": "Staff meeting minutes and attendance",
         "frequencyType": "recurring",
         "frequencyDays": 30,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "Good attendance",
@@ -1206,7 +1206,7 @@
         "evidenceHint": "Policy review schedule with completion status",
         "frequencyType": "recurring",
         "frequencyDays": 90,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "All policies scheduled",
@@ -1258,7 +1258,7 @@
         "evidenceHint": "Survey results and improvement action plan",
         "frequencyType": "recurring",
         "frequencyDays": 365,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "Anonymous survey",
@@ -1310,7 +1310,7 @@
         "evidenceHint": "Signed policy and staff acknowledgment",
         "frequencyType": "recurring",
         "frequencyDays": 365,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "Policy current",
@@ -1362,7 +1362,7 @@
         "evidenceHint": "TNA document and training plan",
         "frequencyType": "recurring",
         "frequencyDays": 365,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "All roles covered",
@@ -1388,7 +1388,7 @@
         "evidenceHint": "Training completion records and certificates",
         "frequencyType": "recurring",
         "frequencyDays": 365,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "All staff completed",
@@ -1414,7 +1414,7 @@
         "evidenceHint": "DPIA documentation for relevant systems",
         "frequencyType": "recurring",
         "frequencyDays": 365,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "DPIAs completed",
@@ -1440,7 +1440,7 @@
         "evidenceHint": "SAR log with response times",
         "frequencyType": "recurring",
         "frequencyDays": 30,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "Requests logged",
@@ -1518,7 +1518,7 @@
         "evidenceHint": "Health check report with delivery statistics",
         "frequencyType": "recurring",
         "frequencyDays": 90,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "Invitations sent systematically",
@@ -1544,7 +1544,7 @@
         "evidenceHint": "Carers register and support documentation",
         "frequencyType": "recurring",
         "frequencyDays": 90,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "Active register",
@@ -1648,7 +1648,7 @@
         "evidenceHint": "Green plan progress report",
         "frequencyType": "recurring",
         "frequencyDays": 90,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "Targets set",
@@ -1674,7 +1674,7 @@
         "evidenceHint": "Waste audit with segregation compliance",
         "frequencyType": "recurring",
         "frequencyDays": 180,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "Proper segregation",
@@ -1700,7 +1700,7 @@
         "evidenceHint": "Wellbeing survey and initiative documentation",
         "frequencyType": "recurring",
         "frequencyDays": 180,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "Initiatives in place",
@@ -1726,7 +1726,7 @@
         "evidenceHint": "Absence report with support interventions",
         "frequencyType": "recurring",
         "frequencyDays": 30,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "Trends analysed",
@@ -1778,7 +1778,7 @@
         "evidenceHint": "CQC portal screenshot showing current details",
         "frequencyType": "recurring",
         "frequencyDays": 90,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "Details current",
@@ -1804,7 +1804,7 @@
         "evidenceHint": "DBS register showing check dates and levels",
         "frequencyType": "recurring",
         "frequencyDays": 90,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "All staff checked",
@@ -1830,7 +1830,7 @@
         "evidenceHint": "Registration verification log with dates",
         "frequencyType": "recurring",
         "frequencyDays": 90,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "All registrations verified",
@@ -1856,7 +1856,7 @@
         "evidenceHint": "Induction checklist completion records",
         "frequencyType": "recurring",
         "frequencyDays": 30,
-        "defaultReviewerRole": "Practice Manager",
+        "defaultReviewerRole": "Director",
         "evidenceExamples": {
             "good": [
                 "All areas covered",

@@ -572,7 +572,7 @@ export function UnifiedControlsHub({
             <FilterDropdown
               label="Reviewer"
               options={[
-                "Practice Manager",
+                "Director",
                 "Nurse Lead",
                 "GP Partner",
                 "Trainee",
@@ -1499,7 +1499,7 @@ function ControlDialog({
     frequencyType: "recurring",
     frequencyDays: 30,
     evidenceHint: "",
-    defaultReviewerRole: "Practice Manager",
+    defaultReviewerRole: "Director",
     fallbackReviewerRole: "",
     active: true,
     cqcMythbusterUrl: "",
@@ -1534,7 +1534,7 @@ function ControlDialog({
           frequencyDays: control.frequencyDays || 30,
           evidenceHint: control.evidenceHint || "",
           defaultReviewerRole:
-            control.defaultReviewerRole || "Practice Manager",
+            control.defaultReviewerRole || "Director",
           fallbackReviewerRole: control.fallbackReviewerRole || "",
           active: control.active !== false,
           cqcMythbusterUrl: control.cqcMythbusterUrl || "",
@@ -1549,7 +1549,7 @@ function ControlDialog({
           frequencyType: "recurring",
           frequencyDays: 30,
           evidenceHint: "",
-          defaultReviewerRole: "Practice Manager",
+          defaultReviewerRole: "Director",
           fallbackReviewerRole: "",
           active: true,
           cqcMythbusterUrl: "",
@@ -1916,8 +1916,8 @@ function ControlDialog({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Practice Manager">
-                        Practice Manager
+                      <SelectItem value="Director">
+                        Director
                       </SelectItem>
                       <SelectItem value="Compliance Officer">
                         Compliance Officer
@@ -1946,8 +1946,8 @@ function ControlDialog({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">None (No fallback)</SelectItem>
-                      <SelectItem value="Practice Manager">
-                        Practice Manager
+                      <SelectItem value="Director">
+                        Director
                       </SelectItem>
                       <SelectItem value="Compliance Officer">
                         Compliance Officer

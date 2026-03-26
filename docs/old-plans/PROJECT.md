@@ -422,7 +422,7 @@ export const getEvidenceByQS = createServerFn({
 ### RBAC (Roles)
 
 **Roles (seeded per tenant):**
-- `Practice Manager` — full access to all QS/evidence/policies
+- `Director` — full access to all QS/evidence/policies
 - `GP Partner` — QS ownership, evidence review
 - `Nurse Lead` — evidence & policy review (limited)
 - `Safeguarding Lead` — Safeguarding QS ownership
@@ -438,7 +438,7 @@ async function canApprovePolicy(
   userId: string,
   policyId: string
 ): Promise<boolean> {
-  // Check if user has 'Practice Manager' or 'Admin' role for this tenant
+  // Check if user has 'Director' or 'Admin' role for this tenant
   const roles = await db
     .select({ name: schema.roles.name })
     .from(schema.userRoles)
@@ -451,7 +451,7 @@ async function canApprovePolicy(
     );
 
   const canApprove = roles.some(r => 
-    ['Practice Manager', 'Admin'].includes(r.name)
+    ['Director', 'Admin'].includes(r.name)
   );
 
   return canApprove;
@@ -1443,7 +1443,7 @@ async function createDevUsers() {
 
   // Roles
   const roles = [
-    'Practice Manager',
+    'Director',
     'GP Partner',
     'Nurse Lead',
     'Safeguarding Lead',
@@ -1459,7 +1459,7 @@ async function createDevUsers() {
 
   // Users
   const users = [
-    { id: 'u_pm', email: 'pm@example.com', name: 'Practice Manager', role: 'r_practice_manager' },
+    { id: 'u_pm', email: 'pm@example.com', name: 'Director', role: 'r_practice_manager' },
     { id: 'u_gp', email: 'gp@example.com', name: 'GP Partner', role: 'r_gp_partner' },
     { id: 'u_nurse', email: 'nurse@example.com', name: 'Nurse Lead', role: 'r_nurse_lead' },
     { id: 'u_safe', email: 'safeguarding@example.com', name: 'Safeguarding Lead', role: 'r_safeguarding_lead' },
@@ -1542,7 +1542,7 @@ wrangler d1 execute cqc-compliance --remote --file=./seed/dev_users.sql
 
 | Email | Password | Role | Notes |
 |-------|----------|------|-------|
-| pm@example.com | Password123! | Practice Manager | Full access |
+| pm@example.com | Password123! | Director | Full access |
 | gp@example.com | Password123! | GP Partner | QS ownership |
 | nurse@example.com | Password123! | Nurse Lead | Review access |
 | safeguarding@example.com | Password123! | Safeguarding Lead | Safeguarding QS |

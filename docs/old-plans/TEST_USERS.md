@@ -36,7 +36,7 @@ A large multi-site healthcare organization with comprehensive coverage across th
 
 | Role | Name | Email | Description |
 |------|------|-------|-------------|
-| Practice Manager | Alice Manager | manager@healthcore.com | Full administrative access to all sites |
+| Director | Alice Manager | manager@healthcore.com | Full administrative access to all sites |
 | Admin | Fiona Admin | admin1@healthcore.com | Administrative access across the organization |
 | Compliance Officer | Ian Compliance | compliance@healthcore.com | Monitors compliance across all sites |
 
@@ -66,7 +66,7 @@ A smaller rural practice serving remote communities with two sites.
 
 | Role | Name | Email | Description |
 |------|------|-------|-------------|
-| Practice Manager | David Manager | manager@rural.com | Full administrative access |
+| Director | David Manager | manager@rural.com | Full administrative access |
 | Admin | Isabella Admin | admin@rural.com | Administrative access |
 | Compliance Officer | Jack Compliance | compliance@rural.com | Compliance monitoring |
 
@@ -96,7 +96,7 @@ A large metropolitan healthcare provider with three facilities.
 
 | Role | Name | Email | Description |
 |------|------|-------|-------------|
-| Practice Manager | Julian Manager | manager@metromed.com | Full administrative access |
+| Director | Julian Manager | manager@metromed.com | Full administrative access |
 | Admin | Monica Admin | admin@metromed.com | Administrative access |
 | Compliance Officer | Nathan Compliance | compliance@metromed.com | Compliance monitoring |
 
@@ -118,7 +118,7 @@ A large metropolitan healthcare provider with three facilities.
 
 These roles have access across all sites within the organization:
 
-- **Practice Manager** - Full access to all features and sites, can manage users, sites, and organizational settings
+- **Director** - Full access to all features and sites, can manage users, sites, and organizational settings
 - **Admin** - Administrative access, can manage users and operational data but with some restrictions
 - **Compliance Officer** - Monitors compliance, manages quality statements, evidence, and controls across all sites
 
@@ -137,14 +137,14 @@ These roles are assigned to specific sites and have limited access:
 ## Testing Scenarios
 
 ### Test Multi-Site Access
-Login as a Practice Manager (e.g., `manager@healthcore.com`) to see access across all sites.
+Login as a Director (e.g., `manager@healthcore.com`) to see access across all sites.
 
 ### Test Single-Site Access
 Login as a GP Partner (e.g., `gp@rural.com`) to see site-restricted access.
 
 ### Test Different Role Permissions
 Compare the views and capabilities between:
-- Practice Manager (full access)
+- Director (full access)
 - Compliance Officer (compliance-focused)
 - Clinician (limited access)
 - Receptionist (basic access)
@@ -155,7 +155,7 @@ Compare the views and capabilities between:
 3. Link evidence to quality statements and controls
 
 ### Test User Management
-1. Login as Practice Manager or Admin
+1. Login as Director or Admin
 2. Invite new users
 3. Assign roles
 4. Manage existing users

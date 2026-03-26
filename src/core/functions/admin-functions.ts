@@ -97,7 +97,7 @@ export const inviteUserFn = createServerFn({ method: "POST" })
             const myRoleConfig = getRole(myRole.roleName);
 
             // Enforce Role-Based Permission (Who can invite?)
-            const allowedRoles = ["Practice Manager", "Admin", "Compliance Officer", "GP Partner"];
+            const allowedRoles = ["Director", "Admin", "Compliance Officer", "GP Partner"];
             if (!allowedRoles.includes(myRole.roleName)) {
                 throw new Error("Unauthorized: Your role does not have permission to invite users.");
             }
@@ -345,7 +345,7 @@ export const revokeInviteFn = createServerFn({ method: "POST" })
             if (!myRole) throw new Error("Unauthorized");
             const myRoleConfig = getRole(myRole.roleName);
 
-            const allowedRoles = ["Practice Manager", "Admin", "Compliance Officer", "GP Partner"];
+            const allowedRoles = ["Director", "Admin", "Compliance Officer", "GP Partner"];
             if (!allowedRoles.includes(myRole.roleName)) {
                 throw new Error("Unauthorized: Your role does not have permission to revoke invites.");
             }
@@ -418,7 +418,7 @@ export const deleteUserFn = createServerFn({ method: "POST" })
                 throw new Error("Unauthorized: No role found");
             }
 
-            const allowedRoles = ["Practice Manager", "Admin", "Compliance Officer"];
+            const allowedRoles = ["Director", "Admin", "Compliance Officer"];
             if (!allowedRoles.includes(myRole.roleName)) {
                 throw new Error("Unauthorized: Insufficient permissions to delete users");
             }
@@ -498,7 +498,7 @@ export const updateUserFn = createServerFn({ method: "POST" })
                     throw new Error("Unauthorized: No role found");
                 }
 
-                const allowedRoles = ["Practice Manager", "Admin", "Compliance Officer"];
+                const allowedRoles = ["Director", "Admin", "Compliance Officer"];
                 if (!allowedRoles.includes(myRole.roleName)) {
                     throw new Error("Unauthorized: Insufficient permissions to update users");
                 }
@@ -551,7 +551,7 @@ export const updateUserRoleFn = createServerFn({ method: "POST" })
             if (!myRole) throw new Error("Unauthorized");
             const myRoleConfig = getRole(myRole.roleName);
 
-            const allowedRoles = ["Practice Manager", "Admin", "Compliance Officer", "GP Partner"];
+            const allowedRoles = ["Director", "Admin", "Compliance Officer", "GP Partner"];
             if (!allowedRoles.includes(myRole.roleName)) {
                 throw new Error("Unauthorized: Your role does not have permission to update roles.");
             }
@@ -667,7 +667,7 @@ export const generatePasswordResetLinkFn = createServerFn({ method: "POST" })
                 throw new Error("Unauthorized: No role found");
             }
 
-            const allowedRoles = ["Practice Manager", "Admin", "Compliance Officer"];
+            const allowedRoles = ["Director", "Admin", "Compliance Officer"];
             if (!allowedRoles.includes(myRole.roleName)) {
                 throw new Error("Unauthorized: Insufficient permissions to generate password reset links");
             }
@@ -756,7 +756,7 @@ export const getTenantsFn = createServerFn({ method: "GET" })
         // 2. Get all sites
         const sites = await db.select().from(schema.sites as any);
 
-        // 3. Get all Practice Managers (users with PM role)
+        // 3. Get all Directors (users with PM role)
         const practiceManagers = await db.select({
             userId: schema.users.id,
             userName: schema.users.name,
@@ -765,7 +765,7 @@ export const getTenantsFn = createServerFn({ method: "GET" })
         })
             .from(schema.users as any)
             .innerJoin(schema.userRoles as any, eq(schema.users.id, schema.userRoles.userId) as any)
-            .where(eq(schema.userRoles.role, 'Practice Manager') as any);
+            .where(eq(schema.userRoles.role, 'Director') as any);
 
         // 4. Get Pending Invitations for PMs
         const pendingInvitations = await db.select({
@@ -778,7 +778,7 @@ export const getTenantsFn = createServerFn({ method: "GET" })
             .where(
                 and(
                     eq(schema.invitations.status, 'pending') as any,
-                    eq(schema.invitations.role, 'Practice Manager') as any
+                    eq(schema.invitations.role, 'Director') as any
                 )
             );
 
@@ -787,7 +787,7 @@ export const getTenantsFn = createServerFn({ method: "GET" })
             ...tenant,
             sites: sites.filter((s: any) => s.tenantId === tenant.id),
             practiceManagers: practiceManagers.filter((pm: any) => pm.tenantId === tenant.id),
-            practiceManagerRole: 'Practice Manager',
+            practiceManagerRole: 'Director',
             pendingInvitations: pendingInvitations.filter((inv: any) => inv.tenantId === tenant.id)
         }));
     });
@@ -908,7 +908,7 @@ export const getRolesFn = createServerFn({ method: "GET" })
                 throw new Error("Unauthorized: No role found");
             }
 
-            const allowedRoles = ["Practice Manager", "Admin", "Compliance Officer", "GP Partner"];
+            const allowedRoles = ["Director", "Admin", "Compliance Officer", "GP Partner"];
             if (!allowedRoles.includes(myRole.roleName)) {
                 throw new Error("Unauthorized: Insufficient permissions to view roles");
             }
@@ -940,7 +940,7 @@ export const createSiteFn = createServerFn({ method: "POST" })
             throw new Error("Tenant not found");
         }
 
-        // AUTH CHECK: System admin or Practice Manager in the same tenant
+        // AUTH CHECK: System admin or Director in the same tenant
         if (!(user as any).isSystemAdmin) {
             const userRoles = await db.select({
                 roleName: schema.userRoles.role,
@@ -955,9 +955,9 @@ export const createSiteFn = createServerFn({ method: "POST" })
                 throw new Error("Unauthorized: No role found");
             }
 
-            // Must be Practice Manager
-            if (myRole.roleName !== 'Practice Manager') {
-                throw new Error("Unauthorized: Only Practice Managers can create sites.");
+            // Must be Director
+            if (myRole.roleName !== 'Director') {
+                throw new Error("Unauthorized: Only Directors can create sites.");
             }
 
             // Must belong to the same tenant
@@ -1039,4 +1039,59 @@ export const getSitesFn = createServerFn({ method: "GET" })
             .where(and(...conditions));
 
         return sites;
+    });
+
+// ===== CUSTOM ROLES =====
+
+const CreateCustomRoleSchema = z.object({
+    tenantId: z.string(),
+    name: z.string().min(2, "Role name must be at least 2 characters"),
+    baseRoleId: z.string(),
+    description: z.string().optional(),
+});
+
+export const createCustomRoleFn = createServerFn({ method: "POST" })
+    .middleware([authMiddleware])
+    .inputValidator((data: z.infer<typeof CreateCustomRoleSchema>) => CreateCustomRoleSchema.parse(data))
+    .handler(async (ctx) => {
+        const { tenantId, name, baseRoleId, description } = ctx.data;
+        const { db, user } = ctx.context;
+
+        // Verify base role exists in static config
+        const baseRole = getRole(baseRoleId);
+        if (!baseRole) {
+            throw new Error("Invalid base role specified.");
+        }
+
+        const id = `cr_${crypto.randomUUID().split('-')[0]}`;
+
+        await db.insert(schema.customRoles).values({
+            id,
+            tenantId,
+            name,
+            baseRoleId,
+            type: baseRole.type,
+            description: description || baseRole.description,
+            createdAt: new Date(),
+        });
+
+        return { id, name, baseRoleId, type: baseRole.type };
+    });
+
+const GetCustomRolesSchema = z.object({
+    tenantId: z.string(),
+});
+
+export const getCustomRolesFn = createServerFn({ method: "GET" })
+    .middleware([authMiddleware])
+    .inputValidator((data: z.infer<typeof GetCustomRolesSchema>) => GetCustomRolesSchema.parse(data))
+    .handler(async (ctx) => {
+        const { tenantId } = ctx.data;
+        const { db } = ctx.context;
+
+        const roles = await db.select()
+            .from(schema.customRoles)
+            .where(eq(schema.customRoles.tenantId, tenantId));
+
+        return roles;
     });

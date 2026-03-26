@@ -79,7 +79,7 @@ export function validateStatusTransition(
  * 1. If evidence has a localControlId, check the control's defaultReviewerRole
  * 2. User must have that role for the evidence's site
  * 3. Fallback: if no control, check if user is QS owner
- * 4. Practice Managers can always approve (override)
+ * 4. Directors can always approve (override)
  */
 export async function canUserApproveEvidence(
   db: DB,
@@ -122,12 +122,12 @@ export async function canUserApproveEvidence(
     .from(schema.userRoles)
     .where(eq(schema.userRoles.userId, params.userId));
 
-  // Check for Practice Manager (tenant-level override)
+  // Check for Director (tenant-level override)
   const isPracticeManager = userRoles.some(
-    (r) => r.role === "Practice Manager" && r.siteId === null
+    (r) => r.role === "Director" && r.siteId === null
   );
   if (isPracticeManager) {
-    return { allowed: true, reason: "Practice Manager override" };
+    return { allowed: true, reason: "Director override" };
   }
 
   // Get roles for this specific site
@@ -198,7 +198,7 @@ export async function canUserApproveEvidence(
 
 /**
  * Check if a user can delete evidence
- * Only Practice Managers and Admins can delete, or the uploader can delete drafts
+ * Only Directors and Admins can delete, or the uploader can delete drafts
  */
 export async function canUserDeleteEvidence(
   db: DB,
@@ -240,16 +240,16 @@ export async function canUserDeleteEvidence(
 
   const canDelete = userRoles.some(
     (r) =>
-      (r.role === "Practice Manager" || r.role === "Admin") &&
+      (r.role === "Director" || r.role === "Admin") &&
       (r.siteId === null || r.siteId === evidence.siteId)
   );
 
   if (canDelete) {
-    return { allowed: true, reason: "Admin/Practice Manager can delete evidence" };
+    return { allowed: true, reason: "Admin/Director can delete evidence" };
   }
 
   return {
     allowed: false,
-    reason: "Only Practice Managers, Admins, or the uploader (for drafts) can delete evidence",
+    reason: "Only Directors, Admins, or the uploader (for drafts) can delete evidence",
   };
 }

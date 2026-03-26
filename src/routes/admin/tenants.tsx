@@ -164,7 +164,7 @@ function TenantsPage() {
       data: {
         email: inviteEmail,
         tenantId: selectedTenant.id,
-        role: "Practice Manager" // Use role name string, not roleId
+        role: "Director" // Use role name string, not roleId
       }
     })
   }
@@ -239,7 +239,7 @@ function TenantsPage() {
                   <tr>
                     <th className="h-12 px-4 text-left font-medium w-[250px]">Organization</th>
                     <th className="h-12 px-4 text-left font-medium">Sites</th>
-                    <th className="h-12 px-4 text-left font-medium">Practice Manager</th>
+                    <th className="h-12 px-4 text-left font-medium">Director</th>
                     <th className="h-12 px-4 text-right font-medium">Actions</th>
                   </tr>
                 </thead>
@@ -337,7 +337,7 @@ function TenantsPage() {
       <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Invite Practice Manager</DialogTitle>
+            <DialogTitle>Invite Director</DialogTitle>
             <DialogDescription>
               Create an invitation for <span className="font-medium text-foreground">{selectedTenant?.name}</span> and email it when delivery is available.
             </DialogDescription>

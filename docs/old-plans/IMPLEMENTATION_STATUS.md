@@ -158,7 +158,7 @@ Features:
 **Files:** `src/routes/admin/users.tsx`, `src/routes/team.tsx`
 
 - ✅ User invitation system
-- ✅ Role assignment (Practice Manager, Clinical Lead, Staff)
+- ✅ Role assignment (Director, Clinical Lead, Staff)
 - ✅ Site-scoped roles
 - ✅ User status management
 - ✅ Team management interface

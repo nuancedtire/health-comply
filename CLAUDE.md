@@ -49,7 +49,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Authentication
 - **Better Auth**: Authentication library with Drizzle adapter
 - Email/password authentication
-- Invitation-only registration (after first user)
+- Invitation-only registration (after first user), or self-signup to create a new organization
 - Multi-tenant with role-based access control
 
 ### AI & ML
@@ -268,10 +268,10 @@ function MyPage() {
 
 ## Roles System
 
-Roles are defined statically in `src/lib/config/roles.ts`:
+Default roles are defined statically in `src/lib/config/roles.ts`. Custom roles can be created per-tenant in the `custom_roles` table, inheriting permissions from a base static role.
 
 **Tenant-scoped roles:**
-- Practice Manager - Full access
+- Director - Full access (organization-wide)
 - Admin - Administrative access
 - Compliance Officer - Compliance monitoring
 
@@ -281,6 +281,12 @@ Roles are defined statically in `src/lib/config/roles.ts`:
 - Safeguarding Lead - Safeguarding responsibility
 - Clinician - Clinical staff
 - Receptionist - Front desk
+
+**Custom roles** (`src/db/schema.ts` → `customRoles` table):
+- Created during onboarding or via admin
+- Each has a `baseRoleId` pointing to a static role
+- Inherits all permissions from the base role
+- Stored with `custom:` prefix in `userRoles.role`
 
 ## Styling
 
@@ -313,7 +319,9 @@ Roles are defined statically in `src/lib/config/roles.ts`:
 - Routes support loaders, error boundaries, and not-found components
 - Environment variables go in `.dev.vars` (gitignored)
 - First user to sign up becomes system admin automatically
-- Subsequent users require invitations
+- New users can either create a new organization (becoming Director) or join an existing one via invitation
+- Onboarding flow: Create Site → Configure Roles → Seed Starter Pack → Invite Team
+- Starter pack seeds curated CQC controls that align with sample evidence documents in `seed/documents/`
 
 ## Git Conventions
 

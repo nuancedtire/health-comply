@@ -738,7 +738,7 @@ For each Quality Statement:
   Step 5: Draft Action (For Each Gap)
   - Action title: Auto-generated from gap (e.g., "Collect patient feedback for 'Safe' KQ")
   - Action description: Specific guidance (e.g., "Run patient satisfaction survey; aim for 20+ responses")
-  - Suggested owner: Based on gap type (Clinical gaps → GP; Process gaps → Practice Manager; Staffing → HR)
+  - Suggested owner: Based on gap type (Clinical gaps → GP; Process gaps → Director; Staffing → HR)
   - Suggested due date: Today + 28 days (or sooner if critical)
   - Link to gap + statement
   - Suggest priority: High if critical gap, Medium otherwise
@@ -951,7 +951,7 @@ AIPolicyDraft
 - **Policy editor (rich text):** If user clicks "Edit Draft"; simple WYSIWYG editor (or Markdown); save drafts
 - **Policy library:** List of published policies; version history (collapse/expand); "View", "Edit", "Archive", "Create New" buttons
 - **Staff acknowledgement view:** List of policies requiring acknowledgement; document preview; "I acknowledge" button; timestamp recorded
-- **Acknowledgement dashboard (Practice Manager):** Policy name, publication date, % staff acknowledged, list of staff not yet acknowledged, "Send Reminder" button
+- **Acknowledgement dashboard (Director):** Policy name, publication date, % staff acknowledged, list of staff not yet acknowledged, "Send Reminder" button
 
 **Validations:**
 - Topic required; max 100 chars
@@ -974,11 +974,11 @@ AIPolicyDraft
 
 ### 3.4 User & Role Management
 
-**Overview:** Three primary roles (Practice Manager, Clinical Lead, Staff) with cascading permissions. Future: granular role builder.
+**Overview:** Three primary roles (Director, Clinical Lead, Staff) with cascading permissions. Future: granular role builder.
 
 **Roles & Permissions:**
 
-| Feature | Practice Manager | Clinical Lead | Staff |
+| Feature | Director | Clinical Lead | Staff |
 |---------|-----------------|---------------|-------|
 | **Evidence Locker** | | |
 | Upload evidence | ✓ | ✓ | ✓ (own only) |
@@ -1103,7 +1103,7 @@ AuditTrail
 ```
 
 **Audit Trail UI:**
-- **Audit log view (Admin/Practice Manager):** Filterable table: date range, user, entity type, event type; show before/after state (collapsible); export to CSV
+- **Audit log view (Admin/Director):** Filterable table: date range, user, entity type, event type; show before/after state (collapsible); export to CSV
 - **Entity-specific history:** E.g., on evidence detail page, show timeline: "Created Dec 20 by Jane", "Approved Dec 21 by Jane", "Version 2 created Dec 28 by Jane"
 - **Statement assessment history:** Timeline showing all past assessments; scores, dates, who assessed, notes
 
@@ -1533,7 +1533,7 @@ role_staff = Role(name="staff", permissions=[...])
 6. Links evidence; system auto-approves (configurable); action marked "Completed with Evidence"
 7. Audit trail: "Action 456 completed by staff_member, linked evidence 789, approved auto, on Dec 28"
 
-**Use Case 3: Practice Manager Runs Readiness Scan**
+**Use Case 3: Director Runs Readiness Scan**
 1. Practice manager clicks "Run Readiness Scan"
 2. System analyzes all 34 statements; checks evidence coverage, assessment dates, overdue reviews
 3. Identifies 5 gaps:

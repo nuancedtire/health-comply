@@ -2,14 +2,14 @@
 
 **Practice:** Uptown Surgery
 **Version:** 3.0
-**Date:** Jan 2026
-**Responsible Person:** Practice Manager
+**Date:** Mar 2026
+**Responsible Person:** Director
 
 ## 1. Introduction
 This plan sets out the procedures to ensure the practice can continue to provide essential services in the event of a disruption (e.g., power failure, IT failure, flooding, pandemic).
 
 ## 2. Emergency Contacts
-- **Practice Manager (Alice):** 07700 900000
+- **Director (Alice):** 07700 900000
 - **Senior Partner (Dr. Bob):** 07700 900001
 - **IT Support (Egton):** 0300 000 1111
 - **Electricity (National Grid):** 105
@@ -41,5 +41,5 @@ This plan sets out the procedures to ensure the practice can continue to provide
 
 ---
 *Testing:*
-This plan was last tested (Tabletop Exercise) on: Nov 15, 2025.
+This plan was last tested (Tabletop Exercise) on: Feb 15, 2026.
 *Outcome:* Successful. Identified need for spare 4G dongle (now purchased).

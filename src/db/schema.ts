@@ -129,6 +129,20 @@ export const invitations = sqliteTable('invitations', {
     index('idx_invitations_tenant').on(table.tenantId),
 ]);
 
+// ===== CUSTOM ROLES =====
+
+export const customRoles = sqliteTable('custom_roles', {
+    id: text('id').primaryKey(),           // 'cr_<uuid>'
+    tenantId: text('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),          // Display name, e.g., "Head of Nursing"
+    baseRoleId: text('base_role_id').notNull(), // Static role ID it inherits from, e.g., "Nurse Lead"
+    type: text('type').notNull(),          // 'tenant' or 'site' — inherited from base role
+    description: text('description'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+}, (table) => [
+    index('idx_custom_roles_tenant').on(table.tenantId),
+]);
+
 // ===== QS WORKSPACE =====
 
 export const qsOwners = sqliteTable('qs_owners', {
@@ -164,7 +178,7 @@ export const localControls = sqliteTable('local_controls', {
     nextDueAt: integer('next_due_at', { mode: 'timestamp' }), // lastEvidenceAt + frequencyDays
 
     // Assignments
-    defaultReviewerRole: text('default_reviewer_role'), // e.g., 'Practice Manager', 'Nurse Lead'
+    defaultReviewerRole: text('default_reviewer_role'), // e.g., 'Director', 'Nurse Lead'
     fallbackReviewerRole: text('fallback_reviewer_role'),
 
     active: integer('active', { mode: 'boolean' }).notNull().default(true),
@@ -406,7 +420,9 @@ export const actionRelations = relations(actions, ({ one, many }) => ({
     approvals: many(actionApprovals),
 }));
 
-// Role relations deleted
+export const customRoleRelations = relations(customRoles, ({ one }) => ({
+    tenant: one(tenants, { fields: [customRoles.tenantId], references: [tenants.id] }),
+}));
 
 
 export const invitationRelations = relations(invitations, ({ one }) => ({
