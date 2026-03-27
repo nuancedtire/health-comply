@@ -182,51 +182,35 @@ export const signupAndCreateTenantFn = createServerFn({ method: "POST" })
             createdAt: new Date(),
         });
 
-        // 2. Create a self-invite so the Better Auth databaseHook allows registration.
-        //    We use a temporary userId for invitedBy, then update after user creation.
-        const inviteId = `inv_${crypto.randomUUID().split('-')[0]}`;
-        const token = crypto.randomUUID();
-
-        // Temporarily insert invite without invitedBy (we'll fix this after user creation)
-        // Since invitedBy is NOT NULL, we need to work around it.
-        // Approach: Insert user first via auth, which will find this invite.
-        // We use a raw SQL to bypass the NOT NULL constraint temporarily.
-        await db.run(
-            `INSERT INTO invitations (id, email, tenant_id, site_id, role, token, expires_at, status, invited_by, created_at)
-             VALUES (?, ?, ?, NULL, 'Director', ?, ?, 'pending', '__self__', ?)`,
-            [inviteId, email, tenantId, token,
-             Math.floor(Date.now() / 1000) + 86400,
-             Math.floor(Date.now() / 1000)]
-        );
-
-        // 3. Create the user via Better Auth (the databaseHook will find the invite
-        //    and assign tenantId + Director role automatically)
+        // 2. Create the user via Better Auth with tenantId pre-set.
+        //    The databaseHook in auth.ts recognizes that tenantId is already set
+        //    and skips the invitation check (self-signup flow).
         const { createAuth } = await import("@/lib/auth");
         const auth = createAuth(db, env);
 
         let result;
         try {
             result = await auth.api.signUpEmail({
-                body: { email, password, name }
+                body: { email, password, name, tenantId } as any
             });
         } catch (err) {
-            // Clean up on failure
-            await db.run(`DELETE FROM invitations WHERE id = ?`, [inviteId]);
+            // Clean up tenant on failure
             await db.delete(schema.tenants).where(eq(schema.tenants.id, tenantId));
             throw err;
         }
 
         if (!result) {
-            await db.run(`DELETE FROM invitations WHERE id = ?`, [inviteId]);
             await db.delete(schema.tenants).where(eq(schema.tenants.id, tenantId));
             throw new Error("Failed to create user account.");
         }
 
-        // 4. Fix the invitedBy to point to the newly created user
-        await db.run(
-            `UPDATE invitations SET invited_by = ? WHERE id = ?`,
-            [result.user.id, inviteId]
-        );
+        // 3. Assign Director role directly (no invitation needed)
+        await db.insert(schema.userRoles).values({
+            userId: result.user.id,
+            role: 'Director',
+            siteId: null,
+            createdAt: new Date(),
+        });
 
         return { success: true, tenantId, userId: result.user.id };
     });

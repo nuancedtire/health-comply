@@ -88,6 +88,12 @@ export const createAuth = (db: any, env: Env, options?: {
                         };
                     }
 
+                    // Self-signup flow: if tenantId is already set, the user is creating
+                    // their own organization via signupAndCreateTenantFn. Skip invitation check.
+                    if (user.tenantId) {
+                        return { data: user };
+                    }
+
                     // Check for invitation
                     const invite = await db.query.invitations.findFirst({
                         where: (inv: any, { eq, and }: any) => and(
@@ -107,6 +113,18 @@ export const createAuth = (db: any, env: Env, options?: {
                 },
                 after: async (user) => {
                     if (user.isSystemAdmin) return;
+
+                    // Self-signup flow: tenantId already set, no invite to process.
+                    // The userRoles entry is created by signupAndCreateTenantFn directly.
+                    if (user.tenantId) {
+                        const invite = await db.query.invitations.findFirst({
+                            where: (inv: any, { eq, and }: any) => and(
+                                eq(inv.email, user.email),
+                                eq(inv.status, 'pending')
+                            )
+                        });
+                        if (!invite) return; // Self-signup, no invite to process
+                    }
 
                     // Find the invite again
                     const invite = await db.query.invitations.findFirst({
