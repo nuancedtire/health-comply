@@ -1,16 +1,16 @@
-# Infection Prevention and Control (IPC) Annual Statement 2025-2026
+# Infection Prevention and Control (IPC) Annual Statement 2026-2027
 
 **Practice:** Uptown Surgery (Health Core Ltd)
-**Date:** January 5, 2026
-**Lead for IPC:** Charlie Nurse (Nurse Lead)
+**Date:** March 5, 2026
+**Lead for IPC:** Charlie Nurse (Clinical Lead)
 
 ## 1. Purpose
 This annual statement summarizes the infection control activities at Uptown Surgery, in accordance with the Health and Social Care Act 2008 (Code of Practice).
 
 ## 2. Risk Assessments
-- **Annual IPC Audit:** Completed on December 15, 2025. Score: 94%.
+- **Annual IPC Audit:** Completed on February 15, 2026. Score: 94%.
 - **Action Items:**
-  - Replace ripped chair in Waiting Room B (Completed Jan 2026).
+  - Replace ripped chair in Waiting Room B (Completed Mar 2026).
   - Review cleaning schedule for sluice room (Updated).
 
 ## 3. Staff Training
@@ -21,10 +21,10 @@ This annual statement summarizes the infection control activities at Uptown Surg
 ## 4. Audits & Outcomes
 | Audit Type | Frequency | Last Check | Outcome |
 | to | to | to | to |
-| Hand Hygiene | Quarterly | Nov 2025 | Passed (98%) |
-| Cleaning Standards | Monthly | Dec 2025 | Passed (Satisfactory) |
-| Sharps Bins | Quarterly | Oct 2025 | Passed (All tagged correctly) |
-| PPE Availability | Monthly | Jan 2026 | Stock levels adequate |
+| Hand Hygiene | Quarterly | Feb 2026 | Passed (98%) |
+| Cleaning Standards | Monthly | Mar 2026 | Passed (Satisfactory) |
+| Sharps Bins | Quarterly | Jan 2026 | Passed (All tagged correctly) |
+| PPE Availability | Monthly | Mar 2026 | Stock levels adequate |
 
 ## 5. Significant Events (Infection Control)
 - **Incident #442:** Needle stick injury (July 2025).

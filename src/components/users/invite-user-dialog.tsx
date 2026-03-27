@@ -119,7 +119,7 @@ export function InviteUserDialog({ onSuccess }: { onSuccess: () => void }) {
         ? sites?.filter((s: any) => s.id === myRoleData.siteId)
         : sites;
 
-    const isPracticeManager = selectedRole === 'Practice Manager';
+    const isPracticeManager = selectedRole === 'Director';
     const isTenantAdmin = selectedRole === 'Admin';
 
     const isSiteRequired = !isPracticeManager && !isTenantAdmin && !!selectedRole;

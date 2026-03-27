@@ -572,9 +572,9 @@ export function UnifiedControlsHub({
             <FilterDropdown
               label="Reviewer"
               options={[
-                "Practice Manager",
-                "Nurse Lead",
-                "GP Partner",
+                "Director",
+                "Clinical Lead",
+                "Site Lead",
                 "Trainee",
               ]}
               selected={activeFilters.reviewer}
@@ -1499,7 +1499,7 @@ function ControlDialog({
     frequencyType: "recurring",
     frequencyDays: 30,
     evidenceHint: "",
-    defaultReviewerRole: "Practice Manager",
+    defaultReviewerRole: "Director",
     fallbackReviewerRole: "",
     active: true,
     cqcMythbusterUrl: "",
@@ -1534,7 +1534,7 @@ function ControlDialog({
           frequencyDays: control.frequencyDays || 30,
           evidenceHint: control.evidenceHint || "",
           defaultReviewerRole:
-            control.defaultReviewerRole || "Practice Manager",
+            control.defaultReviewerRole || "Director",
           fallbackReviewerRole: control.fallbackReviewerRole || "",
           active: control.active !== false,
           cqcMythbusterUrl: control.cqcMythbusterUrl || "",
@@ -1549,7 +1549,7 @@ function ControlDialog({
           frequencyType: "recurring",
           frequencyDays: 30,
           evidenceHint: "",
-          defaultReviewerRole: "Practice Manager",
+          defaultReviewerRole: "Director",
           fallbackReviewerRole: "",
           active: true,
           cqcMythbusterUrl: "",
@@ -1916,16 +1916,16 @@ function ControlDialog({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Practice Manager">
-                        Practice Manager
+                      <SelectItem value="Director">
+                        Director
                       </SelectItem>
                       <SelectItem value="Compliance Officer">
                         Compliance Officer
                       </SelectItem>
-                      <SelectItem value="Nurse Lead">Nurse Lead</SelectItem>
-                      <SelectItem value="GP Partner">GP Partner</SelectItem>
-                      <SelectItem value="Safeguarding Lead">
-                        Safeguarding Lead
+                      <SelectItem value="Clinical Lead">Clinical Lead</SelectItem>
+                      <SelectItem value="Site Lead">Site Lead</SelectItem>
+                      <SelectItem value="Safety Lead">
+                        Safety Lead
                       </SelectItem>
                     </SelectContent>
                   </Select>
@@ -1946,14 +1946,14 @@ function ControlDialog({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">None (No fallback)</SelectItem>
-                      <SelectItem value="Practice Manager">
-                        Practice Manager
+                      <SelectItem value="Director">
+                        Director
                       </SelectItem>
                       <SelectItem value="Compliance Officer">
                         Compliance Officer
                       </SelectItem>
-                      <SelectItem value="Nurse Lead">Nurse Lead</SelectItem>
-                      <SelectItem value="GP Partner">GP Partner</SelectItem>
+                      <SelectItem value="Clinical Lead">Clinical Lead</SelectItem>
+                      <SelectItem value="Site Lead">Site Lead</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

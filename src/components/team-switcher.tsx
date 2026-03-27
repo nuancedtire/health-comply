@@ -38,11 +38,11 @@ export function TeamSwitcher() {
   const userRole = roleData?.role || (session as any)?.role || "User";
   const roleType = roleData?.type || "site";
 
-  // Can switch sites if System Admin OR Tenant-scoped role (Practice Manager, Compliance Officer, etc.)
+  // Can switch sites if System Admin OR Tenant-scoped role (Director, Compliance Officer, etc.)
   const canSwitchSites = isSystemAdmin || roleType === 'tenant';
 
-  // Can CREATE sites only if System Admin or Practice Manager
-  const canCreateSites = isSystemAdmin || userRole === "Practice Manager";
+  // Can CREATE sites only if System Admin or Director
+  const canCreateSites = isSystemAdmin || userRole === "Director";
 
   if (isSystemAdmin) {
     return (

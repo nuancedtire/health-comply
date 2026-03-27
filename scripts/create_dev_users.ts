@@ -32,10 +32,10 @@ async function createDevUsers() {
 
     // Roles
     const roles = [
-        'Practice Manager',
-        'GP Partner',
-        'Nurse Lead',
-        'Safeguarding Lead',
+        'Director',
+        'Site Lead',
+        'Clinical Lead',
+        'Safety Lead',
         'Admin',
     ];
 
@@ -48,10 +48,10 @@ async function createDevUsers() {
 
     // Users
     const users = [
-        { id: 'u_pm', email: 'pm@example.com', name: 'Practice Manager', role: 'r_practice_manager' },
-        { id: 'u_gp', email: 'gp@example.com', name: 'GP Partner', role: 'r_gp_partner' },
-        { id: 'u_nurse', email: 'nurse@example.com', name: 'Nurse Lead', role: 'r_nurse_lead' },
-        { id: 'u_safe', email: 'safeguarding@example.com', name: 'Safeguarding Lead', role: 'r_safeguarding_lead' },
+        { id: 'u_pm', email: 'pm@example.com', name: 'Director', role: 'r_practice_manager' },
+        { id: 'u_gp', email: 'gp@example.com', name: 'Site Lead', role: 'r_site_lead' },
+        { id: 'u_nurse', email: 'nurse@example.com', name: 'Clinical Lead', role: 'r_clinical_lead' },
+        { id: 'u_safe', email: 'safeguarding@example.com', name: 'Safety Lead', role: 'r_safety_lead' },
         { id: 'u_admin', email: 'admin@example.com', name: 'Admin', role: 'r_admin' },
     ];
 

@@ -1,0 +1,526 @@
+[
+    {
+        "packId": "safe_safeguarding",
+        "packName": "Safeguarding",
+        "packIcon": "Shield",
+        "keyQuestion": "safe",
+        "qsId": "safe.safeguarding",
+        "title": "Safeguarding policies reviewed and updated",
+        "description": "Ensure safeguarding policies are regularly reviewed and all staff are aware of current procedures",
+        "evidenceHint": "Upload dated policy document with review signature",
+        "frequencyType": "recurring",
+        "frequencyDays": 365,
+        "defaultReviewerRole": "Director",
+        "evidenceExamples": {
+            "good": [
+                "Signed policy with review date",
+                "Staff acknowledgment register",
+                "Training completion certificates"
+            ],
+            "bad": [
+                "Undated documents",
+                "Unsigned policies",
+                "Outdated training records"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters",
+        "sampleDocuments": [
+            "safeguarding_report_dummy.txt"
+        ]
+    },
+    {
+        "packId": "safe_safeguarding",
+        "packName": "Safeguarding",
+        "packIcon": "Shield",
+        "keyQuestion": "safe",
+        "qsId": "safe.safeguarding",
+        "title": "Safeguarding training compliance monitored",
+        "description": "Track and ensure all staff complete required safeguarding training at appropriate levels",
+        "evidenceHint": "Training matrix showing completion dates and levels",
+        "frequencyType": "recurring",
+        "frequencyDays": 365,
+        "defaultReviewerRole": "Director",
+        "evidenceExamples": {
+            "good": [
+                "Complete training matrix",
+                "Certificates with expiry dates",
+                "Role-appropriate levels"
+            ],
+            "bad": [
+                "Expired certificates",
+                "Missing staff",
+                "Wrong training levels"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters",
+        "sampleDocuments": [
+            "safeguarding_training_matrix.csv"
+        ]
+    },
+    {
+        "packId": "safe_infection_control",
+        "packName": "Infection Prevention & Control",
+        "packIcon": "Bug",
+        "keyQuestion": "safe",
+        "qsId": "safe.infection_prevention_and_control",
+        "title": "Hand hygiene audit completed",
+        "description": "Regular hand hygiene audits using WHO 5 moments methodology",
+        "evidenceHint": "Completed hand hygiene audit forms with action plans",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "Clinical Lead",
+        "evidenceExamples": {
+            "good": [
+                "Audit using WHO methodology",
+                "Dated observations",
+                "Improvement actions documented"
+            ],
+            "bad": [
+                "No baseline data",
+                "Missing observation times",
+                "No action plan"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters/gp-mythbuster-99-infection-prevention-control-general-practice",
+        "sampleDocuments": [
+            "hand_hygiene_audit.csv"
+        ]
+    },
+    {
+        "packId": "safe_infection_control",
+        "packName": "Infection Prevention & Control",
+        "packIcon": "Bug",
+        "keyQuestion": "safe",
+        "qsId": "safe.infection_prevention_and_control",
+        "title": "Cleaning schedule and logs maintained",
+        "description": "Maintain cleaning schedules with documented completion and verification",
+        "evidenceHint": "Signed cleaning logs and schedule documents",
+        "frequencyType": "recurring",
+        "frequencyDays": 30,
+        "defaultReviewerRole": "Director",
+        "evidenceExamples": {
+            "good": [
+                "Daily signed logs",
+                "Clear schedule by area",
+                "Supervisor verification"
+            ],
+            "bad": [
+                "Unsigned logs",
+                "Gaps in records",
+                "No verification"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters/gp-mythbuster-99-infection-prevention-control-general-practice",
+        "sampleDocuments": [
+            "cleaning_schedule_log.csv",
+            "deep_clean_certificate.txt"
+        ]
+    },
+    {
+        "packId": "safe_infection_control",
+        "packName": "Infection Prevention & Control",
+        "packIcon": "Bug",
+        "keyQuestion": "safe",
+        "qsId": "safe.infection_prevention_and_control",
+        "title": "IPC policy annual review completed",
+        "description": "Annual review and update of infection prevention and control policy",
+        "evidenceHint": "Dated policy document with review signature and changes log",
+        "frequencyType": "recurring",
+        "frequencyDays": 365,
+        "defaultReviewerRole": "Clinical Lead",
+        "evidenceExamples": {
+            "good": [
+                "Signed review with date",
+                "Changes highlighted",
+                "Staff notified"
+            ],
+            "bad": [
+                "No review date",
+                "Outdated content",
+                "No distribution record"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters/gp-mythbuster-99-infection-prevention-control-general-practice",
+        "sampleDocuments": [
+            "ipc_annual_statement_2025.txt"
+        ]
+    },
+    {
+        "packId": "safe_infection_control",
+        "packName": "Infection Prevention & Control",
+        "packIcon": "Bug",
+        "keyQuestion": "safe",
+        "qsId": "safe.infection_prevention_and_control",
+        "title": "Sharps management audit completed",
+        "description": "Audit sharps containers usage, disposal and injury reporting",
+        "evidenceHint": "Sharps audit form with container inspection records",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "Clinical Lead",
+        "evidenceExamples": {
+            "good": [
+                "Container fill-level checks",
+                "Disposal records",
+                "Injury log reviewed"
+            ],
+            "bad": [
+                "Overfilled containers",
+                "Missing disposal dates",
+                "No injury reporting"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters/gp-mythbuster-99-infection-prevention-control-general-practice",
+        "sampleDocuments": [
+            "sharps_bin_audit.csv"
+        ]
+    },
+    {
+        "packId": "safe_medicines",
+        "packName": "Medicines Management",
+        "packIcon": "Pill",
+        "keyQuestion": "safe",
+        "qsId": "safe.medicines_optimisation",
+        "title": "Controlled drugs register audit",
+        "description": "Regular audit of controlled drugs register for accuracy and compliance",
+        "evidenceHint": "CD register audit form with discrepancy checks",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "Site Lead",
+        "evidenceExamples": {
+            "good": [
+                "Stock reconciliation",
+                "Witness signatures",
+                "Destruction records"
+            ],
+            "bad": [
+                "Unwitnessed entries",
+                "Discrepancies unexplained",
+                "Missing destructions"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters/gp-mythbuster-28-management-controlled-drugs",
+        "sampleDocuments": [
+            "medication_policy_dummy.txt"
+        ]
+    },
+    {
+        "packId": "safe_medicines",
+        "packName": "Medicines Management",
+        "packIcon": "Pill",
+        "keyQuestion": "safe",
+        "qsId": "safe.medicines_optimisation",
+        "title": "Fridge temperature monitoring reviewed",
+        "description": "Daily fridge temperature checks with action on excursions",
+        "evidenceHint": "Temperature logs with excursion actions documented",
+        "frequencyType": "recurring",
+        "frequencyDays": 30,
+        "defaultReviewerRole": "Clinical Lead",
+        "evidenceExamples": {
+            "good": [
+                "Daily readings recorded",
+                "Min/max checked",
+                "Excursion actions documented"
+            ],
+            "bad": [
+                "Missing days",
+                "No min/max",
+                "Excursions not actioned"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters",
+        "sampleDocuments": [
+            "fridge_temperatures.csv"
+        ]
+    },
+    {
+        "packId": "safe_medicines",
+        "packName": "Medicines Management",
+        "packIcon": "Pill",
+        "keyQuestion": "safe",
+        "qsId": "safe.medicines_optimisation",
+        "title": "Emergency drugs and equipment check",
+        "description": "Regular checks of emergency drugs and equipment for expiry and function",
+        "evidenceHint": "Emergency equipment checklist with expiry dates",
+        "frequencyType": "recurring",
+        "frequencyDays": 7,
+        "defaultReviewerRole": "Clinical Lead",
+        "evidenceExamples": {
+            "good": [
+                "Weekly checks documented",
+                "Expiries noted",
+                "Replacements actioned"
+            ],
+            "bad": [
+                "Expired items",
+                "Missing checks",
+                "Equipment not tested"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters",
+        "sampleDocuments": [
+            "emergency_drugs_checklist.csv"
+        ]
+    },
+    {
+        "packId": "safe_environments",
+        "packName": "Safe Environments",
+        "packIcon": "Building",
+        "keyQuestion": "safe",
+        "qsId": "safe.safe_environments",
+        "title": "Fire safety equipment checks completed",
+        "description": "Regular fire equipment checks including extinguishers, alarms, and exits",
+        "evidenceHint": "Fire equipment check log with engineer certificates",
+        "frequencyType": "recurring",
+        "frequencyDays": 30,
+        "defaultReviewerRole": "Director",
+        "evidenceExamples": {
+            "good": [
+                "Monthly visual checks",
+                "Annual service certificates",
+                "Exit routes clear"
+            ],
+            "bad": [
+                "Missed checks",
+                "Expired servicing",
+                "Blocked exits"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters",
+        "sampleDocuments": [
+            "fire_risk_assessment.txt"
+        ]
+    },
+    {
+        "packId": "safe_environments",
+        "packName": "Safe Environments",
+        "packIcon": "Building",
+        "keyQuestion": "safe",
+        "qsId": "safe.safe_environments",
+        "title": "Health and safety risk assessment reviewed",
+        "description": "Annual review of workplace health and safety risk assessment",
+        "evidenceHint": "Signed H&S risk assessment with review date",
+        "frequencyType": "recurring",
+        "frequencyDays": 365,
+        "defaultReviewerRole": "Director",
+        "evidenceExamples": {
+            "good": [
+                "Comprehensive assessment",
+                "Controls documented",
+                "Review date set"
+            ],
+            "bad": [
+                "Outdated assessment",
+                "Missing hazards",
+                "No control measures"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters",
+        "sampleDocuments": [
+            "health_safety_walkaround.txt"
+        ]
+    },
+    {
+        "packId": "safe_environments",
+        "packName": "Safe Environments",
+        "packIcon": "Building",
+        "keyQuestion": "safe",
+        "qsId": "safe.safe_environments",
+        "title": "Legionella risk assessment and monitoring",
+        "description": "Water safety management including legionella risk assessment and temperature checks",
+        "evidenceHint": "Legionella risk assessment and temperature logs",
+        "frequencyType": "recurring",
+        "frequencyDays": 30,
+        "defaultReviewerRole": "Director",
+        "evidenceExamples": {
+            "good": [
+                "Monthly temperature checks",
+                "Annual assessment",
+                "Flushing records"
+            ],
+            "bad": [
+                "Missing checks",
+                "Outdated assessment",
+                "No flushing regime"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters/gp-mythbuster-27-legionella",
+        "sampleDocuments": [
+            "legionella_risk_assessment.txt",
+            "water_temperature_checks.csv"
+        ]
+    },
+    {
+        "packId": "safe_learning",
+        "packName": "Learning Culture",
+        "packIcon": "BookOpen",
+        "keyQuestion": "safe",
+        "qsId": "safe.learning_culture",
+        "title": "Significant event analysis completed",
+        "description": "Document and learn from significant events using structured analysis",
+        "evidenceHint": "SEA forms with action plans and learning outcomes",
+        "frequencyType": "recurring",
+        "frequencyDays": 30,
+        "defaultReviewerRole": "Site Lead",
+        "evidenceExamples": {
+            "good": [
+                "Structured analysis",
+                "Root cause identified",
+                "Learning shared"
+            ],
+            "bad": [
+                "Blame culture evident",
+                "No actions documented",
+                "Learning not shared"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters",
+        "sampleDocuments": [
+            "sea_log.csv"
+        ]
+    },
+    {
+        "packId": "safe_risks",
+        "packName": "Managing Risks",
+        "packIcon": "AlertTriangle",
+        "keyQuestion": "safe",
+        "qsId": "safe.involving_people_to_manage_risks",
+        "title": "Business continuity plan reviewed",
+        "description": "Annual review and testing of business continuity plan",
+        "evidenceHint": "BCP document with test results and review signature",
+        "frequencyType": "recurring",
+        "frequencyDays": 365,
+        "defaultReviewerRole": "Director",
+        "evidenceExamples": {
+            "good": [
+                "Plan tested",
+                "Contact details current",
+                "Scenarios covered"
+            ],
+            "bad": [
+                "Untested plan",
+                "Outdated contacts",
+                "Key scenarios missing"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters",
+        "sampleDocuments": [
+            "business_continuity_plan.txt"
+        ]
+    },
+    {
+        "packId": "effective_evidence_based",
+        "packName": "Evidence-Based Care",
+        "packIcon": "FileSearch",
+        "keyQuestion": "effective",
+        "qsId": "effective.delivering_evidence_based_care",
+        "title": "Clinical audit completed",
+        "description": "Regular clinical audits with documented methodology and outcomes",
+        "evidenceHint": "Audit report with methodology, results, and action plan",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "Site Lead",
+        "evidenceExamples": {
+            "good": [
+                "Clear methodology",
+                "Results analysed",
+                "Re-audit planned"
+            ],
+            "bad": [
+                "No methodology",
+                "Results not interpreted",
+                "No follow-up audit"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters",
+        "sampleDocuments": [
+            "clinical_audit_uti.txt"
+        ]
+    },
+    {
+        "packId": "well_led_governance",
+        "packName": "Governance & Management",
+        "packIcon": "Building2",
+        "keyQuestion": "well_led",
+        "qsId": "well_led.governance_management_sustainability",
+        "title": "Policy review schedule maintained",
+        "description": "Maintain schedule for policy reviews with tracking",
+        "evidenceHint": "Policy review schedule with completion status",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "Director",
+        "evidenceExamples": {
+            "good": [
+                "All policies scheduled",
+                "Reviews on time",
+                "Owners assigned"
+            ],
+            "bad": [
+                "Missing policies",
+                "Overdue reviews",
+                "No ownership"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters",
+        "sampleDocuments": [
+            "policy_review_log.csv"
+        ]
+    },
+    {
+        "packId": "safe_recruitment",
+        "packName": "Safe Recruitment",
+        "packIcon": "UserPlus",
+        "keyQuestion": "safe",
+        "qsId": "safe.safe_and_effective_staffing",
+        "title": "DBS checks current for all staff",
+        "description": "Ensure DBS checks are current and appropriate for roles",
+        "evidenceHint": "DBS register showing check dates and levels",
+        "frequencyType": "recurring",
+        "frequencyDays": 90,
+        "defaultReviewerRole": "Director",
+        "evidenceExamples": {
+            "good": [
+                "All staff checked",
+                "Appropriate levels",
+                "Renewal tracked"
+            ],
+            "bad": [
+                "Missing checks",
+                "Wrong levels",
+                "Expired checks"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters/gp-mythbuster-2-who-should-have-disclosure-barring-service-dbs-check",
+        "sampleDocuments": [
+            "dbs_check_register.csv"
+        ]
+    },
+    {
+        "packId": "safe_recruitment",
+        "packName": "Safe Recruitment",
+        "packIcon": "UserPlus",
+        "keyQuestion": "safe",
+        "qsId": "safe.safe_and_effective_staffing",
+        "title": "Induction completion verified",
+        "description": "Verify all new starters complete comprehensive induction",
+        "evidenceHint": "Induction checklist completion records",
+        "frequencyType": "recurring",
+        "frequencyDays": 30,
+        "defaultReviewerRole": "Director",
+        "evidenceExamples": {
+            "good": [
+                "All areas covered",
+                "Signed off by manager",
+                "Follow-up scheduled"
+            ],
+            "bad": [
+                "Incomplete induction",
+                "No sign-off",
+                "No follow-up"
+            ]
+        },
+        "cqcMythbusterUrl": "https://www.cqc.org.uk/guidance-providers/gps/gp-mythbusters/gp-mythbuster-2-who-should-have-disclosure-barring-service-dbs-check",
+        "sampleDocuments": [
+            "recruitment_file_audit.csv"
+        ]
+    }
+]

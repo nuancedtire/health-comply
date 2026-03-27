@@ -15,6 +15,20 @@
       "when": 1770162660620,
       "tag": "0001_third_tarantula",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1774518788570,
+      "tag": "0002_handy_famine",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1774622248747,
+      "tag": "0003_short_violations",
+      "breakpoints": true
     }
   ]
 }

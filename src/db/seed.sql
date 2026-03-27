@@ -357,12 +357,12 @@ INSERT INTO
 VALUES (
         'r_pm',
         't_demo',
-        'Practice Manager'
+        'Director'
     ),
     (
         'r_gp',
         't_demo',
-        'GP Partner'
+        'Site Lead'
     ),
     (
         'r_nurse',

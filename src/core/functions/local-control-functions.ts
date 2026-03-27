@@ -4,6 +4,7 @@ import { authMiddleware } from "@/core/middleware/auth-middleware";
 import { z } from "zod";
 import { EVIDENCE_CATEGORIES } from "@/core/data/taxonomy";
 import EXTENDED_CONTROLS from "@/core/data/extended_controls.json";
+import STARTER_PACK_CONTROLS from "@/core/data/starter_pack_controls.json";
 import { logControlEvent, AUDIT_ACTIONS } from "@/lib/audit";
 
 import { eq, and, desc } from "drizzle-orm";
@@ -25,6 +26,7 @@ export const seedLocalControlsFn = createServerFn({ method: "POST" })
     return z
       .object({
         siteId: z.string().optional(),
+        useFullPack: z.boolean().optional(),
       })
       .optional()
       .parse(data);
@@ -58,8 +60,10 @@ export const seedLocalControlsFn = createServerFn({ method: "POST" })
 
     let seededCount = 0;
 
-    // Use EXTENDED_CONTROLS instead of STARTER_PACK
-    const controlsToSeed = EXTENDED_CONTROLS;
+    // Use curated Starter Pack by default, full extended pack optionally
+    const controlsToSeed = ctx.data?.useFullPack
+      ? EXTENDED_CONTROLS
+      : STARTER_PACK_CONTROLS;
 
     for (const item of controlsToSeed) {
       // Map QS ID if needed
@@ -272,9 +276,9 @@ CONTEXT:
 - Consider CQC inspection requirements and "mythbuster" guidance
 
 ROLES FOR ASSIGNMENT:
-- "Practice Manager" - Administrative, governance, HR, facilities
-- "Nurse Lead" - Clinical audits, IPC, medicines, patient safety
-- "GP Partner" - Clinical governance, safeguarding, significant events
+- "Director" - Administrative, governance, HR, facilities
+- "Clinical Lead" - Clinical audits, IPC, medicines, patient safety
+- "Site Lead" - Clinical governance, safeguarding, significant events
 
 FREQUENCY TYPES:
 - "recurring" - Regular schedule (specify frequencyDays: 7=weekly, 30=monthly, 90=quarterly, 365=annually)
@@ -362,18 +366,18 @@ Suggest 3 specific local operational controls that would strengthen this practic
                           defaultReviewerRole: {
                             type: "string",
                             enum: [
-                              "Practice Manager",
-                              "Nurse Lead",
-                              "GP Partner",
+                              "Director",
+                              "Clinical Lead",
+                              "Site Lead",
                             ],
                             description: "Who should own this control",
                           },
                           fallbackReviewerRole: {
                             type: "string",
                             enum: [
-                              "Practice Manager",
-                              "Nurse Lead",
-                              "GP Partner",
+                              "Director",
+                              "Clinical Lead",
+                              "Site Lead",
                             ],
                             description:
                               "Backup reviewer if primary unavailable",
@@ -497,14 +501,14 @@ export const createLocalControlFn = createServerFn({ method: "POST" })
       .from(schema.userRoles)
       .where(eq(schema.userRoles.userId, user.id));
 
-    const allowedRoles = ["Practice Manager", "Admin", "Compliance Officer"];
+    const allowedRoles = ["Director", "Admin", "Compliance Officer"];
     const isSystemAdmin = (user as any).isSystemAdmin;
     const hasPermission =
       isSystemAdmin || userRoles.some((r) => allowedRoles.includes(r.role));
 
     if (!hasPermission) {
       throw new Error(
-        "Unauthorized: Only Practice Managers, Admins, and Compliance Officers can create controls",
+        "Unauthorized: Only Directors, Admins, and Compliance Officers can create controls",
       );
     }
 
@@ -611,14 +615,14 @@ export const updateLocalControlFn = createServerFn({ method: "POST" })
       .from(schema.userRoles)
       .where(eq(schema.userRoles.userId, user.id));
 
-    const allowedRoles = ["Practice Manager", "Admin", "Compliance Officer"];
+    const allowedRoles = ["Director", "Admin", "Compliance Officer"];
     const isSystemAdmin = (user as any).isSystemAdmin;
     const hasPermission =
       isSystemAdmin || userRoles.some((r) => allowedRoles.includes(r.role));
 
     if (!hasPermission) {
       throw new Error(
-        "Unauthorized: Only Practice Managers, Admins, and Compliance Officers can update controls",
+        "Unauthorized: Only Directors, Admins, and Compliance Officers can update controls",
       );
     }
 
@@ -679,14 +683,14 @@ export const deleteLocalControlFn = createServerFn({ method: "POST" })
       .from(schema.userRoles)
       .where(eq(schema.userRoles.userId, user.id));
 
-    const allowedRoles = ["Practice Manager", "Admin"];
+    const allowedRoles = ["Director", "Admin"];
     const isSystemAdmin = (user as any).isSystemAdmin;
     const hasPermission =
       isSystemAdmin || userRoles.some((r) => allowedRoles.includes(r.role));
 
     if (!hasPermission) {
       throw new Error(
-        "Unauthorized: Only Practice Managers and Admins can delete controls",
+        "Unauthorized: Only Directors and Admins can delete controls",
       );
     }
 
@@ -756,7 +760,7 @@ export const generateControlDetailsFn = createServerFn({ method: "POST" })
         frequencyType: "recurring" as const,
         frequencyDays: 90,
         evidenceHint: "Upload relevant documentation",
-        defaultReviewerRole: "Practice Manager",
+        defaultReviewerRole: "Director",
         fallbackReviewerRole: "Admin",
         evidenceExamples: {
           good: ["Completed audit form with date and signature"],
@@ -787,9 +791,9 @@ QUALITY STATEMENT CONTEXT:
 - Key Question: ${(qs as any)?.keyQuestion?.title || "Unknown"}
 
 ROLES FOR ASSIGNMENT:
-- "Practice Manager" - Administrative, governance, HR, facilities
-- "Nurse Lead" - Clinical audits, IPC, medicines, patient safety
-- "GP Partner" - Clinical governance, safeguarding, significant events
+- "Director" - Administrative, governance, HR, facilities
+- "Clinical Lead" - Clinical audits, IPC, medicines, patient safety
+- "Site Lead" - Clinical governance, safeguarding, significant events
 
 FREQUENCY TYPES:
 - "recurring" - Regular schedule (specify frequencyDays: 7=weekly, 30=monthly, 90=quarterly, 365=annually)
@@ -854,12 +858,12 @@ Generate all fields needed for a complete control definition.`;
                     },
                     defaultReviewerRole: {
                       type: "string",
-                      enum: ["Practice Manager", "Nurse Lead", "GP Partner"],
+                      enum: ["Director", "Clinical Lead", "Site Lead"],
                       description: "Who should own this control",
                     },
                     fallbackReviewerRole: {
                       type: "string",
-                      enum: ["Practice Manager", "Nurse Lead", "GP Partner"],
+                      enum: ["Director", "Clinical Lead", "Site Lead"],
                       description: "Backup reviewer if primary unavailable",
                     },
                     evidenceExamples: {
@@ -924,7 +928,7 @@ Generate all fields needed for a complete control definition.`;
         frequencyType: "recurring" as const,
         frequencyDays: 90,
         evidenceHint: "Upload relevant documentation",
-        defaultReviewerRole: "Practice Manager",
+        defaultReviewerRole: "Director",
         fallbackReviewerRole: "Admin",
         evidenceExamples: {
           good: ["Completed audit form with date and signature"],

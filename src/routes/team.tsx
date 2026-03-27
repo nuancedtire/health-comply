@@ -249,7 +249,7 @@ function TeamPage() {
     });
 
     const userRole = roleData?.role || (session as any)?.role;
-    const canInvite = isSystemAdmin || ["Practice Manager", "Admin", "Compliance Officer", "GP Partner"].includes(userRole);
+    const canInvite = isSystemAdmin || ["Director", "Admin", "Compliance Officer", "Site Lead"].includes(userRole);
 
 
     return (

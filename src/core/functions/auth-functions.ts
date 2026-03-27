@@ -26,7 +26,8 @@ export const checkInviteFn = createServerFn({ method: "POST" })
             tenantName: schema.tenants.name,
             siteName: schema.sites.name,
             roleName: schema.invitations.role,
-            valid: schema.invitations.status
+            status: schema.invitations.status,
+            expiresAt: schema.invitations.expiresAt,
         })
             .from(schema.invitations)
             .leftJoin(schema.tenants, eq(schema.invitations.tenantId, schema.tenants.id))
@@ -38,7 +39,15 @@ export const checkInviteFn = createServerFn({ method: "POST" })
             throw new Error("Invalid or expired invitation.");
         }
 
-        // Return public info
+        // Check expiry
+        if (invite.expiresAt && new Date(invite.expiresAt) < new Date()) {
+            throw new Error("This invitation has expired.");
+        }
+
+        if (invite.status === 'accepted') {
+            throw new Error("This invitation has already been used.");
+        }
+
         return {
             email: invite.email,
             tenantName: invite.tenantName,
@@ -49,7 +58,7 @@ export const checkInviteFn = createServerFn({ method: "POST" })
     });
 
 const FindTenantSchema = z.object({
-    query: z.string().min(3)
+    query: z.string().min(2)
 });
 
 export const findTenantFn = createServerFn({ method: "POST" })
@@ -140,6 +149,71 @@ export const createSystemAdminFn = createServerFn({ method: "POST" })
     });
 
 import { getRole } from "@/lib/config/roles";
+
+// ===== SIGNUP + CREATE TENANT (New Organization Flow) =====
+
+const SignupAndCreateTenantSchema = z.object({
+    name: z.string().min(2),
+    email: z.string().email(),
+    password: z.string().min(8),
+    organizationName: z.string().min(2, "Organization name must be at least 2 characters"),
+});
+
+export const signupAndCreateTenantFn = createServerFn({ method: "POST" })
+    .inputValidator((data: z.infer<typeof SignupAndCreateTenantSchema>) => SignupAndCreateTenantSchema.parse(data))
+    .handler(async (ctx) => {
+        const { name, email, password, organizationName } = ctx.data;
+        const env = (ctx.context as any).env;
+        const db = getDb(env) as any;
+
+        // Check if email is already taken
+        const existingUser = await db.query.users.findFirst({
+            where: eq(schema.users.email, email),
+        });
+        if (existingUser) {
+            throw new Error("An account with this email already exists.");
+        }
+
+        // 1. Create the tenant
+        const tenantId = `t_${crypto.randomUUID().split('-')[0]}`;
+        await db.insert(schema.tenants).values({
+            id: tenantId,
+            name: organizationName,
+            createdAt: new Date(),
+        });
+
+        // 2. Create the user via Better Auth with tenantId pre-set.
+        //    The databaseHook in auth.ts recognizes that tenantId is already set
+        //    and skips the invitation check (self-signup flow).
+        const { createAuth } = await import("@/lib/auth");
+        const auth = createAuth(db, env);
+
+        let result;
+        try {
+            result = await auth.api.signUpEmail({
+                body: { email, password, name, tenantId } as any
+            });
+        } catch (err) {
+            // Clean up tenant on failure
+            await db.delete(schema.tenants).where(eq(schema.tenants.id, tenantId));
+            throw err;
+        }
+
+        if (!result) {
+            await db.delete(schema.tenants).where(eq(schema.tenants.id, tenantId));
+            throw new Error("Failed to create user account.");
+        }
+
+        // 3. Assign Director role directly (no invitation needed)
+        await db.insert(schema.userRoles).values({
+            userId: result.user.id,
+            role: 'Director',
+            siteId: null,
+            createdAt: new Date(),
+        });
+
+        return { success: true, tenantId, userId: result.user.id };
+    });
 
 export const getCurrentUserRoleFn = createServerFn({ method: "GET" })
     .middleware([authMiddleware])

@@ -511,7 +511,7 @@ export function DocumentsSidebar({
                                                     </div>
                                                     <div className="p-2 rounded bg-muted/50">
                                                         <p className="text-muted-foreground">Assigned To</p>
-                                                        <p className="font-medium">{evidence.assigneeRole || 'Practice Manager'}</p>
+                                                        <p className="font-medium">{evidence.assigneeRole || 'Director'}</p>
                                                     </div>
                                                 </>
                                             ) : (
@@ -705,7 +705,7 @@ export function DocumentsSidebar({
                                             <User className="h-3.5 w-3.5 text-muted-foreground" />
                                             <span className="text-muted-foreground">Will be sent to:</span>
                                             <span className="font-medium text-foreground">
-                                                {effectiveControl.defaultReviewerRole || 'Practice Manager'}
+                                                {effectiveControl.defaultReviewerRole || 'Director'}
                                             </span>
                                         </div>
                                         {effectiveControl.fallbackReviewerRole && (
