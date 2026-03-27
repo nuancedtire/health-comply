@@ -849,7 +849,10 @@ export const deleteTenantFn = createServerFn({ method: "POST" })
             // 8. Delete Invitations
             await db.delete(schema.invitations as any).where(eq(schema.invitations.tenantId, tenantId) as any);
 
-            // 9. Delete Sessions & Accounts for Users in this Tenant
+            // 9a. Delete Audit Log (actorUserId references users without cascade)
+            await db.delete(schema.auditLog as any).where(eq(schema.auditLog.tenantId, tenantId) as any);
+
+            // 9b. Delete Sessions & Accounts for Users in this Tenant
             const tenantUsers = await db.select({ id: schema.users.id })
                 .from(schema.users as any)
                 .where(eq(schema.users.tenantId, tenantId) as any);
