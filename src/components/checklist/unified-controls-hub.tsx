@@ -573,8 +573,8 @@ export function UnifiedControlsHub({
               label="Reviewer"
               options={[
                 "Director",
-                "Nurse Lead",
-                "GP Partner",
+                "Clinical Lead",
+                "Site Lead",
                 "Trainee",
               ]}
               selected={activeFilters.reviewer}
@@ -1922,10 +1922,10 @@ function ControlDialog({
                       <SelectItem value="Compliance Officer">
                         Compliance Officer
                       </SelectItem>
-                      <SelectItem value="Nurse Lead">Nurse Lead</SelectItem>
-                      <SelectItem value="GP Partner">GP Partner</SelectItem>
-                      <SelectItem value="Safeguarding Lead">
-                        Safeguarding Lead
+                      <SelectItem value="Clinical Lead">Clinical Lead</SelectItem>
+                      <SelectItem value="Site Lead">Site Lead</SelectItem>
+                      <SelectItem value="Safety Lead">
+                        Safety Lead
                       </SelectItem>
                     </SelectContent>
                   </Select>
@@ -1952,8 +1952,8 @@ function ControlDialog({
                       <SelectItem value="Compliance Officer">
                         Compliance Officer
                       </SelectItem>
-                      <SelectItem value="Nurse Lead">Nurse Lead</SelectItem>
-                      <SelectItem value="GP Partner">GP Partner</SelectItem>
+                      <SelectItem value="Clinical Lead">Clinical Lead</SelectItem>
+                      <SelectItem value="Site Lead">Site Lead</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

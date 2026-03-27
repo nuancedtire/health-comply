@@ -276,11 +276,11 @@ Default roles are defined statically in `src/lib/config/roles.ts`. Custom roles 
 - Compliance Officer - Compliance monitoring
 
 **Site-scoped roles:**
-- GP Partner - Site leadership
-- Nurse Lead - Lead nurse
-- Safeguarding Lead - Safeguarding responsibility
-- Clinician - Clinical staff
-- Receptionist - Front desk
+- Site Lead - Site leadership
+- Clinical Lead - Lead nurse
+- Safety Lead - Safeguarding responsibility
+- Practitioner - Clinical staff
+- Support Staff - Front desk
 
 **Custom roles** (`src/db/schema.ts` → `customRoles` table):
 - Created during onboarding or via admin

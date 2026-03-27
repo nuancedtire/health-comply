@@ -423,9 +423,9 @@ export const getEvidenceByQS = createServerFn({
 
 **Roles (seeded per tenant):**
 - `Director` — full access to all QS/evidence/policies
-- `GP Partner` — QS ownership, evidence review
-- `Nurse Lead` — evidence & policy review (limited)
-- `Safeguarding Lead` — Safeguarding QS ownership
+- `Site Lead` — QS ownership, evidence review
+- `Clinical Lead` — evidence & policy review (limited)
+- `Safety Lead` — Safeguarding QS ownership
 - `Admin` — user management, system config
 
 **Permission checks:**
@@ -1444,9 +1444,9 @@ async function createDevUsers() {
   // Roles
   const roles = [
     'Director',
-    'GP Partner',
-    'Nurse Lead',
-    'Safeguarding Lead',
+    'Site Lead',
+    'Clinical Lead',
+    'Safety Lead',
     'Admin',
   ];
 
@@ -1460,9 +1460,9 @@ async function createDevUsers() {
   // Users
   const users = [
     { id: 'u_pm', email: 'pm@example.com', name: 'Director', role: 'r_practice_manager' },
-    { id: 'u_gp', email: 'gp@example.com', name: 'GP Partner', role: 'r_gp_partner' },
-    { id: 'u_nurse', email: 'nurse@example.com', name: 'Nurse Lead', role: 'r_nurse_lead' },
-    { id: 'u_safe', email: 'safeguarding@example.com', name: 'Safeguarding Lead', role: 'r_safeguarding_lead' },
+    { id: 'u_gp', email: 'gp@example.com', name: 'Site Lead', role: 'r_gp_partner' },
+    { id: 'u_nurse', email: 'nurse@example.com', name: 'Clinical Lead', role: 'r_nurse_lead' },
+    { id: 'u_safe', email: 'safeguarding@example.com', name: 'Safety Lead', role: 'r_safeguarding_lead' },
     { id: 'u_admin', email: 'admin@example.com', name: 'Admin', role: 'r_admin' },
   ];
 
@@ -1543,9 +1543,9 @@ wrangler d1 execute cqc-compliance --remote --file=./seed/dev_users.sql
 | Email | Password | Role | Notes |
 |-------|----------|------|-------|
 | pm@example.com | Password123! | Director | Full access |
-| gp@example.com | Password123! | GP Partner | QS ownership |
-| nurse@example.com | Password123! | Nurse Lead | Review access |
-| safeguarding@example.com | Password123! | Safeguarding Lead | Safeguarding QS |
+| gp@example.com | Password123! | Site Lead | QS ownership |
+| nurse@example.com | Password123! | Clinical Lead | Review access |
+| safeguarding@example.com | Password123! | Safety Lead | Safeguarding QS |
 | admin@example.com | Password123! | Admin | System admin |
 
 ---

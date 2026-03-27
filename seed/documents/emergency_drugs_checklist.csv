@@ -1,7 +1,7 @@
 Date,Checker,Adrenaline (Exp),Atropine (Exp),Oxygen Cylinder Level,Defib Battery Status,Suction Unit,Comments
 2026-02-02,Charlie Nurse,2027-02,2027-06,Full,OK,Functioning,Weekly check complete.
 2026-02-09,Charlie Nurse,2027-02,2027-06,Full,OK,Functioning,Weekly check complete.
-2026-02-16,George Clinician,2027-02,2027-06,3/4,OK,Functioning,Oxygen used for patient on 12th; replacement ordered.
+2026-02-16,George Practitioner,2027-02,2027-06,3/4,OK,Functioning,Oxygen used for patient on 12th; replacement ordered.
 2026-02-23,Charlie Nurse,2027-02,2027-06,Full,OK,Functioning,Oxygen replaced.
 2026-03-02,Charlie Nurse,2027-02,2027-06,Full,OK,Functioning,Weekly check complete.
 2026-03-09,Charlie Nurse,2027-02,2027-06,Full,OK,Functioning,Added Paediatric pads to Defib kit (expired set removed).

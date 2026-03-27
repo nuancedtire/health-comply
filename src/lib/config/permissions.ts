@@ -49,7 +49,7 @@ export const PERMISSIONS = {
   // User Management
   "users:view": {
     scope: "users" as PermissionScope,
-    roles: ["Director", "Admin", "Compliance Officer", "GP Partner"] as RoleId[],
+    roles: ["Director", "Admin", "Compliance Officer", "Site Lead"] as RoleId[],
     description: "View team members and their roles",
   },
   "users:invite": {
@@ -103,7 +103,7 @@ export const PERMISSIONS = {
   },
   "evidence:edit": {
     scope: "evidence" as PermissionScope,
-    roles: ["Director", "Admin", "Compliance Officer", "Nurse Lead"] as RoleId[],
+    roles: ["Director", "Admin", "Compliance Officer", "Clinical Lead"] as RoleId[],
     description: "Edit evidence metadata",
   },
   "evidence:delete": {
@@ -127,7 +127,7 @@ export const PERMISSIONS = {
   // Reports
   "reports:view": {
     scope: "reports" as PermissionScope,
-    roles: ["Director", "Admin", "Compliance Officer", "GP Partner"] as RoleId[],
+    roles: ["Director", "Admin", "Compliance Officer", "Site Lead"] as RoleId[],
     description: "View compliance reports",
   },
   "reports:generate": {

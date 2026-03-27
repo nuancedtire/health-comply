@@ -16,9 +16,9 @@ import {
     Building, Bug, Pill, BookOpen, AlertTriangle, FileSearch, Building2, UserPlus,
     Pencil, Trash2
 } from 'lucide-react'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
 import { seedLocalControlsFn } from "@/core/functions/local-control-functions"
-import { inviteUserFn, createSiteFn, createCustomRoleFn, getCustomRolesFn } from "@/core/functions/admin-functions"
+import { inviteUserFn, createSiteFn, createCustomRoleFn } from "@/core/functions/admin-functions"
 import { ROLES, TENANT_ROLES, SITE_ROLES } from "@/lib/config/roles"
 import { getRoleScopesWithColors } from "@/lib/config/permissions"
 import { useSite } from "@/components/site-context"
@@ -103,13 +103,6 @@ function OnboardingPage() {
     const [inviteEmail, setInviteEmail] = useState("")
     const [selectedRole, setSelectedRole] = useState<string | null>(null)
     const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false)
-
-    // Fetch existing custom roles for this tenant
-    const { data: existingCustomRoles } = useQuery({
-        queryKey: ['custom-roles', tenantId],
-        queryFn: () => getCustomRolesFn({ data: { tenantId: tenantId! } }),
-        enabled: !!tenantId,
-    })
 
     // Mutations
     const createSiteMutation = useMutation({
@@ -224,11 +217,6 @@ function OnboardingPage() {
     }
 
     const progress = (step / totalSteps) * 100
-
-    const allRolesForInvite = [
-        ...ROLES.map(r => ({ id: r.id, name: r.name, type: r.type, description: r.description })),
-        ...customRoles.map(r => ({ id: r.name, name: r.name, type: r.type, description: r.description })),
-    ]
 
     return (
         <MainLayout title="Onboarding">

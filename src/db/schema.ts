@@ -108,7 +108,7 @@ export const userRoles = sqliteTable('user_roles', {
     siteId: text('site_id').references(() => sites.id, { onDelete: 'cascade' }),  // optional: site-scoped role
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 }, (table) => [
-    primaryKey({ columns: [table.userId, table.role, table.siteId || 'userId'] }), // Composite PK
+    primaryKey({ columns: [table.userId, table.role] }), // Composite PK
     index('idx_user_roles_user_id').on(table.userId),
 ]);
 
@@ -135,7 +135,7 @@ export const customRoles = sqliteTable('custom_roles', {
     id: text('id').primaryKey(),           // 'cr_<uuid>'
     tenantId: text('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),          // Display name, e.g., "Head of Nursing"
-    baseRoleId: text('base_role_id').notNull(), // Static role ID it inherits from, e.g., "Nurse Lead"
+    baseRoleId: text('base_role_id').notNull(), // Static role ID it inherits from, e.g., "Clinical Lead"
     type: text('type').notNull(),          // 'tenant' or 'site' — inherited from base role
     description: text('description'),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
@@ -178,7 +178,7 @@ export const localControls = sqliteTable('local_controls', {
     nextDueAt: integer('next_due_at', { mode: 'timestamp' }), // lastEvidenceAt + frequencyDays
 
     // Assignments
-    defaultReviewerRole: text('default_reviewer_role'), // e.g., 'Director', 'Nurse Lead'
+    defaultReviewerRole: text('default_reviewer_role'), // e.g., 'Director', 'Clinical Lead'
     fallbackReviewerRole: text('fallback_reviewer_role'),
 
     active: integer('active', { mode: 'boolean' }).notNull().default(true),

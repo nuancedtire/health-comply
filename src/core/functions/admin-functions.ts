@@ -97,7 +97,7 @@ export const inviteUserFn = createServerFn({ method: "POST" })
             const myRoleConfig = getRole(myRole.roleName);
 
             // Enforce Role-Based Permission (Who can invite?)
-            const allowedRoles = ["Director", "Admin", "Compliance Officer", "GP Partner"];
+            const allowedRoles = ["Director", "Admin", "Compliance Officer", "Site Lead"];
             if (!allowedRoles.includes(myRole.roleName)) {
                 throw new Error("Unauthorized: Your role does not have permission to invite users.");
             }
@@ -345,7 +345,7 @@ export const revokeInviteFn = createServerFn({ method: "POST" })
             if (!myRole) throw new Error("Unauthorized");
             const myRoleConfig = getRole(myRole.roleName);
 
-            const allowedRoles = ["Director", "Admin", "Compliance Officer", "GP Partner"];
+            const allowedRoles = ["Director", "Admin", "Compliance Officer", "Site Lead"];
             if (!allowedRoles.includes(myRole.roleName)) {
                 throw new Error("Unauthorized: Your role does not have permission to revoke invites.");
             }
@@ -525,7 +525,7 @@ const UpdateUserRoleSchema = z.object({
     // The requirement is "change roles". Usually role and site go together. 
     // Let's allow changing roleId. If role is site-scoped, we might need siteId validation or we keep existing siteId.
     // For simplicity, let's assume just changing the role for now. 
-    // But wait, if they change from Admin (Tenant) to GP Partner (Site), they need a site.
+    // But wait, if they change from Admin (Tenant) to Site Lead (Site), they need a site.
     // So we likely need siteId in input just in case.
 });
 
@@ -551,7 +551,7 @@ export const updateUserRoleFn = createServerFn({ method: "POST" })
             if (!myRole) throw new Error("Unauthorized");
             const myRoleConfig = getRole(myRole.roleName);
 
-            const allowedRoles = ["Director", "Admin", "Compliance Officer", "GP Partner"];
+            const allowedRoles = ["Director", "Admin", "Compliance Officer", "Site Lead"];
             if (!allowedRoles.includes(myRole.roleName)) {
                 throw new Error("Unauthorized: Your role does not have permission to update roles.");
             }
@@ -908,7 +908,7 @@ export const getRolesFn = createServerFn({ method: "GET" })
                 throw new Error("Unauthorized: No role found");
             }
 
-            const allowedRoles = ["Director", "Admin", "Compliance Officer", "GP Partner"];
+            const allowedRoles = ["Director", "Admin", "Compliance Officer", "Site Lead"];
             if (!allowedRoles.includes(myRole.roleName)) {
                 throw new Error("Unauthorized: Insufficient permissions to view roles");
             }

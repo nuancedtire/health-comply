@@ -362,7 +362,7 @@ VALUES (
     (
         'r_gp',
         't_demo',
-        'GP Partner'
+        'Site Lead'
     ),
     (
         'r_nurse',

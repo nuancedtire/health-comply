@@ -32,7 +32,7 @@ export const getChecklistDataFn = createServerFn({ method: "GET" })
         const userSiteId = (user as any).siteId; // From auth context if available
 
         if (userSiteId) {
-            // If user is strictly site-scoped (e.g. GP Partner), they can only see their site
+            // If user is strictly site-scoped (e.g. Site Lead), they can only see their site
             // We assume auth middleware populates this for site-scoped roles
             targetSiteId = userSiteId;
         }

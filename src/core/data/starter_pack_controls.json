@@ -68,7 +68,7 @@
         "evidenceHint": "Completed hand hygiene audit forms with action plans",
         "frequencyType": "recurring",
         "frequencyDays": 90,
-        "defaultReviewerRole": "Nurse Lead",
+        "defaultReviewerRole": "Clinical Lead",
         "evidenceExamples": {
             "good": [
                 "Audit using WHO methodology",
@@ -127,7 +127,7 @@
         "evidenceHint": "Dated policy document with review signature and changes log",
         "frequencyType": "recurring",
         "frequencyDays": 365,
-        "defaultReviewerRole": "Nurse Lead",
+        "defaultReviewerRole": "Clinical Lead",
         "evidenceExamples": {
             "good": [
                 "Signed review with date",
@@ -156,7 +156,7 @@
         "evidenceHint": "Sharps audit form with container inspection records",
         "frequencyType": "recurring",
         "frequencyDays": 90,
-        "defaultReviewerRole": "Nurse Lead",
+        "defaultReviewerRole": "Clinical Lead",
         "evidenceExamples": {
             "good": [
                 "Container fill-level checks",
@@ -185,7 +185,7 @@
         "evidenceHint": "CD register audit form with discrepancy checks",
         "frequencyType": "recurring",
         "frequencyDays": 90,
-        "defaultReviewerRole": "GP Partner",
+        "defaultReviewerRole": "Site Lead",
         "evidenceExamples": {
             "good": [
                 "Stock reconciliation",
@@ -214,7 +214,7 @@
         "evidenceHint": "Temperature logs with excursion actions documented",
         "frequencyType": "recurring",
         "frequencyDays": 30,
-        "defaultReviewerRole": "Nurse Lead",
+        "defaultReviewerRole": "Clinical Lead",
         "evidenceExamples": {
             "good": [
                 "Daily readings recorded",
@@ -243,7 +243,7 @@
         "evidenceHint": "Emergency equipment checklist with expiry dates",
         "frequencyType": "recurring",
         "frequencyDays": 7,
-        "defaultReviewerRole": "Nurse Lead",
+        "defaultReviewerRole": "Clinical Lead",
         "evidenceExamples": {
             "good": [
                 "Weekly checks documented",
@@ -360,7 +360,7 @@
         "evidenceHint": "SEA forms with action plans and learning outcomes",
         "frequencyType": "recurring",
         "frequencyDays": 30,
-        "defaultReviewerRole": "GP Partner",
+        "defaultReviewerRole": "Site Lead",
         "evidenceExamples": {
             "good": [
                 "Structured analysis",
@@ -418,7 +418,7 @@
         "evidenceHint": "Audit report with methodology, results, and action plan",
         "frequencyType": "recurring",
         "frequencyDays": 90,
-        "defaultReviewerRole": "GP Partner",
+        "defaultReviewerRole": "Site Lead",
         "evidenceExamples": {
             "good": [
                 "Clear methodology",

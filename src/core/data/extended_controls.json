@@ -36,7 +36,7 @@
         "evidenceHint": "Risk register with dated entries and action log",
         "frequencyType": "recurring",
         "frequencyDays": 90,
-        "defaultReviewerRole": "GP Partner",
+        "defaultReviewerRole": "Site Lead",
         "evidenceExamples": {
             "good": [
                 "Dated risk register entries",
@@ -114,7 +114,7 @@
         "evidenceHint": "Completed hand hygiene audit forms with action plans",
         "frequencyType": "recurring",
         "frequencyDays": 90,
-        "defaultReviewerRole": "Nurse Lead",
+        "defaultReviewerRole": "Clinical Lead",
         "evidenceExamples": {
             "good": [
                 "Audit using WHO methodology",
@@ -166,7 +166,7 @@
         "evidenceHint": "Dated policy document with review signature and changes log",
         "frequencyType": "recurring",
         "frequencyDays": 365,
-        "defaultReviewerRole": "Nurse Lead",
+        "defaultReviewerRole": "Clinical Lead",
         "evidenceExamples": {
             "good": [
                 "Signed review with date",
@@ -192,7 +192,7 @@
         "evidenceHint": "Sharps audit form with container inspection records",
         "frequencyType": "recurring",
         "frequencyDays": 90,
-        "defaultReviewerRole": "Nurse Lead",
+        "defaultReviewerRole": "Clinical Lead",
         "evidenceExamples": {
             "good": [
                 "Container fill-level checks",
@@ -244,7 +244,7 @@
         "evidenceHint": "CD register audit form with discrepancy checks",
         "frequencyType": "recurring",
         "frequencyDays": 90,
-        "defaultReviewerRole": "GP Partner",
+        "defaultReviewerRole": "Site Lead",
         "evidenceExamples": {
             "good": [
                 "Stock reconciliation",
@@ -270,7 +270,7 @@
         "evidenceHint": "Temperature logs with excursion actions documented",
         "frequencyType": "recurring",
         "frequencyDays": 30,
-        "defaultReviewerRole": "Nurse Lead",
+        "defaultReviewerRole": "Clinical Lead",
         "evidenceExamples": {
             "good": [
                 "Daily readings recorded",
@@ -296,7 +296,7 @@
         "evidenceHint": "Emergency equipment checklist with expiry dates",
         "frequencyType": "recurring",
         "frequencyDays": 7,
-        "defaultReviewerRole": "Nurse Lead",
+        "defaultReviewerRole": "Clinical Lead",
         "evidenceExamples": {
             "good": [
                 "Weekly checks documented",
@@ -322,7 +322,7 @@
         "evidenceHint": "High-risk medication protocol and patient review log",
         "frequencyType": "recurring",
         "frequencyDays": 90,
-        "defaultReviewerRole": "GP Partner",
+        "defaultReviewerRole": "Site Lead",
         "evidenceExamples": {
             "good": [
                 "Patient review list",
@@ -504,7 +504,7 @@
         "evidenceHint": "SEA forms with action plans and learning outcomes",
         "frequencyType": "recurring",
         "frequencyDays": 30,
-        "defaultReviewerRole": "GP Partner",
+        "defaultReviewerRole": "Site Lead",
         "evidenceExamples": {
             "good": [
                 "Structured analysis",
@@ -556,7 +556,7 @@
         "evidenceHint": "Safety alerts log with review dates and actions taken",
         "frequencyType": "recurring",
         "frequencyDays": 30,
-        "defaultReviewerRole": "GP Partner",
+        "defaultReviewerRole": "Site Lead",
         "evidenceExamples": {
             "good": [
                 "All alerts reviewed",
@@ -582,7 +582,7 @@
         "evidenceHint": "Risk register with review dates and mitigation actions",
         "frequencyType": "recurring",
         "frequencyDays": 90,
-        "defaultReviewerRole": "GP Partner",
+        "defaultReviewerRole": "Site Lead",
         "evidenceExamples": {
             "good": [
                 "Regular review documented",
@@ -634,7 +634,7 @@
         "evidenceHint": "Audit report with methodology, results, and action plan",
         "frequencyType": "recurring",
         "frequencyDays": 90,
-        "defaultReviewerRole": "GP Partner",
+        "defaultReviewerRole": "Site Lead",
         "evidenceExamples": {
             "good": [
                 "Clear methodology",
@@ -660,7 +660,7 @@
         "evidenceHint": "NICE guidance log with implementation status",
         "frequencyType": "recurring",
         "frequencyDays": 90,
-        "defaultReviewerRole": "GP Partner",
+        "defaultReviewerRole": "Site Lead",
         "evidenceExamples": {
             "good": [
                 "Guidance reviewed systematically",
@@ -686,7 +686,7 @@
         "evidenceHint": "Template review documentation with updates made",
         "frequencyType": "recurring",
         "frequencyDays": 365,
-        "defaultReviewerRole": "GP Partner",
+        "defaultReviewerRole": "Site Lead",
         "evidenceExamples": {
             "good": [
                 "Templates align with guidance",
@@ -738,7 +738,7 @@
         "evidenceHint": "Outcome tracking report with trend analysis",
         "frequencyType": "recurring",
         "frequencyDays": 90,
-        "defaultReviewerRole": "GP Partner",
+        "defaultReviewerRole": "Site Lead",
         "evidenceExamples": {
             "good": [
                 "PROMs collected",
@@ -790,7 +790,7 @@
         "evidenceHint": "MDT meeting minutes with action log",
         "frequencyType": "recurring",
         "frequencyDays": 30,
-        "defaultReviewerRole": "GP Partner",
+        "defaultReviewerRole": "Site Lead",
         "evidenceExamples": {
             "good": [
                 "Attendance recorded",
@@ -816,7 +816,7 @@
         "evidenceHint": "Signed consent policy with review date",
         "frequencyType": "recurring",
         "frequencyDays": 365,
-        "defaultReviewerRole": "GP Partner",
+        "defaultReviewerRole": "Site Lead",
         "evidenceExamples": {
             "good": [
                 "MCA compliant",
@@ -1024,7 +1024,7 @@
         "evidenceHint": "Home visit log with response times",
         "frequencyType": "recurring",
         "frequencyDays": 30,
-        "defaultReviewerRole": "GP Partner",
+        "defaultReviewerRole": "Site Lead",
         "evidenceExamples": {
             "good": [
                 "Requests triaged appropriately",
@@ -1154,7 +1154,7 @@
         "evidenceHint": "Partners meeting minutes with action tracker",
         "frequencyType": "recurring",
         "frequencyDays": 30,
-        "defaultReviewerRole": "GP Partner",
+        "defaultReviewerRole": "Site Lead",
         "evidenceExamples": {
             "good": [
                 "Regular meetings",
@@ -1232,7 +1232,7 @@
         "evidenceHint": "Vision/values document and communication evidence",
         "frequencyType": "recurring",
         "frequencyDays": 365,
-        "defaultReviewerRole": "GP Partner",
+        "defaultReviewerRole": "Site Lead",
         "evidenceExamples": {
             "good": [
                 "Displayed prominently",
@@ -1284,7 +1284,7 @@
         "evidenceHint": "FTSU guardian appointment and promotion evidence",
         "frequencyType": "recurring",
         "frequencyDays": 365,
-        "defaultReviewerRole": "GP Partner",
+        "defaultReviewerRole": "Site Lead",
         "evidenceExamples": {
             "good": [
                 "Guardian appointed",
@@ -1336,7 +1336,7 @@
         "evidenceHint": "QI project documentation with PDSA cycles",
         "frequencyType": "recurring",
         "frequencyDays": 90,
-        "defaultReviewerRole": "GP Partner",
+        "defaultReviewerRole": "Site Lead",
         "evidenceExamples": {
             "good": [
                 "PDSA methodology",
@@ -1466,7 +1466,7 @@
         "evidenceHint": "Immunisation uptake report with actions for improvement",
         "frequencyType": "recurring",
         "frequencyDays": 90,
-        "defaultReviewerRole": "Nurse Lead",
+        "defaultReviewerRole": "Clinical Lead",
         "evidenceExamples": {
             "good": [
                 "Uptake tracked by cohort",
@@ -1492,7 +1492,7 @@
         "evidenceHint": "Screening uptake report with recall effectiveness",
         "frequencyType": "recurring",
         "frequencyDays": 90,
-        "defaultReviewerRole": "Nurse Lead",
+        "defaultReviewerRole": "Clinical Lead",
         "evidenceExamples": {
             "good": [
                 "Uptake by screening type",
@@ -1570,7 +1570,7 @@
         "evidenceHint": "EOLC register and planning audit",
         "frequencyType": "recurring",
         "frequencyDays": 90,
-        "defaultReviewerRole": "GP Partner",
+        "defaultReviewerRole": "Site Lead",
         "evidenceExamples": {
             "good": [
                 "Register maintained",
@@ -1596,7 +1596,7 @@
         "evidenceHint": "New patient health check completion report",
         "frequencyType": "recurring",
         "frequencyDays": 30,
-        "defaultReviewerRole": "Nurse Lead",
+        "defaultReviewerRole": "Clinical Lead",
         "evidenceExamples": {
             "good": [
                 "All new patients offered",
@@ -1622,7 +1622,7 @@
         "evidenceHint": "Frailty register and assessment audit",
         "frequencyType": "recurring",
         "frequencyDays": 90,
-        "defaultReviewerRole": "GP Partner",
+        "defaultReviewerRole": "Site Lead",
         "evidenceExamples": {
             "good": [
                 "eFI used systematically",
@@ -1752,7 +1752,7 @@
         "evidenceHint": "Leadership development plan and succession planning",
         "frequencyType": "recurring",
         "frequencyDays": 365,
-        "defaultReviewerRole": "GP Partner",
+        "defaultReviewerRole": "Site Lead",
         "evidenceExamples": {
             "good": [
                 "Development plans in place",

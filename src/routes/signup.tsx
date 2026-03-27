@@ -446,7 +446,6 @@ const createOrgSchema = z.object({
 })
 
 function CreateOrganization({ onBack }: { onBack: () => void }) {
-    const router = useRouter()
     const [error, setError] = React.useState<string | null>(null)
 
     const form = useForm<z.infer<typeof createOrgSchema>>({

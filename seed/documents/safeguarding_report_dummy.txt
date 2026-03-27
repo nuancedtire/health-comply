@@ -2,8 +2,8 @@
 
 **Context:** Southside Medical Practice (Uptown Surgery)
 **Date of Meeting:** December 1, 2025
-**Present:** Dr. Sarah Smith (Safeguarding Lead/GP Partner), Alice Manager (PM), Charlie Nurse (Nurse Lead).
-**Apologies:** George Clinician.
+**Present:** Dr. Sarah Smith (Safety Lead/Site Lead), Alice Manager (PM), Charlie Nurse (Clinical Lead).
+**Apologies:** George Practitioner.
 
 ---
 
@@ -62,5 +62,5 @@ This document serves as both the Annual Safeguarding Report and the minutes for 
 
 *Signed:*
 Dr. Sarah Smith
-Safeguarding Lead
+Safety Lead
 Uptown Surgery

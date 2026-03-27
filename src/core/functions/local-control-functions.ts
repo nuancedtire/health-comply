@@ -277,8 +277,8 @@ CONTEXT:
 
 ROLES FOR ASSIGNMENT:
 - "Director" - Administrative, governance, HR, facilities
-- "Nurse Lead" - Clinical audits, IPC, medicines, patient safety
-- "GP Partner" - Clinical governance, safeguarding, significant events
+- "Clinical Lead" - Clinical audits, IPC, medicines, patient safety
+- "Site Lead" - Clinical governance, safeguarding, significant events
 
 FREQUENCY TYPES:
 - "recurring" - Regular schedule (specify frequencyDays: 7=weekly, 30=monthly, 90=quarterly, 365=annually)
@@ -367,8 +367,8 @@ Suggest 3 specific local operational controls that would strengthen this practic
                             type: "string",
                             enum: [
                               "Director",
-                              "Nurse Lead",
-                              "GP Partner",
+                              "Clinical Lead",
+                              "Site Lead",
                             ],
                             description: "Who should own this control",
                           },
@@ -376,8 +376,8 @@ Suggest 3 specific local operational controls that would strengthen this practic
                             type: "string",
                             enum: [
                               "Director",
-                              "Nurse Lead",
-                              "GP Partner",
+                              "Clinical Lead",
+                              "Site Lead",
                             ],
                             description:
                               "Backup reviewer if primary unavailable",
@@ -792,8 +792,8 @@ QUALITY STATEMENT CONTEXT:
 
 ROLES FOR ASSIGNMENT:
 - "Director" - Administrative, governance, HR, facilities
-- "Nurse Lead" - Clinical audits, IPC, medicines, patient safety
-- "GP Partner" - Clinical governance, safeguarding, significant events
+- "Clinical Lead" - Clinical audits, IPC, medicines, patient safety
+- "Site Lead" - Clinical governance, safeguarding, significant events
 
 FREQUENCY TYPES:
 - "recurring" - Regular schedule (specify frequencyDays: 7=weekly, 30=monthly, 90=quarterly, 365=annually)
@@ -858,12 +858,12 @@ Generate all fields needed for a complete control definition.`;
                     },
                     defaultReviewerRole: {
                       type: "string",
-                      enum: ["Director", "Nurse Lead", "GP Partner"],
+                      enum: ["Director", "Clinical Lead", "Site Lead"],
                       description: "Who should own this control",
                     },
                     fallbackReviewerRole: {
                       type: "string",
-                      enum: ["Director", "Nurse Lead", "GP Partner"],
+                      enum: ["Director", "Clinical Lead", "Site Lead"],
                       description: "Backup reviewer if primary unavailable",
                     },
                     evidenceExamples: {

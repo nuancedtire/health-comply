@@ -26,7 +26,8 @@ export const checkInviteFn = createServerFn({ method: "POST" })
             tenantName: schema.tenants.name,
             siteName: schema.sites.name,
             roleName: schema.invitations.role,
-            valid: schema.invitations.status
+            status: schema.invitations.status,
+            expiresAt: schema.invitations.expiresAt,
         })
             .from(schema.invitations)
             .leftJoin(schema.tenants, eq(schema.invitations.tenantId, schema.tenants.id))
@@ -38,7 +39,15 @@ export const checkInviteFn = createServerFn({ method: "POST" })
             throw new Error("Invalid or expired invitation.");
         }
 
-        // Return public info
+        // Check expiry
+        if (invite.expiresAt && new Date(invite.expiresAt) < new Date()) {
+            throw new Error("This invitation has expired.");
+        }
+
+        if (invite.status === 'accepted') {
+            throw new Error("This invitation has already been used.");
+        }
+
         return {
             email: invite.email,
             tenantName: invite.tenantName,
@@ -49,7 +58,7 @@ export const checkInviteFn = createServerFn({ method: "POST" })
     });
 
 const FindTenantSchema = z.object({
-    query: z.string().min(3)
+    query: z.string().min(2)
 });
 
 export const findTenantFn = createServerFn({ method: "POST" })

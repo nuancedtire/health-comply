@@ -42,14 +42,14 @@ export const seedDatabaseFn = createServerFn({ method: "POST" })
                 sites: ["Downtown Clinic", "Uptown Surgery", "Westside Health"],
                 users: [
                     { email: "manager@healthcore.com", name: "Alice Manager", role: "Director" },
-                    { email: "gp1@healthcore.com", name: "Dr. Bob GP", role: "GP Partner", siteIndex: 0 },
-                    { email: "gp2@healthcore.com", name: "Dr. Sarah Smith", role: "GP Partner", siteIndex: 1 },
-                    { email: "nurse1@healthcore.com", name: "Charlie Nurse", role: "Nurse Lead", siteIndex: 1 },
-                    { email: "nurse2@healthcore.com", name: "Diana Nurse", role: "Nurse Lead", siteIndex: 2 },
-                    { email: "safeguarding@healthcore.com", name: "Edward Guard", role: "Safeguarding Lead", siteIndex: 0 },
+                    { email: "gp1@healthcore.com", name: "Dr. Bob GP", role: "Site Lead", siteIndex: 0 },
+                    { email: "gp2@healthcore.com", name: "Dr. Sarah Smith", role: "Site Lead", siteIndex: 1 },
+                    { email: "nurse1@healthcore.com", name: "Charlie Nurse", role: "Clinical Lead", siteIndex: 1 },
+                    { email: "nurse2@healthcore.com", name: "Diana Nurse", role: "Clinical Lead", siteIndex: 2 },
+                    { email: "safeguarding@healthcore.com", name: "Edward Guard", role: "Safety Lead", siteIndex: 0 },
                     { email: "admin1@healthcore.com", name: "Fiona Admin", role: "Admin", siteIndex: 0 },
-                    { email: "clinician1@healthcore.com", name: "George Clinician", role: "Clinician", siteIndex: 1 },
-                    { email: "reception@healthcore.com", name: "Hannah Frontdesk", role: "Receptionist", siteIndex: 2 },
+                    { email: "clinician1@healthcore.com", name: "George Clinician", role: "Practitioner", siteIndex: 1 },
+                    { email: "reception@healthcore.com", name: "Hannah Frontdesk", role: "Support Staff", siteIndex: 2 },
                     { email: "compliance@healthcore.com", name: "Ian Compliance", role: "Compliance Officer" }
                 ]
             },
@@ -60,12 +60,12 @@ export const seedDatabaseFn = createServerFn({ method: "POST" })
                     { email: "manager@rural.com", name: "David Manager", role: "Director" },
                     { email: "admin@rural.com", name: "Isabella Admin", role: "Admin" },
                     { email: "compliance@rural.com", name: "Jack Compliance", role: "Compliance Officer" },
-                    { email: "gp@rural.com", name: "Dr. Eve GP", role: "GP Partner", siteIndex: 0 },
-                    { email: "partner@rural.com", name: "Dr. Frank Partner", role: "GP Partner", siteIndex: 1 },
-                    { email: "nurse@rural.com", name: "Grace Nurse", role: "Nurse Lead", siteIndex: 0 },
-                    { email: "safeguarding@rural.com", name: "Karen Guard", role: "Safeguarding Lead", siteIndex: 0 },
-                    { email: "clinician@rural.com", name: "Liam Clinician", role: "Clinician", siteIndex: 1 },
-                    { email: "reception@rural.com", name: "Henry Frontdesk", role: "Receptionist", siteIndex: 0 }
+                    { email: "gp@rural.com", name: "Dr. Eve GP", role: "Site Lead", siteIndex: 0 },
+                    { email: "partner@rural.com", name: "Dr. Frank Partner", role: "Site Lead", siteIndex: 1 },
+                    { email: "nurse@rural.com", name: "Grace Nurse", role: "Clinical Lead", siteIndex: 0 },
+                    { email: "safeguarding@rural.com", name: "Karen Guard", role: "Safety Lead", siteIndex: 0 },
+                    { email: "clinician@rural.com", name: "Liam Clinician", role: "Practitioner", siteIndex: 1 },
+                    { email: "reception@rural.com", name: "Henry Frontdesk", role: "Support Staff", siteIndex: 0 }
                 ]
             },
             {
@@ -75,11 +75,11 @@ export const seedDatabaseFn = createServerFn({ method: "POST" })
                     { email: "manager@metromed.com", name: "Julian Manager", role: "Director" },
                     { email: "admin@metromed.com", name: "Monica Admin", role: "Admin" },
                     { email: "compliance@metromed.com", name: "Nathan Compliance", role: "Compliance Officer" },
-                    { email: "gp@metromed.com", name: "Dr. Kevin Director", role: "GP Partner", siteIndex: 0 },
-                    { email: "nurse@metromed.com", name: "Laura Lead", role: "Nurse Lead", siteIndex: 0 },
-                    { email: "safeguarding@metromed.com", name: "Nina Safe", role: "Safeguarding Lead", siteIndex: 0 },
-                    { email: "clinician@metromed.com", name: "Mike Clinician", role: "Clinician", siteIndex: 1 },
-                    { email: "reception@metromed.com", name: "Oscar Frontdesk", role: "Receptionist", siteIndex: 1 }
+                    { email: "gp@metromed.com", name: "Dr. Kevin Director", role: "Site Lead", siteIndex: 0 },
+                    { email: "nurse@metromed.com", name: "Laura Lead", role: "Clinical Lead", siteIndex: 0 },
+                    { email: "safeguarding@metromed.com", name: "Nina Safe", role: "Safety Lead", siteIndex: 0 },
+                    { email: "clinician@metromed.com", name: "Mike Clinician", role: "Practitioner", siteIndex: 1 },
+                    { email: "reception@metromed.com", name: "Oscar Frontdesk", role: "Support Staff", siteIndex: 1 }
                 ]
             }
         ];
