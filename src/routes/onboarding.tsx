@@ -13,7 +13,7 @@ import {
     Building, Bug, Pill, BookOpen, AlertTriangle, FileSearch, Building2, UserPlus,
     Pencil, Trash2, X
 } from 'lucide-react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { seedLocalControlsFn } from "@/core/functions/local-control-functions"
 import { inviteUserFn, createSiteFn, createCustomRoleFn } from "@/core/functions/admin-functions"
 import { ROLES, TENANT_ROLES, SITE_ROLES } from "@/lib/config/roles"
@@ -152,6 +152,7 @@ function OnboardingPage() {
     const siteContext = useSite()
     const tenantId = search.tenantId || siteContext.tenantId
     const navigate = useNavigate()
+    const queryClient = useQueryClient()
     const [step, setStepState] = useState(() => search.step ?? (search.siteId ? 2 : 1))
     const totalSteps = 5
 
@@ -188,6 +189,7 @@ function OnboardingPage() {
         onSuccess: (data) => {
             setCreatedSiteId(data.siteId)
             toast.success("Site created successfully!")
+            queryClient.invalidateQueries({ queryKey: ['sites'] })
             setStepState(2)
             navigate({ to: '/onboarding', search: (prev) => ({ ...prev, siteId: data.siteId, step: 2 }), replace: true })
         },
@@ -879,13 +881,13 @@ function OnboardingPage() {
                                         <Button
                                             variant="outline"
                                             className="flex-1"
-                                            onClick={() => navigate({ to: '/checklist' })}
+                                            onClick={() => { window.location.href = '/checklist' }}
                                         >
                                             View Checklist
                                         </Button>
                                         <Button
                                             className="flex-1"
-                                            onClick={() => navigate({ to: '/dashboard' })}
+                                            onClick={() => { window.location.href = '/dashboard' }}
                                         >
                                             Go to Dashboard
                                             <ArrowRight className="w-4 h-4" />
