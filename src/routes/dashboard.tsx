@@ -370,7 +370,7 @@ function DashboardPage() {
                   </Link>
                 </Button>
                 <Button variant="outline" className="w-full justify-start gap-2" asChild>
-                  <Link to="/admin/users">
+                  <Link to="/team">
                     <UserPlus className="w-4 h-4" />
                     Invite Team Member
                   </Link>

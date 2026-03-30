@@ -117,11 +117,12 @@ export const inviteUserFn = createServerFn({ method: "POST" })
         }
 
         // Check for existing pending invitation
+        const normalizedEmail = data.email.toLowerCase().trim();
         const existingInvite = await db.select()
             .from(schema.invitations as any)
             .where(
                 and(
-                    eq(schema.invitations.email, data.email) as any,
+                    eq(schema.invitations.email, normalizedEmail) as any,
                     eq(schema.invitations.tenantId, data.tenantId) as any,
                     eq(schema.invitations.status, 'pending') as any
                 )
@@ -137,7 +138,7 @@ export const inviteUserFn = createServerFn({ method: "POST" })
 
         await db.insert(schema.invitations as any).values({
             id: inviteId,
-            email: data.email,
+            email: normalizedEmail,
             tenantId: data.tenantId,
             siteId: data.siteId,
             role: data.role,
@@ -155,7 +156,7 @@ export const inviteUserFn = createServerFn({ method: "POST" })
             targetUserId: inviteId, // Use invite ID since user doesn't exist yet
             action: AUDIT_ACTIONS.USER_INVITED,
             details: {
-                targetUserEmail: data.email,
+                targetUserEmail: normalizedEmail,
                 newRole: data.role,
             },
         });
